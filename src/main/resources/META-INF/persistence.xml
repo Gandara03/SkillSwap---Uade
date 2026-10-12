@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Unidad de persistencia de SkillSwap. NO lleva url, usuario ni clave: la conexion la arma
+  BaseDeDatos (iniciarMySql / iniciarH2) con propiedades programaticas a partir de variables de entorno.
+  El esquema lo crea Flyway (db/migration); Hibernate solo lo valida.
+-->
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
+             version="3.1">
+
+    <persistence-unit name="skillswapPU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.BloqueDisponibilidadEmbebible</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.HistorialBaseJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.PerfilJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.PublicacionJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.FranjaJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.HistorialPublicacionJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.ContratacionJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.HistorialContratacionJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.WalletJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.MovimientoCreditoJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.CalificacionJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.NotificacionJpaEntity</class>
+        <class>com.uade.skillswap.infrastructure.persistence.jpa.entity.PromocionJpaEntity</class>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+
+        <properties>
+            <!-- Defensa en profundidad: BaseDeDatos tambien lo fija. Nunca create / update. -->
+            <property name="hibernate.hbm2ddl.auto" value="validate"/>
+            <property name="hibernate.show_sql" value="false"/>
+        </properties>
+    </persistence-unit>
+</persistence>
