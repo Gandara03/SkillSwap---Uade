@@ -21,9 +21,6 @@ import com.uade.skillswap.application.service.RecomendacionService;
 import com.uade.skillswap.application.service.SesionService;
 import com.uade.skillswap.application.service.WalletService;
 import com.uade.skillswap.infrastructure.notificacion.CanalNotificacionFactoryImpl;
-import com.uade.skillswap.infrastructure.notificacion.EmailCanalAdapter;
-import com.uade.skillswap.infrastructure.notificacion.InternaCanalAdapter;
-import com.uade.skillswap.infrastructure.notificacion.PushCanalAdapter;
 import com.uade.skillswap.infrastructure.notificacion.sdk.EmailSdkMock;
 import com.uade.skillswap.infrastructure.notificacion.sdk.PushSdkMock;
 
@@ -62,8 +59,7 @@ public final class AplicacionEnMemoria {
 
     private AplicacionEnMemoria(SkillSwapConfig config) {
         this.config = config;
-        CanalNotificacionFactoryImpl canales = new CanalNotificacionFactoryImpl(
-                new EmailCanalAdapter(emailSdk, identidad), new PushCanalAdapter(pushSdk), new InternaCanalAdapter());
+        CanalNotificacionFactoryImpl canales = new CanalNotificacionFactoryImpl(emailSdk, pushSdk, identidad);
         NotificadorObserver notificador = new NotificadorObserver(notificaciones, perfiles, canales, transaccion, reloj);
 
         this.sesion = new SesionService(identidad, perfiles);

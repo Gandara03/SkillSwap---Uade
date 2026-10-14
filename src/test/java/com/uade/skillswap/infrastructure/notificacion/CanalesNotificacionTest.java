@@ -33,7 +33,7 @@ class CanalesNotificacionTest {
         email = new EmailCanalAdapter(emailSdk);
         push = new PushCanalAdapter(pushSdk);
         interna = new InternaCanalAdapter();
-        factory = new CanalNotificacionFactoryImpl(email, push, interna);
+        factory = new CanalNotificacionFactoryImpl(emailSdk, pushSdk, IdentidadMockAdapter.conUsuariosDemo());
         destinatario = Datos.profesional(1L, "u-ana");
     }
 
@@ -86,11 +86,28 @@ class CanalesNotificacionTest {
     }
 
     @Test
-    @DisplayName("la fabrica devuelve el adapter del canal pedido")
+    @DisplayName("la fabrica crea el adapter del canal pedido")
     void fabricaPorCanal() {
-        assertSame(email, factory.crear(CanalNotificacion.EMAIL));
-        assertSame(push, factory.crear(CanalNotificacion.PUSH));
-        assertSame(interna, factory.crear(CanalNotificacion.INTERNA));
+        assertInstanceOf(EmailCanalAdapter.class, factory.crear(CanalNotificacion.EMAIL));
+        assertInstanceOf(PushCanalAdapter.class, factory.crear(CanalNotificacion.PUSH));
+        assertInstanceOf(InternaCanalAdapter.class, factory.crear(CanalNotificacion.INTERNA));
+    }
+
+    @Test
+    @DisplayName("la fabrica crea un adapter nuevo en cada pedido")
+    void fabricaCreaEnCadaPedido() {
+        for (CanalNotificacion canal : CanalNotificacion.values()) {
+            assertNotSame(factory.crear(canal), factory.crear(canal));
+        }
+    }
+
+    @Test
+    @DisplayName("los adapters que crea la fabrica envian por el SDK de su proveedor")
+    void fabricaUsaLosSdk() {
+        factory.crear(CanalNotificacion.EMAIL).enviar(notificacion(CanalNotificacion.EMAIL), destinatario);
+        factory.crear(CanalNotificacion.PUSH).enviar(notificacion(CanalNotificacion.PUSH), destinatario);
+        assertEquals("ana@skillswap.test", emailSdk.enviados().get(0).destino());
+        assertEquals("dispositivo-u-ana", pushSdk.enviados().get(0).dispositivo());
     }
 
     @Test
@@ -105,15 +122,16 @@ class CanalesNotificacionTest {
     @Test
     @DisplayName("canal nulo cae en el canal interno")
     void fabricaCanalNulo() {
-        assertSame(interna, factory.crear(null));
+        assertInstanceOf(InternaCanalAdapter.class, factory.crear(null));
     }
 
     @Test
-    @DisplayName("la fabrica exige los tres canales")
-    void fabricaExigeCanales() {
-        assertThrows(NullPointerException.class, () -> new CanalNotificacionFactoryImpl(null, push, interna));
-        assertThrows(NullPointerException.class, () -> new CanalNotificacionFactoryImpl(email, null, interna));
-        assertThrows(NullPointerException.class, () -> new CanalNotificacionFactoryImpl(email, push, null));
+    @DisplayName("la fabrica exige los dos SDK y la identidad")
+    void fabricaExigeDependencias() {
+        IdentidadMockAdapter identidad = IdentidadMockAdapter.conUsuariosDemo();
+        assertThrows(NullPointerException.class, () -> new CanalNotificacionFactoryImpl(null, pushSdk, identidad));
+        assertThrows(NullPointerException.class, () -> new CanalNotificacionFactoryImpl(emailSdk, null, identidad));
+        assertThrows(NullPointerException.class, () -> new CanalNotificacionFactoryImpl(emailSdk, pushSdk, null));
     }
 
     @Test

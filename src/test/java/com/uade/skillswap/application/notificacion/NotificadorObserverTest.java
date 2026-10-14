@@ -13,9 +13,6 @@ import com.uade.skillswap.domain.model.contratacion.observer.ContratacionEvent;
 import com.uade.skillswap.domain.model.notificacion.CanalNotificacion;
 import com.uade.skillswap.domain.model.notificacion.Notificacion;
 import com.uade.skillswap.infrastructure.notificacion.CanalNotificacionFactoryImpl;
-import com.uade.skillswap.infrastructure.notificacion.EmailCanalAdapter;
-import com.uade.skillswap.infrastructure.notificacion.InternaCanalAdapter;
-import com.uade.skillswap.infrastructure.notificacion.PushCanalAdapter;
 import com.uade.skillswap.support.AplicacionEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -50,8 +47,7 @@ class NotificadorObserverTest {
     }
 
     private CanalNotificacionFactory canalesReales() {
-        return new CanalNotificacionFactoryImpl(new EmailCanalAdapter(app.emailSdk, app.identidad),
-                new PushCanalAdapter(app.pushSdk), new InternaCanalAdapter());
+        return new CanalNotificacionFactoryImpl(app.emailSdk, app.pushSdk, app.identidad);
     }
 
     private NotificadorObserver observerCon(CanalNotificacionFactory factory) {

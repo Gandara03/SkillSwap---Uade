@@ -18,9 +18,6 @@ import com.uade.skillswap.application.service.WalletService;
 import com.uade.skillswap.domain.model.contratacion.observer.ContratacionObserver;
 import com.uade.skillswap.infrastructure.identidad.IdentidadMockAdapter;
 import com.uade.skillswap.infrastructure.notificacion.CanalNotificacionFactoryImpl;
-import com.uade.skillswap.infrastructure.notificacion.EmailCanalAdapter;
-import com.uade.skillswap.infrastructure.notificacion.InternaCanalAdapter;
-import com.uade.skillswap.infrastructure.notificacion.PushCanalAdapter;
 import com.uade.skillswap.infrastructure.notificacion.sdk.EmailSdkMock;
 import com.uade.skillswap.infrastructure.notificacion.sdk.PushSdkMock;
 import com.uade.skillswap.infrastructure.persistence.JpaContexto;
@@ -107,11 +104,10 @@ public final class Composicion {
         TransaccionPort transaccion = new JpaTransaccionAdapter(ctx);
         RelojPort reloj = new RelojSistema();
 
-        // Canales de notificacion: un adapter por SDK externo + Simple Factory
+        // Canales de notificacion: un SDK por proveedor externo; la Simple Factory crea el adapter en cada pedido
         var emailSdk = new EmailSdkMock();
         var pushSdk = new PushSdkMock();
-        CanalNotificacionFactory canales = new CanalNotificacionFactoryImpl(
-                new EmailCanalAdapter(emailSdk, identidad), new PushCanalAdapter(pushSdk), new InternaCanalAdapter());
+        CanalNotificacionFactory canales = new CanalNotificacionFactoryImpl(emailSdk, pushSdk, identidad);
 
         // Observer de contrataciones: persiste y envia notificaciones despues del commit
         ContratacionObserver notificador =
