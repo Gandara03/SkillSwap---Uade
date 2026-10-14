@@ -14,6 +14,7 @@ import com.uade.skillswap.application.port.out.TransaccionPort;
 import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.precio.PrecioPublicacion;
 import com.uade.skillswap.domain.model.promocion.Promocion;
+import com.uade.skillswap.domain.model.publicacion.DatosPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
@@ -62,10 +63,11 @@ public class PublicacionService implements PublicacionUseCase {
         return transaccion.ejecutar(() -> {
             Perfil autor = Cargas.perfilActivo(perfilRepository, actorId);
             LocalDateTime ahora = reloj.ahora();
-            Publicacion borrador = Publicacion.crearBorrador(comando.tipo(), actorId, autor.getTipo(),
-                    comando.titulo(), comando.descripcion(), comando.categoria(), comando.modalidad(),
-                    comando.duracionMinutos(), comando.cupo(), Entradas.precio(comando.precioBase()),
-                    comando.etiquetas(), habilidades, comando.politicaCancelacion(), ahora);
+            DatosPublicacion datos = new DatosPublicacion(comando.titulo(), comando.descripcion(),
+                    comando.categoria(), comando.modalidad(), comando.duracionMinutos(), comando.cupo(),
+                    Entradas.precio(comando.precioBase()), comando.etiquetas(), habilidades,
+                    comando.politicaCancelacion());
+            Publicacion borrador = Publicacion.crearBorrador(comando.tipo(), actorId, autor.getTipo(), datos, ahora);
             for (FranjaCommand franja : franjas) {
                 Entradas.exigir(franja, "La franja");
                 borrador.agregarFranja(franja.inicio(), franja.fin(), ahora);
@@ -78,10 +80,10 @@ public class PublicacionService implements PublicacionUseCase {
     public PublicacionDto editar(Long actorId, Long publicacionId, EditarPublicacionCommand comando) {
         Entradas.exigir(comando, "El comando");
         var habilidades = Entradas.habilidades(comando.habilidades());
-        return modificar(actorId, publicacionId, (p, ahora) -> p.editar(comando.titulo(), comando.descripcion(),
-                comando.categoria(), comando.modalidad(), comando.duracionMinutos(), comando.cupo(),
-                Entradas.precio(comando.precioBase()), comando.etiquetas(), habilidades,
-                comando.politicaCancelacion()));
+        return modificar(actorId, publicacionId, (p, ahora) -> p.editar(new DatosPublicacion(comando.titulo(),
+                comando.descripcion(), comando.categoria(), comando.modalidad(), comando.duracionMinutos(),
+                comando.cupo(), Entradas.precio(comando.precioBase()), comando.etiquetas(), habilidades,
+                comando.politicaCancelacion())));
     }
 
     @Override

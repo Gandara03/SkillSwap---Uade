@@ -2,6 +2,7 @@ package com.uade.skillswap.support;
 
 import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
+import com.uade.skillswap.domain.model.publicacion.DatosPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
 import com.uade.skillswap.domain.model.publicacion.TipoPublicacion;
@@ -53,9 +54,9 @@ class InMemoryPublicacionRepositoryTest {
     private Publicacion nueva(Perfil autor, String titulo, String categoria, TipoPublicacion tipo, Modalidad modalidad,
                               int precio, List<String> etiquetas, List<Habilidad> habilidades, LocalDateTime franjaInicio,
                               boolean publicar) {
-        Publicacion p = Publicacion.crearBorrador(tipo, autor.getId(), TipoPerfil.PROFESIONAL, titulo, "descripcion de " + titulo,
-                categoria, modalidad, 60, 1, SkillCoins.de(precio), etiquetas, habilidades,
-                TipoPoliticaCancelacion.FLEXIBLE, AHORA);
+        Publicacion p = Publicacion.crearBorrador(tipo, autor.getId(), TipoPerfil.PROFESIONAL,
+                new DatosPublicacion(titulo, "descripcion de " + titulo, categoria, modalidad, 60, 1,
+                        SkillCoins.de(precio), etiquetas, habilidades, TipoPoliticaCancelacion.FLEXIBLE), AHORA);
         p.agregarFranja(franjaInicio, franjaInicio.plusHours(1), AHORA);
         repo.guardar(p);
         if (publicar) {

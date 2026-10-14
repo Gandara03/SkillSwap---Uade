@@ -2,6 +2,7 @@ package com.uade.skillswap.application.recomendacion;
 
 import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
+import com.uade.skillswap.domain.model.publicacion.DatosPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
 import com.uade.skillswap.domain.model.publicacion.TipoPublicacion;
@@ -37,9 +38,9 @@ class RecomendacionTest {
     /** Publicada con id, autor, habilidades/etiquetas/categoria dados y cupo ocupado = ocupado. */
     private static Publicacion publicada(long id, long autor, String categoria, List<String> etiquetas,
                                          List<Habilidad> habilidades, int ocupado) {
-        Publicacion p = Publicacion.crearBorrador(TipoPublicacion.MENTORIA, autor, TipoPerfil.PROFESIONAL, "T" + id,
-                "d", categoria, Modalidad.REMOTA, 60, 10, SkillCoins.de(10), etiquetas, habilidades,
-                TipoPoliticaCancelacion.FLEXIBLE, AHORA);
+        Publicacion p = Publicacion.crearBorrador(TipoPublicacion.MENTORIA, autor, TipoPerfil.PROFESIONAL,
+                new DatosPublicacion("T" + id, "d", categoria, Modalidad.REMOTA, 60, 10, SkillCoins.de(10), etiquetas,
+                        habilidades, TipoPoliticaCancelacion.FLEXIBLE), AHORA);
         for (int i = 0; i < Math.max(ocupado, 1); i++) {
             p.agregarFranja(AHORA.plusDays(i + 1), AHORA.plusDays(i + 1).plusHours(1), AHORA);
         }

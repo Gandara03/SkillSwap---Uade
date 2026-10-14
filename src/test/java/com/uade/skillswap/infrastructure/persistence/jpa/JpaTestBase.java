@@ -4,6 +4,7 @@ import com.uade.skillswap.domain.model.contratacion.Contratacion;
 import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
+import com.uade.skillswap.domain.model.publicacion.DatosPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Franja;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
@@ -184,8 +185,9 @@ public abstract class JpaTestBase {
             for (String h : habilidades) {
                 habs.add(Habilidad.de(h));
             }
-            Publicacion p = Publicacion.crearBorrador(t, autor.getId(), autor.getTipo(), titulo, descripcion, categoria,
-                    modalidad, 60, cupo, precio, etiquetas, habs, TipoPoliticaCancelacion.FLEXIBLE, AHORA);
+            Publicacion p = Publicacion.crearBorrador(t, autor.getId(), autor.getTipo(), new DatosPublicacion(titulo,
+                    descripcion, categoria, modalidad, 60, cupo, precio, etiquetas, habs,
+                    TipoPoliticaCancelacion.FLEXIBLE), AHORA);
             for (LocalDateTime inicio : inicios) {
                 p.agregarFranja(inicio, inicio.plusHours(1), AHORA);
             }

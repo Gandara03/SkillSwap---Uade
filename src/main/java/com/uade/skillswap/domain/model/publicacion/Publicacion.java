@@ -58,11 +58,8 @@ public class Publicacion {
     }
 
     /** Crea un borrador. Puede estar incompleto: la completitud se exige recien al publicar. */
-    public static Publicacion crearBorrador(TipoPublicacion tipo, Long autorId, TipoPerfil tipoAutor, String titulo,
-                                            String descripcion, String categoria, Modalidad modalidad,
-                                            int duracionMinutos, int cupo, SkillCoins precioBase,
-                                            Collection<String> etiquetas, Collection<Habilidad> habilidades,
-                                            TipoPoliticaCancelacion politicaCancelacion, LocalDateTime ahora) {
+    public static Publicacion crearBorrador(TipoPublicacion tipo, Long autorId, TipoPerfil tipoAutor,
+                                            DatosPublicacion datos, LocalDateTime ahora) {
         if (tipo == null || autorId == null || tipoAutor == null) {
             throw new ReglaDeNegocioException("Tipo de publicacion, autor y tipo de autor son obligatorios");
         }
@@ -73,22 +70,7 @@ public class Publicacion {
             throw new ReglaDeNegocioException("Solo un profesional puede publicar mentorias o servicios");
         }
         Publicacion p = new Publicacion(tipo, autorId, ahora);
-        p.titulo = titulo;
-        p.descripcion = descripcion;
-        p.categoria = categoria;
-        p.modalidad = modalidad;
-        p.duracionMinutos = duracionMinutos;
-        p.cupo = cupo;
-        p.precioBase = precioBase;
-        if (politicaCancelacion != null) {
-            p.politicaCancelacion = politicaCancelacion;
-        }
-        if (etiquetas != null) {
-            p.etiquetas.addAll(etiquetas);
-        }
-        if (habilidades != null) {
-            p.habilidades.addAll(habilidades);
-        }
+        p.cargarDatos(datos);
         p.estadoActual = new EstadoBorrador();
         p.estado = p.estadoActual.getNombre();
         p.historial.add(HistorialEstado.registrar(null, p.estado,
@@ -129,30 +111,36 @@ public class Publicacion {
     // ---------- edicion ----------
 
     /** Solo editable en BORRADOR. */
-    public void editar(String titulo, String descripcion, String categoria, Modalidad modalidad, int duracionMinutos,
-                       int cupo, SkillCoins precioBase, Collection<String> etiquetas, Collection<Habilidad> habilidades,
-                       TipoPoliticaCancelacion politicaCancelacion) {
+    public void editar(DatosPublicacion datos) {
         if (!estadoActual.permiteEdicion()) {
             throw new ReglaDeNegocioException("Solo se puede editar una publicacion en BORRADOR (estado actual: "
                     + estado + ")");
         }
-        this.titulo = titulo;
-        this.descripcion = descripcion;
-        this.categoria = categoria;
-        this.modalidad = modalidad;
-        this.duracionMinutos = duracionMinutos;
-        this.cupo = cupo;
-        this.precioBase = precioBase;
-        if (politicaCancelacion != null) {
-            this.politicaCancelacion = politicaCancelacion;
+        cargarDatos(datos);
+    }
+
+    /** Copia los datos editables. Etiquetas y habilidades se reemplazan; la politica solo cambia si viene. */
+    private void cargarDatos(DatosPublicacion datos) {
+        if (datos == null) {
+            throw new ReglaDeNegocioException("Los datos de la publicacion son obligatorios");
+        }
+        this.titulo = datos.titulo();
+        this.descripcion = datos.descripcion();
+        this.categoria = datos.categoria();
+        this.modalidad = datos.modalidad();
+        this.duracionMinutos = datos.duracionMinutos();
+        this.cupo = datos.cupo();
+        this.precioBase = datos.precioBase();
+        if (datos.politicaCancelacion() != null) {
+            this.politicaCancelacion = datos.politicaCancelacion();
         }
         this.etiquetas.clear();
-        if (etiquetas != null) {
-            this.etiquetas.addAll(etiquetas);
+        if (datos.etiquetas() != null) {
+            this.etiquetas.addAll(datos.etiquetas());
         }
         this.habilidades.clear();
-        if (habilidades != null) {
-            this.habilidades.addAll(habilidades);
+        if (datos.habilidades() != null) {
+            this.habilidades.addAll(datos.habilidades());
         }
     }
 

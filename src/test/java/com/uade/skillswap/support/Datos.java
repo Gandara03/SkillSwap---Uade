@@ -5,6 +5,7 @@ import com.uade.skillswap.domain.model.contratacion.Contratacion;
 import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
+import com.uade.skillswap.domain.model.publicacion.DatosPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Franja;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
@@ -62,9 +63,9 @@ public final class Datos {
 
     public static Publicacion borradorCompleto(Long autorId, int cantidadFranjas, int cupo, SkillCoins precio) {
         Publicacion p = Publicacion.crearBorrador(TipoPublicacion.MENTORIA, autorId, TipoPerfil.PROFESIONAL,
-                "Mentoria de Java", "Clean Architecture y patrones", "programacion", Modalidad.REMOTA, 60, cupo,
-                precio, List.of("java", "backend"), List.of(Habilidad.de("Java")),
-                TipoPoliticaCancelacion.FLEXIBLE, AHORA);
+                new DatosPublicacion("Mentoria de Java", "Clean Architecture y patrones", "programacion",
+                        Modalidad.REMOTA, 60, cupo, precio, List.of("java", "backend"), List.of(Habilidad.de("Java")),
+                        TipoPoliticaCancelacion.FLEXIBLE), AHORA);
         for (int i = 1; i <= cantidadFranjas; i++) {
             p.agregarFranja(AHORA.plusDays(i), AHORA.plusDays(i).plusHours(1), AHORA);
         }

@@ -26,8 +26,15 @@ import static org.junit.jupiter.api.Assertions.*;
 class PublicacionTest {
 
     private static Publicacion borradorVacio() {
-        return Publicacion.crearBorrador(TipoPublicacion.MENTORIA, PROVEEDOR, TipoPerfil.PROFESIONAL, null, null, null,
-                null, 0, 0, null, null, null, null, AHORA);
+        return Publicacion.crearBorrador(TipoPublicacion.MENTORIA, PROVEEDOR, TipoPerfil.PROFESIONAL,
+                new DatosPublicacion(null, null, null, null, 0, 0, null, null, null, null), AHORA);
+    }
+
+    /** Datos con descripcion "d" y sin etiquetas, habilidades ni politica (queda la que tenga la publicacion). */
+    private static DatosPublicacion datos(String titulo, String categoria, Modalidad modalidad, int duracionMinutos,
+                                          int cupo, SkillCoins precioBase) {
+        return new DatosPublicacion(titulo, "d", categoria, modalidad, duracionMinutos, cupo, precioBase,
+                null, null, null);
     }
 
     // ---------- creacion ----------
@@ -35,8 +42,8 @@ class PublicacionTest {
     @Test
     @DisplayName("nace en BORRADOR con historial inicial y politica FLEXIBLE por defecto")
     void creacion() {
-        Publicacion p = Publicacion.crearBorrador(TipoPublicacion.SERVICIO, PROVEEDOR, TipoPerfil.PROFESIONAL, "t", "d",
-                "c", Modalidad.REMOTA, 30, 2, SkillCoins.de(10), null, null, null, AHORA);
+        Publicacion p = Publicacion.crearBorrador(TipoPublicacion.SERVICIO, PROVEEDOR, TipoPerfil.PROFESIONAL,
+                datos("t", "c", Modalidad.REMOTA, 30, 2, SkillCoins.de(10)), AHORA);
         assertEquals("BORRADOR", p.getEstado());
         assertEquals(TipoPoliticaCancelacion.FLEXIBLE, p.getPoliticaCancelacion());
         assertEquals(1, p.getHistorial().size());
@@ -52,31 +59,35 @@ class PublicacionTest {
     @Test
     @DisplayName("solo una organizacion puede crear un desafio")
     void desafioSoloOrganizacion() {
+        DatosPublicacion datos = datos("t", "c", Modalidad.REMOTA, 30, 1, SkillCoins.CERO);
         assertThrows(ReglaDeNegocioException.class, () -> Publicacion.crearBorrador(TipoPublicacion.DESAFIO, PROVEEDOR,
-                TipoPerfil.PROFESIONAL, "t", "d", "c", Modalidad.REMOTA, 30, 1, SkillCoins.CERO, null, null, null, AHORA));
-        Publicacion ok = Publicacion.crearBorrador(TipoPublicacion.DESAFIO, 9L, TipoPerfil.ORGANIZACION, "t", "d", "c",
-                Modalidad.REMOTA, 30, 1, SkillCoins.CERO, null, null, null, AHORA);
+                TipoPerfil.PROFESIONAL, datos, AHORA));
+        Publicacion ok = Publicacion.crearBorrador(TipoPublicacion.DESAFIO, 9L, TipoPerfil.ORGANIZACION, datos, AHORA);
         assertEquals(TipoPublicacion.DESAFIO, ok.getTipo());
     }
 
     @Test
     @DisplayName("una organizacion no puede crear mentorias ni servicios")
     void organizacionNoMentorias() {
+        DatosPublicacion datos = datos("t", "c", Modalidad.REMOTA, 30, 1, SkillCoins.CERO);
         assertThrows(ReglaDeNegocioException.class, () -> Publicacion.crearBorrador(TipoPublicacion.MENTORIA, 9L,
-                TipoPerfil.ORGANIZACION, "t", "d", "c", Modalidad.REMOTA, 30, 1, SkillCoins.CERO, null, null, null, AHORA));
+                TipoPerfil.ORGANIZACION, datos, AHORA));
         assertThrows(ReglaDeNegocioException.class, () -> Publicacion.crearBorrador(TipoPublicacion.SERVICIO, 9L,
-                TipoPerfil.ORGANIZACION, "t", "d", "c", Modalidad.REMOTA, 30, 1, SkillCoins.CERO, null, null, null, AHORA));
+                TipoPerfil.ORGANIZACION, datos, AHORA));
     }
 
     @Test
-    @DisplayName("tipo, autor y tipo de autor son obligatorios")
+    @DisplayName("tipo, autor, tipo de autor y datos son obligatorios")
     void obligatorios() {
+        DatosPublicacion datos = datos("t", "c", Modalidad.REMOTA, 30, 1, SkillCoins.CERO);
         assertThrows(ReglaDeNegocioException.class, () -> Publicacion.crearBorrador(null, PROVEEDOR,
-                TipoPerfil.PROFESIONAL, "t", "d", "c", Modalidad.REMOTA, 30, 1, SkillCoins.CERO, null, null, null, AHORA));
+                TipoPerfil.PROFESIONAL, datos, AHORA));
         assertThrows(ReglaDeNegocioException.class, () -> Publicacion.crearBorrador(TipoPublicacion.MENTORIA, null,
-                TipoPerfil.PROFESIONAL, "t", "d", "c", Modalidad.REMOTA, 30, 1, SkillCoins.CERO, null, null, null, AHORA));
+                TipoPerfil.PROFESIONAL, datos, AHORA));
         assertThrows(ReglaDeNegocioException.class, () -> Publicacion.crearBorrador(TipoPublicacion.MENTORIA, PROVEEDOR,
-                null, "t", "d", "c", Modalidad.REMOTA, 30, 1, SkillCoins.CERO, null, null, null, AHORA));
+                null, datos, AHORA));
+        assertThrows(ReglaDeNegocioException.class, () -> Publicacion.crearBorrador(TipoPublicacion.MENTORIA, PROVEEDOR,
+                TipoPerfil.PROFESIONAL, null, AHORA));
     }
 
     // ---------- edicion ----------
@@ -85,8 +96,8 @@ class PublicacionTest {
     @DisplayName("solo se edita en BORRADOR: los datos cambian")
     void editarBorrador() {
         Publicacion p = Datos.borradorCompleto(PROVEEDOR, 1);
-        p.editar("Nuevo", "Desc", "diseno", Modalidad.PRESENCIAL, 90, 3, SkillCoins.de(50), List.of("ux"),
-                List.of(Habilidad.de("Figma")), TipoPoliticaCancelacion.ESTRICTA);
+        p.editar(new DatosPublicacion("Nuevo", "Desc", "diseno", Modalidad.PRESENCIAL, 90, 3, SkillCoins.de(50),
+                List.of("ux"), List.of(Habilidad.de("Figma")), TipoPoliticaCancelacion.ESTRICTA));
         assertEquals("Nuevo", p.getTitulo());
         assertEquals("diseno", p.getCategoria());
         assertEquals(Modalidad.PRESENCIAL, p.getModalidad());
@@ -103,33 +114,38 @@ class PublicacionTest {
     @DisplayName("editar con politica nula conserva la politica actual")
     void editarPoliticaNula() {
         Publicacion p = Datos.borradorCompleto(PROVEEDOR, 1);
-        p.editar("t", "d", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(1), null, null, null);
+        p.editar(datos("t", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(1)));
         assertEquals(TipoPoliticaCancelacion.FLEXIBLE, p.getPoliticaCancelacion());
         assertTrue(p.getEtiquetas().isEmpty());
     }
 
     @Test
+    @DisplayName("editar exige los datos y no cambia nada si faltan")
+    void editarSinDatos() {
+        Publicacion p = Datos.borradorCompleto(PROVEEDOR, 1);
+        assertThrows(ReglaDeNegocioException.class, () -> p.editar(null));
+        assertEquals("Mentoria de Java", p.getTitulo());
+    }
+
+    @Test
     @DisplayName("no se puede editar una publicacion PUBLICADA, PAUSADA, CERRADA ni CANCELADA")
     void editarNoBorrador() {
+        DatosPublicacion nuevos = datos("x", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(1));
         Publicacion publicada = Datos.publicada(PROVEEDOR, 1);
-        assertThrows(ReglaDeNegocioException.class, () -> publicada.editar("x", "d", "c", Modalidad.REMOTA, 60, 1,
-                SkillCoins.de(1), null, null, null));
+        assertThrows(ReglaDeNegocioException.class, () -> publicada.editar(nuevos));
         assertEquals("Mentoria de Java", publicada.getTitulo());
 
         Publicacion pausada = Datos.publicada(PROVEEDOR, 1);
         pausada.pausar(PROVEEDOR, AHORA);
-        assertThrows(ReglaDeNegocioException.class, () -> pausada.editar("x", "d", "c", Modalidad.REMOTA, 60, 1,
-                SkillCoins.de(1), null, null, null));
+        assertThrows(ReglaDeNegocioException.class, () -> pausada.editar(nuevos));
 
         Publicacion cerrada = Datos.publicada(PROVEEDOR, 1);
         cerrada.cerrar(PROVEEDOR, AHORA);
-        assertThrows(ReglaDeNegocioException.class, () -> cerrada.editar("x", "d", "c", Modalidad.REMOTA, 60, 1,
-                SkillCoins.de(1), null, null, null));
+        assertThrows(ReglaDeNegocioException.class, () -> cerrada.editar(nuevos));
 
         Publicacion cancelada = Datos.borradorCompleto(PROVEEDOR, 1);
         cancelada.cancelar(PROVEEDOR, "ya no", AHORA);
-        assertThrows(ReglaDeNegocioException.class, () -> cancelada.editar("x", "d", "c", Modalidad.REMOTA, 60, 1,
-                SkillCoins.de(1), null, null, null));
+        assertThrows(ReglaDeNegocioException.class, () -> cancelada.editar(nuevos));
     }
 
     // ---------- franjas ----------
@@ -223,14 +239,14 @@ class PublicacionTest {
     @Test
     @DisplayName("cada dato faltante impide publicar: titulo, categoria, precio, franja, cupo, duracion, modalidad")
     void publicarFaltaCadaDato() {
-        assertIncompleta((p) -> p.editar(null, "d", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(1), null, null, null));
-        assertIncompleta((p) -> p.editar("  ", "d", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(1), null, null, null));
-        assertIncompleta((p) -> p.editar("t", "d", null, Modalidad.REMOTA, 60, 1, SkillCoins.de(1), null, null, null));
-        assertIncompleta((p) -> p.editar("t", "d", "c", Modalidad.REMOTA, 60, 1, null, null, null, null));
-        assertIncompleta((p) -> p.editar("t", "d", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(-1), null, null, null));
-        assertIncompleta((p) -> p.editar("t", "d", "c", Modalidad.REMOTA, 60, 0, SkillCoins.de(1), null, null, null));
-        assertIncompleta((p) -> p.editar("t", "d", "c", Modalidad.REMOTA, 0, 1, SkillCoins.de(1), null, null, null));
-        assertIncompleta((p) -> p.editar("t", "d", "c", null, 60, 1, SkillCoins.de(1), null, null, null));
+        assertIncompleta((p) -> p.editar(datos(null, "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(1))));
+        assertIncompleta((p) -> p.editar(datos("  ", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(1))));
+        assertIncompleta((p) -> p.editar(datos("t", null, Modalidad.REMOTA, 60, 1, SkillCoins.de(1))));
+        assertIncompleta((p) -> p.editar(datos("t", "c", Modalidad.REMOTA, 60, 1, null)));
+        assertIncompleta((p) -> p.editar(datos("t", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(-1))));
+        assertIncompleta((p) -> p.editar(datos("t", "c", Modalidad.REMOTA, 60, 0, SkillCoins.de(1))));
+        assertIncompleta((p) -> p.editar(datos("t", "c", Modalidad.REMOTA, 0, 1, SkillCoins.de(1))));
+        assertIncompleta((p) -> p.editar(datos("t", "c", null, 60, 1, SkillCoins.de(1))));
     }
 
     private interface Edicion {

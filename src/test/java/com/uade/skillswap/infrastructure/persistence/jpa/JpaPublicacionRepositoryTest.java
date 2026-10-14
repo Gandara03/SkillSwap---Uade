@@ -4,6 +4,7 @@ import com.uade.skillswap.application.exception.ConflictoConcurrenciaException;
 import com.uade.skillswap.domain.model.historial.HistorialEstado;
 import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
+import com.uade.skillswap.domain.model.publicacion.DatosPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Franja;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
@@ -74,8 +75,8 @@ class JpaPublicacionRepositoryTest extends JpaTestBase {
     @Test
     @DisplayName("un borrador incompleto (sin titulo, categoria, modalidad ni precio) tambien se persiste")
     void borradorIncompleto() {
-        Publicacion incompleta = Publicacion.crearBorrador(TipoPublicacion.SERVICIO, ana.getId(), ana.getTipo(), null,
-                null, null, null, 0, 0, null, null, null, null, AHORA);
+        Publicacion incompleta = Publicacion.crearBorrador(TipoPublicacion.SERVICIO, ana.getId(), ana.getTipo(),
+                new DatosPublicacion(null, null, null, null, 0, 0, null, null, null, null), AHORA);
 
         Publicacion leida = publicaciones.buscarPorId(publicaciones.guardar(incompleta).getId()).orElseThrow();
 
@@ -170,8 +171,9 @@ class JpaPublicacionRepositoryTest extends JpaTestBase {
         Publicacion guardada = publicacion(ana).borrador().etiquetas("a", "b").habilidades("java").guardar();
 
         Publicacion editable = publicaciones.buscarPorId(guardada.getId()).orElseThrow();
-        editable.editar("Nuevo titulo", "Nueva descripcion", "backend", Modalidad.PRESENCIAL, 90, 3,
-                SkillCoins.de(250), List.of("b", "c"), List.of(Habilidad.de("python")), TipoPoliticaCancelacion.ESTRICTA);
+        editable.editar(new DatosPublicacion("Nuevo titulo", "Nueva descripcion", "backend", Modalidad.PRESENCIAL,
+                90, 3, SkillCoins.de(250), List.of("b", "c"), List.of(Habilidad.de("python")),
+                TipoPoliticaCancelacion.ESTRICTA));
         publicaciones.guardar(editable);
 
         Publicacion leida = publicaciones.buscarPorId(guardada.getId()).orElseThrow();
