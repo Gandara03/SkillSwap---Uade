@@ -1,6 +1,4 @@
-package com.uade.skillswap.application.politica;
-
-import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
+package com.uade.skillswap.domain.model.politica;
 
 /** Flexible: 100 % con 24 h o mas, 50 % con 2 h o mas, 0 % por debajo (valores por defecto). */
 public class PoliticaFlexible extends PoliticaPorUmbrales {

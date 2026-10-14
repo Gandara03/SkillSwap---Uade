@@ -1,6 +1,6 @@
 package com.uade.skillswap.application.config;
 
-import com.uade.skillswap.application.politica.ConfiguracionCancelacion;
+import com.uade.skillswap.domain.model.politica.ConfiguracionCancelacion;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 
 /** Parametros de negocio configurables (inyectados por el compositor, no hardcodeados en los servicios). */

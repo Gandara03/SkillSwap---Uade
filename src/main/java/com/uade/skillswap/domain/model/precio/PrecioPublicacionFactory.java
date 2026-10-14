@@ -1,4 +1,4 @@
-package com.uade.skillswap.application.precio;
+package com.uade.skillswap.domain.model.precio;
 
 import com.uade.skillswap.domain.model.promocion.Promocion;
 import com.uade.skillswap.domain.model.vo.SkillCoins;

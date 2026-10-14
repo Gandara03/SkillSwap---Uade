@@ -10,7 +10,7 @@ import com.uade.skillswap.application.exception.RecursoNoEncontradoException;
 import com.uade.skillswap.application.exception.ValidacionException;
 import com.uade.skillswap.domain.model.notificacion.CanalNotificacion;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
-import com.uade.skillswap.application.politica.ConfiguracionCancelacion;
+import com.uade.skillswap.domain.model.politica.ConfiguracionCancelacion;
 import com.uade.skillswap.application.recomendacion.TipoEstrategiaRecomendacion;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.support.AplicacionEnMemoria;

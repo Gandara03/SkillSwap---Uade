@@ -1,4 +1,4 @@
-package com.uade.skillswap.application.politica;
+package com.uade.skillswap.domain.model.politica;
 
 /** Umbrales configurables de cada politica (el reglamento no obliga a persistirlos por publicacion). */
 public record ConfiguracionCancelacion(UmbralesCancelacion flexible, UmbralesCancelacion estricta) {

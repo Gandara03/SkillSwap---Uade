@@ -9,7 +9,7 @@ import com.uade.skillswap.application.dto.PublicacionDto;
 import com.uade.skillswap.application.dto.WalletDto;
 import com.uade.skillswap.application.exception.RecursoNoEncontradoException;
 import com.uade.skillswap.application.exception.ValidacionException;
-import com.uade.skillswap.application.politica.ConfiguracionCancelacion;
+import com.uade.skillswap.domain.model.politica.ConfiguracionCancelacion;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.domain.model.wallet.TipoMovimiento;
 import com.uade.skillswap.domain.query.Pagina;

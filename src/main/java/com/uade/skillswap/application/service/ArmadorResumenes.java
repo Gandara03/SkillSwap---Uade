@@ -43,7 +43,7 @@ final class ArmadorResumenes {
     }
 
     List<PublicacionResumenDto> resumir(List<Publicacion> publicaciones, Map<Long, Perfil> autores) {
-        Map<Long, com.uade.skillswap.application.precio.PrecioPublicacion> preciosPorId = precios.paraTodas(publicaciones);
+        Map<Long, com.uade.skillswap.domain.model.precio.PrecioPublicacion> preciosPorId = precios.paraTodas(publicaciones);
         return publicaciones.stream()
                 .map(p -> Mapeador.resumen(p, autores.get(p.getAutorId()), preciosPorId.get(p.getId())))
                 .toList();

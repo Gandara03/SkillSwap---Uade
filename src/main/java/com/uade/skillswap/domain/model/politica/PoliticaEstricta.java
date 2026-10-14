@@ -1,6 +1,4 @@
-package com.uade.skillswap.application.politica;
-
-import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
+package com.uade.skillswap.domain.model.politica;
 
 /** Estricta: 100 % con 72 h o mas, 50 % con 48 h o mas, 0 % por debajo (valores por defecto). */
 public class PoliticaEstricta extends PoliticaPorUmbrales {

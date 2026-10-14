@@ -1,8 +1,8 @@
 package com.uade.skillswap.application.service;
 
 import com.uade.skillswap.application.port.out.RelojPort;
-import com.uade.skillswap.application.precio.PrecioPublicacion;
-import com.uade.skillswap.application.precio.PrecioPublicacionFactory;
+import com.uade.skillswap.domain.model.precio.PrecioPublicacion;
+import com.uade.skillswap.domain.model.precio.PrecioPublicacionFactory;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
 import com.uade.skillswap.application.port.out.PromocionRepository;
 

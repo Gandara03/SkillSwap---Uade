@@ -1,4 +1,4 @@
-package com.uade.skillswap.application.politica;
+package com.uade.skillswap.domain.model.politica;
 
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 

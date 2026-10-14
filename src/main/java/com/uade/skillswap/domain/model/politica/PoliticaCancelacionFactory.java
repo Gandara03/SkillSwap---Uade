@@ -1,6 +1,4 @@
-package com.uade.skillswap.application.politica;
-
-import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
+package com.uade.skillswap.domain.model.politica;
 
 /** Simple Factory: construye la estrategia a partir del tipo guardado en la publicacion. */
 public final class PoliticaCancelacionFactory {

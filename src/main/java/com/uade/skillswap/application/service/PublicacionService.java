@@ -12,7 +12,7 @@ import com.uade.skillswap.application.port.in.PublicacionUseCase;
 import com.uade.skillswap.application.port.out.RelojPort;
 import com.uade.skillswap.application.port.out.TransaccionPort;
 import com.uade.skillswap.domain.model.perfil.Perfil;
-import com.uade.skillswap.application.precio.PrecioPublicacion;
+import com.uade.skillswap.domain.model.precio.PrecioPublicacion;
 import com.uade.skillswap.domain.model.promocion.Promocion;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
 import com.uade.skillswap.domain.query.Pagina;
