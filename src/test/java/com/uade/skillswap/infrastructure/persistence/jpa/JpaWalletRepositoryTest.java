@@ -11,6 +11,7 @@ import com.uade.skillswap.domain.model.wallet.TipoMovimiento;
 import com.uade.skillswap.domain.model.wallet.Wallet;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
+import com.uade.skillswap.infrastructure.persistence.jpa.entity.WalletJpaEntity;
 import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -152,7 +153,7 @@ class JpaWalletRepositoryTest extends JpaTestBase {
         abrir(ana, 100);
 
         assertThrows(PersistenceException.class, () -> abrir(ana, 50));
-        assertEquals(1, wallets.listarEntidades().size());
+        assertEquals(1, contarFilas(ctx, WalletJpaEntity.class));
     }
 
     @Test
@@ -171,7 +172,7 @@ class JpaWalletRepositoryTest extends JpaTestBase {
         assertThrows(PersistenceException.class, () -> wallets.guardar(w));
 
         assertTrue(wallets.buscarPorPerfilId(ana.getId()).isEmpty());
-        assertTrue(wallets.listarEntidades().isEmpty());
+        assertEquals(0, contarFilas(ctx, WalletJpaEntity.class));
     }
 
     @Test

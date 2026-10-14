@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.Map;
 
 /** Las calificaciones son inmutables: guardar siempre inserta. El unico (contratacion, autor) lo impone la base. */
-public class JpaCalificacionRepository extends SimpleJpaRepository<CalificacionJpaEntity, Long>
+public class JpaCalificacionRepository extends SimpleJpaRepository
         implements CalificacionRepository {
 
     private static final String MAS_RECIENTE = " order by c.fecha desc, c.id desc";
 
     public JpaCalificacionRepository(JpaContexto contexto) {
-        super(contexto, CalificacionJpaEntity.class);
+        super(contexto);
     }
 
     @Override

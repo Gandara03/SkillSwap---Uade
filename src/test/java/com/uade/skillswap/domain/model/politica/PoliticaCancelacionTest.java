@@ -147,18 +147,9 @@ class PoliticaCancelacionTest {
         PoliticaCancelacionFactory f = new PoliticaCancelacionFactory();
         assertInstanceOf(PoliticaFlexible.class, f.crear(TipoPoliticaCancelacion.FLEXIBLE));
         assertInstanceOf(PoliticaEstricta.class, f.crear(TipoPoliticaCancelacion.ESTRICTA));
-        assertInstanceOf(PoliticaFlexible.class, f.crear((TipoPoliticaCancelacion) null));
+        assertInstanceOf(PoliticaFlexible.class, f.crear(null));
         assertEquals(TipoPoliticaCancelacion.ESTRICTA, f.crear(TipoPoliticaCancelacion.ESTRICTA).getTipo());
         assertEquals(TipoPoliticaCancelacion.FLEXIBLE, f.crear(TipoPoliticaCancelacion.FLEXIBLE).getTipo());
-    }
-
-    @Test
-    @DisplayName("la fabrica tambien acepta el nombre como texto (sin importar mayusculas ni espacios)")
-    void fabricaPorTexto() {
-        PoliticaCancelacionFactory f = new PoliticaCancelacionFactory();
-        assertInstanceOf(PoliticaEstricta.class, f.crear(" estricta "));
-        assertInstanceOf(PoliticaFlexible.class, f.crear("FLEXIBLE"));
-        assertThrows(IllegalArgumentException.class, () -> f.crear("moderada"));
     }
 
     @Test

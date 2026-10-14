@@ -45,9 +45,4 @@ public class InMemoryContratacionRepository implements ContratacionRepository {
                 .collect(Collectors.toList());
         return Paginador.paginar(propias, pagina);
     }
-
-    @Override
-    public long contarPorPublicacion(Long publicacionId) {
-        return contrataciones.values().stream().filter(c -> c.getPublicacionId().equals(publicacionId)).count();
-    }
 }

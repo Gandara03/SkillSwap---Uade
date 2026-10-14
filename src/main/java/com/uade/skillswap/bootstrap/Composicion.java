@@ -3,7 +3,6 @@ package com.uade.skillswap.bootstrap;
 import com.uade.skillswap.application.config.SkillSwapConfig;
 import com.uade.skillswap.application.facade.PerfilPublicoFacade;
 import com.uade.skillswap.application.notificacion.NotificadorObserver;
-import com.uade.skillswap.application.port.in.SesionUseCase;
 import com.uade.skillswap.application.port.out.CanalNotificacionFactory;
 import com.uade.skillswap.application.port.out.RelojPort;
 import com.uade.skillswap.application.port.out.TransaccionPort;
@@ -17,6 +16,7 @@ import com.uade.skillswap.application.service.RecomendacionService;
 import com.uade.skillswap.application.service.SesionService;
 import com.uade.skillswap.application.service.WalletService;
 import com.uade.skillswap.domain.model.contratacion.observer.ContratacionObserver;
+import com.uade.skillswap.domain.model.politica.PoliticaCancelacionFactory;
 import com.uade.skillswap.infrastructure.identidad.IdentidadMockAdapter;
 import com.uade.skillswap.infrastructure.notificacion.CanalNotificacionFactoryImpl;
 import com.uade.skillswap.infrastructure.notificacion.sdk.EmailSdkMock;
@@ -61,10 +61,8 @@ import java.util.List;
 public final class Composicion {
 
     private final JpaContexto contexto;
-    private final SkillSwapConfig config;
     private final EmailSdkMock emailSdk;
     private final PushSdkMock pushSdk;
-    private final SesionUseCase sesion;
     private final IPerfilController perfilController;
     private final IPublicacionController publicacionController;
     private final IBusquedaController busquedaController;
@@ -74,16 +72,14 @@ public final class Composicion {
     private final INotificacionController notificacionController;
     private final IWalletController walletController;
 
-    private Composicion(JpaContexto contexto, SkillSwapConfig config, EmailSdkMock emailSdk, PushSdkMock pushSdk,
-                        SesionUseCase sesion, IPerfilController perfil, IPublicacionController publicacion,
+    private Composicion(JpaContexto contexto, EmailSdkMock emailSdk, PushSdkMock pushSdk,
+                        IPerfilController perfil, IPublicacionController publicacion,
                         IBusquedaController busqueda, IRecomendacionController recomendacion,
                         IContratacionController contratacion, ICalificacionController calificacion,
                         INotificacionController notificacion, IWalletController wallet) {
         this.contexto = contexto;
-        this.config = config;
         this.emailSdk = emailSdk;
         this.pushSdk = pushSdk;
-        this.sesion = sesion;
         this.perfilController = perfil;
         this.publicacionController = publicacion;
         this.busquedaController = busqueda;
@@ -121,7 +117,7 @@ public final class Composicion {
         var perfilService = new PerfilService(perfiles, wallets, publicaciones, identidad, transaccion, reloj, config);
         var publicacionService = new PublicacionService(publicaciones, perfiles, promociones, transaccion, reloj);
         var contratacionService = new ContratacionService(contrataciones, publicaciones, perfiles, wallets,
-                promociones, observadores, transaccion, reloj);
+                promociones, observadores, transaccion, reloj, new PoliticaCancelacionFactory(config.cancelacion()));
         var busquedaService = new BusquedaService(publicaciones, perfiles, promociones, reloj);
         var recomendacionService = new RecomendacionService(publicaciones, perfiles, reloj, promociones, config);
         var calificacionService = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);
@@ -131,7 +127,7 @@ public final class Composicion {
         var perfilPublico = new PerfilPublicoFacade(perfilService, calificacionService, publicacionService, config);
 
         // Controllers (presentacion): dependen solo de los puertos de entrada
-        return new Composicion(ctx, config, emailSdk, pushSdk, sesion,
+        return new Composicion(ctx, emailSdk, pushSdk,
                 new PerfilController(perfilService, perfilPublico, sesion),
                 new PublicacionController(publicacionService, sesion),
                 new BusquedaController(busquedaService),
@@ -172,14 +168,6 @@ public final class Composicion {
 
     public IWalletController getWalletController() {
         return walletController;
-    }
-
-    public SesionUseCase getSesion() {
-        return sesion;
-    }
-
-    public SkillSwapConfig getConfig() {
-        return config;
     }
 
     /** Correos "enviados" por el SDK simulado (la demo los muestra para evidenciar el segundo canal). */

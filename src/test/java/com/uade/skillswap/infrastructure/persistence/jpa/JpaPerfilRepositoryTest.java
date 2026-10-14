@@ -5,6 +5,7 @@ import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.domain.model.vo.BloqueDisponibilidad;
 import com.uade.skillswap.domain.model.vo.Habilidad;
+import com.uade.skillswap.infrastructure.persistence.jpa.entity.PerfilJpaEntity;
 import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -132,7 +133,7 @@ class JpaPerfilRepositoryTest extends JpaTestBase {
         profesional("u-ana");
 
         assertThrows(PersistenceException.class, () -> profesional("u-ana"));
-        assertEquals(1, perfiles.listarEntidades().size());
+        assertEquals(1, contarFilas(ctx, PerfilJpaEntity.class));
     }
 
     @Test

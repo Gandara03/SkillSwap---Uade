@@ -14,10 +14,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class JpaPerfilRepository extends SimpleJpaRepository<PerfilJpaEntity, Long> implements PerfilRepository {
+public class JpaPerfilRepository extends SimpleJpaRepository implements PerfilRepository {
 
     public JpaPerfilRepository(JpaContexto contexto) {
-        super(contexto, PerfilJpaEntity.class);
+        super(contexto);
     }
 
     @Override

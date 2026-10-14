@@ -22,8 +22,4 @@ public final class PoliticaCancelacionFactory {
             case ESTRICTA -> new PoliticaEstricta(configuracion.estricta());
         };
     }
-
-    public PoliticaCancelacion crear(String nombre) {
-        return crear(TipoPoliticaCancelacion.valueOf(nombre.trim().toUpperCase()));
-    }
 }

@@ -22,6 +22,7 @@ import com.uade.skillswap.application.service.PublicacionService;
 import com.uade.skillswap.application.service.RecomendacionService;
 import com.uade.skillswap.application.service.SesionService;
 import com.uade.skillswap.application.service.WalletService;
+import com.uade.skillswap.domain.model.politica.PoliticaCancelacionFactory;
 import com.uade.skillswap.infrastructure.notificacion.CanalNotificacionFactoryImpl;
 import com.uade.skillswap.infrastructure.notificacion.sdk.EmailSdkMock;
 import com.uade.skillswap.infrastructure.notificacion.sdk.PushSdkMock;
@@ -49,6 +50,7 @@ public final class AplicacionEnMemoria {
     public final EmailSdkMock emailSdk = new EmailSdkMock();
     public final PushSdkMock pushSdk = new PushSdkMock();
     public final SkillSwapConfig config;
+    public final PoliticaCancelacionFactory politicas;
 
     // ---- casos de uso ----
     public final SesionUseCase sesion;
@@ -64,6 +66,7 @@ public final class AplicacionEnMemoria {
 
     private AplicacionEnMemoria(SkillSwapConfig config) {
         this.config = config;
+        this.politicas = new PoliticaCancelacionFactory(config.cancelacion());
         CanalNotificacionFactoryImpl canales = new CanalNotificacionFactoryImpl(emailSdk, pushSdk, identidad);
         NotificadorObserver notificador = new NotificadorObserver(notificaciones, perfiles, canales, transaccion, reloj);
 
@@ -71,7 +74,7 @@ public final class AplicacionEnMemoria {
         this.perfilUseCase = new PerfilService(perfiles, wallets, publicaciones, identidad, transaccion, reloj, config);
         this.publicacionUseCase = new PublicacionService(publicaciones, perfiles, promociones, transaccion, reloj);
         this.contratacionUseCase = new ContratacionService(contrataciones, publicaciones, perfiles, wallets,
-                promociones, List.of(notificador), transaccion, reloj);
+                promociones, List.of(notificador), transaccion, reloj, politicas);
         this.busquedaUseCase = new BusquedaService(publicaciones, perfiles, promociones, reloj);
         this.recomendacionUseCase = new RecomendacionService(publicaciones, perfiles, reloj, promociones, config);
         this.calificacionUseCase = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);

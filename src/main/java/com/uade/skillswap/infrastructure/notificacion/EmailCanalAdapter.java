@@ -13,12 +13,7 @@ public class EmailCanalAdapter implements CanalNotificacionPort {
     private final EmailSdkMock sdk;
     private final IdentidadPort identidad;
 
-    /** Sin identidad: el destino se arma a partir del userId del perfil. */
-    public EmailCanalAdapter(EmailSdkMock sdk) {
-        this(sdk, null);
-    }
-
-    /** Con identidad: el destino es el email real del usuario. */
+    /** El destino es el email real del usuario segun la identidad; si no lo encuentra, uno armado con su userId. */
     public EmailCanalAdapter(EmailSdkMock sdk, IdentidadPort identidad) {
         this.sdk = sdk;
         this.identidad = identidad;
@@ -36,12 +31,9 @@ public class EmailCanalAdapter implements CanalNotificacionPort {
     }
 
     private String direccionDe(Perfil destinatario) {
-        if (identidad != null) {
-            return identidad.buscarPorUserId(destinatario.getUserId())
-                    .map(IdentidadPort.UsuarioIdentidad::email)
-                    .orElse(porDefecto(destinatario));
-        }
-        return porDefecto(destinatario);
+        return identidad.buscarPorUserId(destinatario.getUserId())
+                .map(IdentidadPort.UsuarioIdentidad::email)
+                .orElse(porDefecto(destinatario));
     }
 
     private static String porDefecto(Perfil destinatario) {

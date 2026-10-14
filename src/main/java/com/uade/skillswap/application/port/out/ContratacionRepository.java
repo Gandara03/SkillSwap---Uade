@@ -11,5 +11,4 @@ public interface ContratacionRepository {
     Contratacion guardar(Contratacion contratacion);
     Optional<Contratacion> buscarPorId(Long id);
     Pagina<Contratacion> buscarPorParticipante(Long perfilId, PaginaRequest pagina);
-    long contarPorPublicacion(Long publicacionId);
 }

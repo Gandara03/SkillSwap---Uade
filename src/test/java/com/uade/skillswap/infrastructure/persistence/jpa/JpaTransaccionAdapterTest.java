@@ -7,6 +7,8 @@ import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.domain.model.wallet.Wallet;
 import com.uade.skillswap.infrastructure.persistence.ErroresJpa;
+import com.uade.skillswap.infrastructure.persistence.jpa.entity.PerfilJpaEntity;
+import com.uade.skillswap.infrastructure.persistence.jpa.entity.WalletJpaEntity;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.RollbackException;
 import org.junit.jupiter.api.DisplayName;
@@ -68,15 +70,15 @@ class JpaTransaccionAdapterTest extends JpaTestBase {
             wallets.guardar(Wallet.abrir(p.getId(), SkillCoins.de(100), AHORA));
             throw new IllegalStateException("revertir todo");
         }));
-        assertTrue(perfiles.listarEntidades().isEmpty());
-        assertTrue(wallets.listarEntidades().isEmpty());
+        assertEquals(0, contarFilas(ctx, PerfilJpaEntity.class));
+        assertEquals(0, contarFilas(ctx, WalletJpaEntity.class));
 
         transaccion.ejecutar(() -> {
             Perfil p = perfiles.guardar(perfilNuevo("u-ana"));
             wallets.guardar(Wallet.abrir(p.getId(), SkillCoins.de(100), AHORA));
         });
-        assertEquals(1, perfiles.listarEntidades().size());
-        assertEquals(1, wallets.listarEntidades().size());
+        assertEquals(1, contarFilas(ctx, PerfilJpaEntity.class));
+        assertEquals(1, contarFilas(ctx, WalletJpaEntity.class));
     }
 
     @Test
@@ -109,7 +111,7 @@ class JpaTransaccionAdapterTest extends JpaTestBase {
             });
             perfiles.guardar(perfilNuevo("u-cecilia"));
         });
-        assertEquals(2, perfiles.listarEntidades().size());
+        assertEquals(2, contarFilas(ctx, PerfilJpaEntity.class));
     }
 
     @Test

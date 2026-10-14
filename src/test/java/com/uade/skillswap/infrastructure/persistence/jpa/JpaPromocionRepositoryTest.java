@@ -4,6 +4,7 @@ import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.promocion.Promocion;
 import com.uade.skillswap.domain.model.promocion.TipoPromocion;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
+import com.uade.skillswap.infrastructure.persistence.jpa.entity.PromocionJpaEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -67,8 +68,8 @@ class JpaPromocionRepositoryTest extends JpaTestBase {
         promociones.guardar(promo);
 
         assertTrue(promociones.buscarActivasPorPublicacion(publicacion.getId()).isEmpty());
-        assertEquals(1, promociones.listarEntidades().size());
-        assertFalse(promociones.listarEntidades().get(0).isActiva());
+        assertEquals(1, contarFilas(ctx, PromocionJpaEntity.class));
+        assertFalse(ctx.leer(em -> em.find(PromocionJpaEntity.class, promo.getId())).isActiva());
     }
 
     @Test

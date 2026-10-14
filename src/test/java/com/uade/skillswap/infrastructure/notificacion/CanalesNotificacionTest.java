@@ -30,7 +30,7 @@ class CanalesNotificacionTest {
     void preparar() {
         emailSdk = new EmailSdkMock();
         pushSdk = new PushSdkMock();
-        email = new EmailCanalAdapter(emailSdk);
+        email = new EmailCanalAdapter(emailSdk, IdentidadMockAdapter.conUsuariosDemo());
         push = new PushCanalAdapter(pushSdk);
         interna = new InternaCanalAdapter();
         factory = new CanalNotificacionFactoryImpl(emailSdk, pushSdk, IdentidadMockAdapter.conUsuariosDemo());
@@ -48,21 +48,18 @@ class CanalesNotificacionTest {
         email.enviar(notificacion(CanalNotificacion.EMAIL), destinatario);
         assertEquals(1, emailSdk.enviados().size());
         EmailSdkMock.Correo correo = emailSdk.enviados().get(0);
-        assertEquals("u-ana@skillswap.local", correo.destino());
+        assertEquals("ana@skillswap.test", correo.destino(), "el email real del usuario segun la identidad");
         assertTrue(correo.asunto().contains("SOLICITUD_RECIBIDA"));
         assertEquals("Tenes una nueva solicitud", correo.cuerpo());
         assertEquals(CanalNotificacion.EMAIL, email.getCanal());
     }
 
     @Test
-    @DisplayName("EmailCanalAdapter usa el email real del usuario cuando se le da la identidad")
-    void emailConIdentidad() {
-        EmailCanalAdapter conIdentidad = new EmailCanalAdapter(emailSdk, IdentidadMockAdapter.conUsuariosDemo());
-        conIdentidad.enviar(notificacion(CanalNotificacion.EMAIL), destinatario);
-        assertEquals("ana@skillswap.test", emailSdk.enviados().get(0).destino());
+    @DisplayName("EmailCanalAdapter arma la direccion con el userId si la identidad no conoce al usuario")
+    void emailSinUsuarioEnIdentidad() {
         Perfil desconocido = Datos.profesional(9L, "u-desconocido");
-        conIdentidad.enviar(notificacion(CanalNotificacion.EMAIL), desconocido);
-        assertEquals("u-desconocido@skillswap.local", emailSdk.enviados().get(1).destino());
+        email.enviar(notificacion(CanalNotificacion.EMAIL), desconocido);
+        assertEquals("u-desconocido@skillswap.local", emailSdk.enviados().get(0).destino());
     }
 
     @Test

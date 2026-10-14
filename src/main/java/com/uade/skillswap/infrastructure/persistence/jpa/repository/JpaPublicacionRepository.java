@@ -21,7 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-public class JpaPublicacionRepository extends SimpleJpaRepository<PublicacionJpaEntity, Long>
+public class JpaPublicacionRepository extends SimpleJpaRepository
         implements PublicacionRepository {
 
     private static final String PUBLICADA = "PUBLICADA";
@@ -30,7 +30,7 @@ public class JpaPublicacionRepository extends SimpleJpaRepository<PublicacionJpa
     private static final String MAS_RECIENTE = "coalesce(p.publicadaEn, p.creadaEn) desc, p.id desc";
 
     public JpaPublicacionRepository(JpaContexto contexto) {
-        super(contexto, PublicacionJpaEntity.class);
+        super(contexto);
     }
 
     @Override

@@ -63,16 +63,10 @@ public class ContratacionService implements ContratacionUseCase {
     private final CalculadorPrecios precios;
     private final PoliticaCancelacionFactory politicas;
 
-    /** {@code observers}: los interesados en los eventos de las contrataciones; los arma el compositor. */
-    public ContratacionService(ContratacionRepository contratacionRepository,
-                               PublicacionRepository publicacionRepository, PerfilRepository perfilRepository,
-                               WalletRepository walletRepository, PromocionRepository promocionRepository,
-                               List<ContratacionObserver> observers, TransaccionPort transaccion, RelojPort reloj) {
-        this(contratacionRepository, publicacionRepository, perfilRepository, walletRepository, promocionRepository,
-                observers, transaccion, reloj, new PoliticaCancelacionFactory());
-    }
-
-    /** Permite inyectar umbrales de cancelacion propios (por ejemplo desde SkillSwapConfig.cancelacion()). */
+    /**
+     * {@code observers}: los interesados en los eventos de las contrataciones. {@code politicas}: crea la politica
+     * de cancelacion de cada publicacion con los umbrales configurados. Las dos cosas las arma el compositor.
+     */
     public ContratacionService(ContratacionRepository contratacionRepository,
                                PublicacionRepository publicacionRepository, PerfilRepository perfilRepository,
                                WalletRepository walletRepository, PromocionRepository promocionRepository,

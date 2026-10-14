@@ -11,49 +11,20 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
  * Base de los repositorios JPA, al estilo del SimpleJpaRepository del curso (MagicCafe) pero sin JPAUtil estatico:
  * trabaja sobre un {@link JpaContexto}, asi que participa de la transaccion del caso de uso si hay una abierta.
- * T es la entidad JPA (no el agregado de dominio). Ademas del CRUD generico trae los helpers de consulta que
- * comparten los repositorios: parametros nombrados, conteo, paginacion por ids y precarga de colecciones.
+ * Trae lo que comparten los repositorios: acceso al contexto, chequeo de version y los helpers de consulta
+ * (parametros nombrados, conteo, paginacion por ids y precarga de colecciones).
  */
-public abstract class SimpleJpaRepository<T, ID> {
+public abstract class SimpleJpaRepository {
 
     protected final JpaContexto contexto;
-    private final Class<T> entidad;
 
-    protected SimpleJpaRepository(JpaContexto contexto, Class<T> entidad) {
+    protected SimpleJpaRepository(JpaContexto contexto) {
         this.contexto = contexto;
-        this.entidad = entidad;
-    }
-
-    // ---------- CRUD generico sobre la entidad ----------
-
-    /** Persiste o actualiza la entidad (merge). Devuelve la instancia gestionada. */
-    public T guardarEntidad(T e) {
-        return escribir(em -> em.merge(e));
-    }
-
-    /** Ojo: la entidad vuelve desconectada; sus colecciones lazy no se pueden recorrer fuera de la unidad. */
-    public Optional<T> buscarEntidad(ID id) {
-        return leer(em -> Optional.ofNullable(em.find(entidad, id)));
-    }
-
-    public List<T> listarEntidades() {
-        return leer(em -> em.createQuery("select e from " + entidad.getSimpleName() + " e", entidad).getResultList());
-    }
-
-    public void eliminarEntidadPorId(ID id) {
-        escribir(em -> {
-            T e = em.find(entidad, id);
-            if (e != null) {
-                em.remove(e);
-            }
-            return null;
-        });
     }
 
     // ---------- acceso al contexto ----------

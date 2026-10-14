@@ -17,10 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class JpaWalletRepository extends SimpleJpaRepository<WalletJpaEntity, Long> implements WalletRepository {
+public class JpaWalletRepository extends SimpleJpaRepository implements WalletRepository {
 
     public JpaWalletRepository(JpaContexto contexto) {
-        super(contexto, WalletJpaEntity.class);
+        super(contexto);
     }
 
     /**

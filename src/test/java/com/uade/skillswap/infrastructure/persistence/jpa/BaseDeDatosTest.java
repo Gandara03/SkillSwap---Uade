@@ -4,6 +4,7 @@ import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.infrastructure.persistence.BaseDeDatos;
 import com.uade.skillswap.infrastructure.persistence.JpaContexto;
+import com.uade.skillswap.infrastructure.persistence.jpa.entity.PerfilJpaEntity;
 import com.uade.skillswap.infrastructure.persistence.jpa.repository.JpaPerfilRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,8 +45,8 @@ class BaseDeDatosTest {
 
             assertTrue(new JpaPerfilRepository(a).buscarPorUserId("u-ana").isPresent());
             assertFalse(new JpaPerfilRepository(b).buscarPorUserId("u-ana").isPresent());
-            assertEquals(1, new JpaPerfilRepository(a).listarEntidades().size());
-            assertEquals(0, new JpaPerfilRepository(b).listarEntidades().size());
+            assertEquals(1, JpaTestBase.contarFilas(a, PerfilJpaEntity.class));
+            assertEquals(0, JpaTestBase.contarFilas(b, PerfilJpaEntity.class));
         } finally {
             a.cerrar();
             b.cerrar();

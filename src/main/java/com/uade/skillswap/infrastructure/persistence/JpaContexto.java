@@ -18,10 +18,6 @@ public final class JpaContexto implements AutoCloseable {
     private final Runnable alCerrar;
     private final ThreadLocal<EntityManager> unidad = new ThreadLocal<>();
 
-    public JpaContexto(EntityManagerFactory emf) {
-        this(emf, () -> { });
-    }
-
     /** {@code alCerrar} libera recursos externos al EMF (p. ej. apagar la base H2 en memoria). */
     public JpaContexto(EntityManagerFactory emf, Runnable alCerrar) {
         this.emf = emf;
@@ -35,14 +31,6 @@ public final class JpaContexto implements AutoCloseable {
     public boolean hayUnidadActiva() {
         EntityManager em = unidad.get();
         return em != null && em.isOpen();
-    }
-
-    /**
-     * Devuelve el EntityManager de la unidad activa o, si no hay, uno nuevo y efimero. En este ultimo caso
-     * quien lo pide debe cerrarlo; los repositorios usan {@link #leer} y {@link #escribir}, que lo hacen solos.
-     */
-    public EntityManager em() {
-        return hayUnidadActiva() ? unidad.get() : emf.createEntityManager();
     }
 
     /** Abre la unidad de trabajo del thread (la usa el adapter de transacciones). */

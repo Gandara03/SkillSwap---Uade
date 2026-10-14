@@ -19,11 +19,11 @@ import java.util.Optional;
  * Los eventos pendientes y los observers de la Contratacion viven solo en memoria: guardar() devuelve la MISMA
  * instancia (con id/version asignados) para que el servicio pueda notificarlos despues del commit.
  */
-public class JpaContratacionRepository extends SimpleJpaRepository<ContratacionJpaEntity, Long>
+public class JpaContratacionRepository extends SimpleJpaRepository
         implements ContratacionRepository {
 
     public JpaContratacionRepository(JpaContexto contexto) {
-        super(contexto, ContratacionJpaEntity.class);
+        super(contexto);
     }
 
     @Override
@@ -77,16 +77,6 @@ public class JpaContratacionRepository extends SimpleJpaRepository<ContratacionJ
                 resultado.add(ContratacionMapper.aDominio(e));
             }
             return new Pagina<>(resultado, pagina.pagina(), pagina.tamano(), total);
-        });
-    }
-
-    @Override
-    public long contarPorPublicacion(Long publicacionId) {
-        return leer(em -> {
-            Map<String, Object> parametros = new HashMap<>();
-            parametros.put("publicacionId", publicacionId);
-            return contar(em, "select count(c) from ContratacionJpaEntity c where c.publicacionId = :publicacionId",
-                    parametros);
         });
     }
 }

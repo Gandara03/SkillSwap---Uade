@@ -233,19 +233,6 @@ class JpaContratacionRepositoryTest extends JpaTestBase {
     }
 
     @Test
-    @DisplayName("contarPorPublicacion cuenta todas las contrataciones de esa publicacion")
-    void contarPorPublicacion() {
-        Publicacion otra = publicacion(proveedor).titulo("Otra").guardar();
-        solicitud(publicacion, cliente);
-        solicitud(publicacion, cliente);
-        solicitud(otra, cliente);
-
-        assertEquals(2, contrataciones.contarPorPublicacion(publicacion.getId()));
-        assertEquals(1, contrataciones.contarPorPublicacion(otra.getId()));
-        assertEquals(0, contrataciones.contarPorPublicacion(9999L));
-    }
-
-    @Test
     @DisplayName("buscarPorId devuelve vacio si no existe o si el id es null")
     void buscarPorIdInexistente() {
         assertTrue(contrataciones.buscarPorId(9999L).isEmpty());

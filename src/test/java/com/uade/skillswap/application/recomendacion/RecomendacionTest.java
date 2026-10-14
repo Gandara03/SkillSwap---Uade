@@ -194,14 +194,12 @@ class RecomendacionTest {
     }
 
     @Test
-    @DisplayName("la fabrica devuelve la estrategia por tipo, por nombre y AFINIDAD por defecto")
+    @DisplayName("la fabrica devuelve la estrategia por tipo y AFINIDAD por defecto")
     void fabrica() {
         assertInstanceOf(RecomendacionPorAfinidad.class, EstrategiaRecomendacionFactory.crear(TipoEstrategiaRecomendacion.AFINIDAD));
         assertInstanceOf(RecomendacionPorPopularidad.class, EstrategiaRecomendacionFactory.crear(TipoEstrategiaRecomendacion.POPULARIDAD));
-        assertInstanceOf(RecomendacionPorAfinidad.class, EstrategiaRecomendacionFactory.crear((TipoEstrategiaRecomendacion) null));
-        assertInstanceOf(RecomendacionPorPopularidad.class, EstrategiaRecomendacionFactory.crear(" popularidad "));
+        assertInstanceOf(RecomendacionPorAfinidad.class, EstrategiaRecomendacionFactory.crear(null));
         assertEquals(TipoEstrategiaRecomendacion.POPULARIDAD,
                 EstrategiaRecomendacionFactory.crear(TipoEstrategiaRecomendacion.POPULARIDAD).getTipo());
-        assertThrows(IllegalArgumentException.class, () -> EstrategiaRecomendacionFactory.crear("azar"));
     }
 }

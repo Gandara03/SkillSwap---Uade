@@ -67,6 +67,12 @@ public abstract class JpaTestBase {
         ctx.cerrar();
     }
 
+    /** Cantidad de filas de una entidad JPA en la base de ese contexto (para ver que quedo despues de un commit o rollback). */
+    protected static long contarFilas(JpaContexto ctx, Class<?> entidad) {
+        return ctx.leer(em -> em.createQuery("select count(e) from " + entidad.getSimpleName() + " e", Long.class)
+                .getSingleResult());
+    }
+
     // ---------- perfiles ----------
 
     protected Perfil profesional(String userId) {

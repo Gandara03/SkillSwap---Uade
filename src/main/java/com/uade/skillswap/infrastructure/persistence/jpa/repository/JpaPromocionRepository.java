@@ -14,11 +14,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JpaPromocionRepository extends SimpleJpaRepository<PromocionJpaEntity, Long>
+public class JpaPromocionRepository extends SimpleJpaRepository
         implements PromocionRepository {
 
     public JpaPromocionRepository(JpaContexto contexto) {
-        super(contexto, PromocionJpaEntity.class);
+        super(contexto);
     }
 
     @Override

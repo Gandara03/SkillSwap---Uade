@@ -14,8 +14,4 @@ public final class EstrategiaRecomendacionFactory {
             case POPULARIDAD -> new RecomendacionPorPopularidad();
         };
     }
-
-    public static EstrategiaRecomendacion crear(String nombre) {
-        return crear(TipoEstrategiaRecomendacion.valueOf(nombre.trim().toUpperCase()));
-    }
 }

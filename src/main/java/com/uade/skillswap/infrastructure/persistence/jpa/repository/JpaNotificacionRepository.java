@@ -15,11 +15,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class JpaNotificacionRepository extends SimpleJpaRepository<NotificacionJpaEntity, Long>
+public class JpaNotificacionRepository extends SimpleJpaRepository
         implements NotificacionRepository {
 
     public JpaNotificacionRepository(JpaContexto contexto) {
-        super(contexto, NotificacionJpaEntity.class);
+        super(contexto);
     }
 
     @Override

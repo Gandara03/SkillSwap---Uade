@@ -59,8 +59,6 @@ class RepositoriosEnMemoriaTest {
         assertEquals(3L, p.totalElementos());
         assertEquals(2, p.contenido().size());
         assertEquals(3L, (long) p.contenido().get(0).getId());
-        assertEquals(3L, repo.contarPorPublicacion(10L));
-        assertEquals(1L, repo.contarPorPublicacion(11L));
         assertEquals(1L, repo.buscarPorParticipante(Datos.PROVEEDOR, PaginaRequest.de(0, 10)).totalElementos() - 2);
     }
 
