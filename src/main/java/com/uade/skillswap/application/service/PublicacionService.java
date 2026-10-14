@@ -23,6 +23,7 @@ import com.uade.skillswap.application.port.out.PublicacionRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 /**
@@ -37,6 +38,7 @@ public class PublicacionService implements PublicacionUseCase {
     private final TransaccionPort transaccion;
     private final RelojPort reloj;
     private final CalculadorPrecios precios;
+    private final ArmadorResumenes armador;
 
     public PublicacionService(PublicacionRepository publicacionRepository, PerfilRepository perfilRepository,
                               PromocionRepository promocionRepository, TransaccionPort transaccion,
@@ -47,6 +49,7 @@ public class PublicacionService implements PublicacionUseCase {
         this.transaccion = transaccion;
         this.reloj = reloj;
         this.precios = new CalculadorPrecios(promocionRepository, reloj);
+        this.armador = new ArmadorResumenes(perfilRepository, precios);
     }
 
     @Override
@@ -128,6 +131,16 @@ public class PublicacionService implements PublicacionUseCase {
         Perfil autor = Cargas.perfil(perfilRepository, actorId);
         return publicacionRepository.buscarPorAutor(actorId, pagina)
                 .mapear(p -> Mapeador.resumen(p, autor, precios.para(p)));
+    }
+
+    @Override
+    public List<PublicacionResumenDto> listarPublicadasDe(Long autorId, int limite) {
+        Perfil autor = Cargas.perfil(perfilRepository, autorId);
+        // El repositorio pagina por autor sin filtrar estado: se pide una pagina acotada y se quedan las PUBLICADAS.
+        List<Publicacion> publicadas = publicacionRepository
+                .buscarPorAutor(autorId, PaginaRequest.de(0, PaginaRequest.TAMANO_MAXIMO))
+                .contenido().stream().filter(Publicacion::estaPublicada).limit(Math.max(limite, 0)).toList();
+        return armador.resumir(publicadas, Map.of(autor.getId(), autor));
     }
 
     @Override

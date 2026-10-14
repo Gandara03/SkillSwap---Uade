@@ -8,7 +8,6 @@ import com.uade.skillswap.application.config.SkillSwapConfig;
 import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.MovimientoDto;
 import com.uade.skillswap.application.dto.PerfilDto;
-import com.uade.skillswap.application.dto.PerfilPublicoDto;
 import com.uade.skillswap.application.dto.PublicacionDto;
 import com.uade.skillswap.application.exception.NoAutorizadoException;
 import com.uade.skillswap.application.exception.RecursoNoEncontradoException;
@@ -36,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("PerfilService: registro, edicion, baja logica y perfil publico")
+@DisplayName("PerfilService: registro, edicion y baja logica")
 class PerfilServiceTest {
 
     private Escenario e;
@@ -178,7 +177,6 @@ class PerfilServiceTest {
         assertThrows(RecursoNoEncontradoException.class, () -> app.perfilUseCase.obtener(999L));
         assertThrows(RecursoNoEncontradoException.class, () -> app.perfilUseCase.actualizar(999L,
                 new ActualizarPerfilCommand("X", null, null, null, null, null, null)));
-        assertThrows(RecursoNoEncontradoException.class, () -> app.perfilUseCase.verPerfilPublico(999L));
         assertThrows(RecursoNoEncontradoException.class, () -> app.perfilUseCase.darDeBaja(999L));
     }
 
@@ -252,72 +250,6 @@ class PerfilServiceTest {
 
         assertEquals("CONFIRMADA", e.estado(bruno, pagada).estado());
         assertEquals(1L, app.contratacionUseCase.listarMias(ana.id(), PaginaRequest.de(0, 10)).totalElementos());
-    }
-
-    // ---------- perfil publico (Facade) ----------
-
-    @Test
-    @DisplayName("el perfil publico arma reputacion, ultimas calificaciones y solo las publicaciones activas")
-    void perfilPublico() {
-        PerfilDto ana = e.profesional("u-ana", "Ana");
-        PerfilDto bruno = e.profesional("u-bruno", "Bruno");
-        PublicacionDto publicada = e.publicada(ana, e.oferta().titulo("Activa").cupo(2));
-        e.borrador(ana, e.oferta().titulo("Solo borrador"));
-        PublicacionDto pausada = e.publicada(ana, e.oferta().titulo("Pausada"));
-        app.publicacionUseCase.pausar(ana.id(), pausada.id());
-        ContratacionDto completada = e.completada(bruno, ana, publicada, 0);
-        e.calificar(bruno, completada, 4);
-
-        PerfilPublicoDto publico = app.perfilUseCase.verPerfilPublico(ana.id());
-
-        assertEquals(ana.id(), publico.id());
-        assertEquals("Ana", publico.nombreVisible());
-        assertEquals(Set.of("java"), publico.habilidades());
-        assertEquals(4.0, publico.reputacion(), 0.0001);
-        assertEquals(1, publico.cantidadCalificaciones());
-        assertEquals(1, publico.ultimasCalificaciones().size());
-        assertEquals(4, publico.ultimasCalificaciones().get(0).puntaje());
-        assertEquals(1, publico.publicacionesActivas().size(), "solo la PUBLICADA");
-        assertEquals("Activa", publico.publicacionesActivas().get(0).titulo());
-        assertEquals("Ana", publico.publicacionesActivas().get(0).autorNombre());
-        assertEquals(4.0, publico.publicacionesActivas().get(0).autorReputacion(), 0.0001);
-    }
-
-    @Test
-    @DisplayName("el perfil publico limita calificaciones y publicaciones segun la configuracion y lista primero las mas recientes")
-    void perfilPublicoRespetaLimites() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 10, 2, 1, ConfiguracionCancelacion.porDefecto());
-        Escenario otro = new Escenario(AplicacionEnMemoria.crear(config));
-        PerfilDto ana = otro.profesional("u-ana", "Ana");
-        PerfilDto bruno = otro.profesional("u-bruno", "Bruno");
-        PublicacionDto principal = otro.publicada(ana, otro.oferta().cupo(3).precio("10").franjasEn(100L, 110L, 120L));
-        otro.publicada(ana, otro.oferta().titulo("Segunda publicada"));
-        int[] puntajes = {1, 3, 5};
-        for (int i = 0; i < puntajes.length; i++) {
-            ContratacionDto c = otro.completada(bruno, ana, principal, i);
-            otro.avanzarHoras(1); // cada calificacion en un instante distinto
-            otro.calificar(bruno, c, puntajes[i]);
-        }
-
-        PerfilPublicoDto publico = otro.app.perfilUseCase.verPerfilPublico(ana.id());
-
-        assertEquals(3, publico.cantidadCalificaciones());
-        assertEquals(3.0, publico.reputacion(), 0.0001);
-        assertEquals(2, publico.ultimasCalificaciones().size(), "tope configurado");
-        assertEquals(5, publico.ultimasCalificaciones().get(0).puntaje(), "la mas reciente primero");
-        assertEquals(1, publico.publicacionesActivas().size(), "tope configurado");
-    }
-
-    @Test
-    @DisplayName("un perfil nuevo tiene perfil publico vacio: sin calificaciones ni publicaciones")
-    void perfilPublicoVacio() {
-        PerfilDto ana = e.profesional("u-ana", "Ana");
-
-        PerfilPublicoDto publico = app.perfilUseCase.verPerfilPublico(ana.id());
-
-        assertEquals(0.0, publico.reputacion(), 0.0001);
-        assertTrue(publico.ultimasCalificaciones().isEmpty());
-        assertTrue(publico.publicacionesActivas().isEmpty());
     }
 
     @Test

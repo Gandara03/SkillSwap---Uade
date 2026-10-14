@@ -9,6 +9,7 @@ import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface PublicacionUseCase {
 
@@ -32,6 +33,9 @@ public interface PublicacionUseCase {
     PublicacionDto obtener(Long actorId, Long publicacionId);
 
     Pagina<PublicacionResumenDto> listarPropias(Long actorId, PaginaRequest pagina);
+
+    /** Vista publica: las publicaciones PUBLICADAS del autor, las mas recientes primero y como mucho {@code limite}. */
+    List<PublicacionResumenDto> listarPublicadasDe(Long autorId, int limite);
 
     /** Solo el autor puede agregar promociones a su publicacion. */
     PublicacionDto agregarPromocion(Long actorId, CrearPromocionCommand comando);

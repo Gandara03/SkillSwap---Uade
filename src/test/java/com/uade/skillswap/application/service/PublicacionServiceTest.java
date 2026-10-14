@@ -314,6 +314,27 @@ class PublicacionServiceTest {
         assertThrows(ValidacionException.class, () -> app.publicacionUseCase.listarPropias(ana.id(), null));
     }
 
+    @Test
+    @DisplayName("listarPublicadasDe devuelve solo las PUBLICADAS del autor, de la mas reciente a la mas antigua y hasta el limite")
+    void listarPublicadasDe() {
+        e.publicada(ana, e.oferta().titulo("Primera"));
+        e.avanzarHoras(1);
+        PublicacionDto pausada = e.publicada(ana, e.oferta().titulo("Pausada"));
+        app.publicacionUseCase.pausar(ana.id(), pausada.id());
+        e.avanzarHoras(1);
+        e.publicada(ana, e.oferta().titulo("Segunda"));
+        e.borrador(ana, e.oferta().titulo("Borrador"));
+        e.publicada(bruno, e.oferta().titulo("De Bruno"));
+
+        List<PublicacionResumenDto> todas = app.publicacionUseCase.listarPublicadasDe(ana.id(), 10);
+        List<PublicacionResumenDto> una = app.publicacionUseCase.listarPublicadasDe(ana.id(), 1);
+
+        assertEquals(List.of("Segunda", "Primera"), todas.stream().map(PublicacionResumenDto::titulo).toList());
+        assertEquals(List.of("Segunda"), una.stream().map(PublicacionResumenDto::titulo).toList());
+        assertTrue(app.publicacionUseCase.listarPublicadasDe(ana.id(), 0).isEmpty());
+        assertThrows(RecursoNoEncontradoException.class, () -> app.publicacionUseCase.listarPublicadasDe(999L, 5));
+    }
+
     // ---------- promociones ----------
 
     @Test

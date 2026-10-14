@@ -1,11 +1,13 @@
 package com.uade.skillswap.support;
 
 import com.uade.skillswap.application.config.SkillSwapConfig;
+import com.uade.skillswap.application.facade.PerfilPublicoFacade;
 import com.uade.skillswap.application.notificacion.NotificadorObserver;
 import com.uade.skillswap.application.port.in.BusquedaUseCase;
 import com.uade.skillswap.application.port.in.CalificacionUseCase;
 import com.uade.skillswap.application.port.in.ContratacionUseCase;
 import com.uade.skillswap.application.port.in.NotificacionUseCase;
+import com.uade.skillswap.application.port.in.PerfilPublicoUseCase;
 import com.uade.skillswap.application.port.in.PerfilUseCase;
 import com.uade.skillswap.application.port.in.PublicacionUseCase;
 import com.uade.skillswap.application.port.in.RecomendacionUseCase;
@@ -58,6 +60,7 @@ public final class AplicacionEnMemoria {
     public final CalificacionUseCase calificacionUseCase;
     public final NotificacionUseCase notificacionUseCase;
     public final WalletUseCase walletUseCase;
+    public final PerfilPublicoUseCase perfilPublicoUseCase;
 
     private AplicacionEnMemoria(SkillSwapConfig config) {
         this.config = config;
@@ -65,8 +68,7 @@ public final class AplicacionEnMemoria {
         NotificadorObserver notificador = new NotificadorObserver(notificaciones, perfiles, canales, transaccion, reloj);
 
         this.sesion = new SesionService(identidad, perfiles);
-        this.perfilUseCase = new PerfilService(perfiles, wallets, calificaciones, publicaciones, promociones,
-                identidad, transaccion, reloj, config);
+        this.perfilUseCase = new PerfilService(perfiles, wallets, publicaciones, identidad, transaccion, reloj, config);
         this.publicacionUseCase = new PublicacionService(publicaciones, perfiles, promociones, transaccion, reloj);
         this.contratacionUseCase = new ContratacionService(contrataciones, publicaciones, perfiles, wallets,
                 promociones, List.of(notificador), transaccion, reloj);
@@ -75,6 +77,8 @@ public final class AplicacionEnMemoria {
         this.calificacionUseCase = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);
         this.notificacionUseCase = new NotificacionService(notificaciones);
         this.walletUseCase = new WalletService(wallets);
+        this.perfilPublicoUseCase = new PerfilPublicoFacade(perfilUseCase, calificacionUseCase, publicacionUseCase,
+                config);
     }
 
     /** Aplicacion con la configuracion por defecto (bono inicial de 100 SC, etc.). */

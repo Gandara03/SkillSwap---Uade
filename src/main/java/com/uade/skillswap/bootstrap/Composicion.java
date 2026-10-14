@@ -1,6 +1,7 @@
 package com.uade.skillswap.bootstrap;
 
 import com.uade.skillswap.application.config.SkillSwapConfig;
+import com.uade.skillswap.application.facade.PerfilPublicoFacade;
 import com.uade.skillswap.application.notificacion.NotificadorObserver;
 import com.uade.skillswap.application.port.in.SesionUseCase;
 import com.uade.skillswap.application.port.out.CanalNotificacionFactory;
@@ -117,8 +118,7 @@ public final class Composicion {
 
         // Servicios de aplicacion (casos de uso)
         var sesion = new SesionService(identidad, perfiles);
-        var perfilService = new PerfilService(perfiles, wallets, calificaciones, publicaciones, promociones,
-                identidad, transaccion, reloj, config);
+        var perfilService = new PerfilService(perfiles, wallets, publicaciones, identidad, transaccion, reloj, config);
         var publicacionService = new PublicacionService(publicaciones, perfiles, promociones, transaccion, reloj);
         var contratacionService = new ContratacionService(contrataciones, publicaciones, perfiles, wallets,
                 promociones, observadores, transaccion, reloj);
@@ -127,10 +127,12 @@ public final class Composicion {
         var calificacionService = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);
         var notificacionService = new NotificacionService(notificaciones);
         var walletService = new WalletService(wallets);
+        // Facade: la vista publica del perfil coordina tres casos de uso
+        var perfilPublico = new PerfilPublicoFacade(perfilService, calificacionService, publicacionService, config);
 
         // Controllers (presentacion): dependen solo de los puertos de entrada
         return new Composicion(ctx, config, emailSdk, pushSdk, sesion,
-                new PerfilController(perfilService, sesion),
+                new PerfilController(perfilService, perfilPublico, sesion),
                 new PublicacionController(publicacionService, sesion),
                 new BusquedaController(busquedaService),
                 new RecomendacionController(recomendacionService, sesion),
