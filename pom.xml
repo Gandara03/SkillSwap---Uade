@@ -100,6 +100,9 @@
                 <version>3.3.0</version>
                 <configuration>
                     <mainClass>com.uade.skillswap.Main</mainClass>
+                    <!-- El driver de MySQL deja un hilo daemon de limpieza que ignora interrupciones:
+                         sin esto, exec:java espera 15 s a que termine antes de cerrar. -->
+                    <cleanupDaemonThreads>false</cleanupDaemonThreads>
                 </configuration>
             </plugin>
         </plugins>
