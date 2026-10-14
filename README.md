@@ -5,14 +5,14 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 ## Estado
 
-`mvnw verify` pasa completo: **589 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+`mvnw verify` pasa completo: **597 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
-| Dominio | `domain/**` | 168 |
-| Aplicación | `application/**` | 234 |
-| Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 45 |
-| Persistencia JPA | `infrastructure/persistence/jpa/**` | 86 |
+| Dominio | `domain/**` | 201 |
+| Aplicación | `application/**` | 208 |
+| Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 47 |
+| Persistencia JPA | `infrastructure/persistence/jpa/**` | 85 |
 | Aceptación en memoria | `acceptance/memoria/**` | 34 |
 | Aceptación sobre JPA/H2 | `acceptance/jpa/**` | 22 |
 
@@ -20,12 +20,12 @@ Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación
 
 | Capa | Líneas | Ramas |
 |---|---|---|
-| `domain` | 99,3 % | 95,8 % |
-| `application` | 99,5 % | 93,6 % |
-| `infrastructure` | 92,3 % | 85,0 % |
-| `presentation` | 33,9 % | 18,5 % |
-| `bootstrap` y `Main` | 14,6 % | 0,0 % |
-| **Total** | **83,6 %** | **78,2 %** |
+| `domain` | 99,4 % | 96,2 % |
+| `application` | 99,4 % | 92,4 % |
+| `infrastructure` | 93,2 % | 86,2 % |
+| `presentation` | 34,1 % | 18,5 % |
+| `bootstrap` y `Main` | 15,0 % | 0,0 % |
+| **Total** | **83,9 %** | **78,5 %** |
 
 `presentation` y `bootstrap` se ejercitan con la demo (sección 2), no con tests. El camino contra MySQL real (`--mysql`) no forma parte de `verify`.
 
@@ -42,9 +42,10 @@ skillswap/
 ├── Informe_SkillSwap.pdf        informe de decisiones de diseño
 └── src/
     ├── main/java/com/uade/skillswap/
-    │   ├── domain/              entidades, VOs, State, Observer (interfaces + evento), historial
-    │   ├── application/         casos de uso (port/in), puertos de salida y repositorios (port/out), Strategy (politica, recomendacion),
-    │   │                        Decorator de precio (precio), commands, DTOs, servicios
+    │   ├── domain/              entidades, VOs, State, Observer (interfaces + evento), historial,
+    │   │                        Strategy de cancelacion (model/politica), Decorator de precio (model/precio)
+    │   ├── application/         casos de uso (port/in), puertos de salida y repositorios (port/out), Strategy de recomendacion,
+    │   │                        Facade del perfil publico (facade), commands, DTOs, servicios
     │   ├── infrastructure/      JPA + Flyway, adapters (identidad, email, push, interna), factory de canales, reloj
     │   ├── presentation/        controllers delgados + interfaces I*Controller + Resultado/ManejadorErrores + menú de consola
     │   ├── bootstrap/           Composicion (compositor a mano), DatosDemo, DemoFlujoPrincipal
@@ -53,7 +54,7 @@ skillswap/
     └── test/java/               domain · application · infrastructure · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 215 clases de producción, 83 clases de test (589 tests), ~10.6 mil líneas de código y ~12.3 mil de tests.
+Números: 219 clases de producción, 84 clases de test (597 tests), ~10.7 mil líneas de código y ~12.5 mil de tests.
 
 ---
 
@@ -118,8 +119,8 @@ presentation ──▶ application (port/in) ──▶ domain ◀── applicat
 
 | Capa | Contiene | No conoce |
 |---|---|---|
-| **Dominio** | `Perfil`, `Publicacion`+`Franja`, `Contratacion`, `Wallet`+`MovimientoCredito`, `Calificacion`, `Notificacion`, `Promocion`, VOs (`SkillCoins`, `Puntaje`, `Habilidad`, `RangoPrecio`, `BloqueDisponibilidad`), State, Observer (`ContratacionObserver`, `ContratacionEvent`), `HistorialEstado` | UI, JPA, MySQL, SDKs |
-| **Aplicación** | 9 casos de uso (`port/in`), commands y DTOs, servicios, puertos de salida y repositorios (`port/out`: `IdentidadPort`, `TransaccionPort`, `RelojPort`, `CanalNotificacionPort`, `CanalNotificacionFactory`, `*Repository`), Strategy (`application.politica`, `application.recomendacion`), Decorator de precio (`application.precio`), `NotificadorObserver` | Controllers concretos, SDKs externos, JPA |
+| **Dominio** | `Perfil`, `Publicacion`+`Franja`+`DatosPublicacion`, `Contratacion`+`RepartoCancelacion`, `Wallet`+`MovimientoCredito`, `Calificacion`, `Notificacion`, `Promocion`, VOs (`SkillCoins`, `Puntaje`, `Habilidad`, `RangoPrecio`, `BloqueDisponibilidad`), State, Observer (`ContratacionObserver`, `ContratacionEvent`), `HistorialEstado`, Strategy de cancelación (`domain.model.politica`), Decorator de precio (`domain.model.precio`) | UI, JPA, MySQL, SDKs |
+| **Aplicación** | 10 casos de uso (`port/in`), commands y DTOs, servicios, puertos de salida y repositorios (`port/out`: `IdentidadPort`, `TransaccionPort`, `RelojPort`, `CanalNotificacionPort`, `CanalNotificacionFactory`, `*Repository`), Strategy de recomendación (`application.recomendacion`), Facade del perfil público (`application.facade`), `NotificadorObserver` | Controllers concretos, SDKs externos, JPA |
 | **Infraestructura** | `JpaContexto`, `BaseDeDatos`, `JpaTransaccionAdapter`, entidades `*JpaEntity` + mappers + 7 repositorios JPA, `IdentidadMockAdapter`, `Email/Push/InternaCanalAdapter`, `CanalNotificacionFactoryImpl`, `RelojSistema`, Flyway | Decisiones de negocio |
 | **Presentación** | 8 interfaces `I*Controller` y sus implementaciones, `Resultado<T>`, `ManejadorErrores`, `MenuConsola` | Persistencia y reglas de negocio |
 
@@ -128,7 +129,8 @@ Reglas que se respetan (verificables con un `grep` de imports): `domain` no impo
 **Diseño clave:**
 
 - **Agregados por id.** Dominio puro (POJOs). La persistencia usa entidades `*JpaEntity` y mappers que rehidratan con los `reconstruir(...)` del dominio. El dominio no tiene setters públicos de reputación, estado ni saldo.
-- **Escrow.** `pagar` debita al cliente y el monto queda retenido en la contratación; `completar` acredita al proveedor; `cancelar` reintegra según la política y el resto compensa al proveedor. Si cancela el proveedor, el cliente recupera el 100 %.
+- **Escrow.** `pagar` debita al cliente y el monto queda retenido en la contratación; `completar` acredita al proveedor; `cancelar` reintegra según la política y el resto compensa al proveedor. Si cancela el proveedor, el cliente recupera el 100 %. El reparto lo decide el dominio (`Contratacion.repartirRetenido`); el servicio solo acredita.
+- **Políticas en el dominio, recomendación en aplicación.** La política de cancelación es una regla de negocio (sección 5 de la consigna) que decide plata dentro de `Contratacion`, así que vive en el dominio junto con el Decorator de precio. Las estrategias de recomendación quedan en `application`: no son reglas de negocio sino criterios para ordenar un listado, y combinan datos de varios agregados que arma el caso de uso.
 - **Reserva dentro de `Contratacion`** (franjaId + `Publicacion.reservarFranja/liberarFranja/reprogramarReserva`), sin entidad `Reserva` aparte.
 - **Reprogramación** = propuesta pendiente en la contratación que la contraparte acepta o rechaza; al aceptar se mueve la reserva sin alterar el cupo.
 - **Permisos.** Todo caso de uso recibe `actorId`; los controllers lo obtienen de `SesionUseCase` (que sale de `IdentidadPort`). Los servicios validan autor/cliente/proveedor/participante con `NoAutorizadoException`.
@@ -171,6 +173,7 @@ Publicacion --> EstadoPublicacion
 Contratacion --> EstadoContratacion
 Contratacion ..> ContratacionObserver : notifica
 Publicacion ..> PoliticaCancelacion : tipo
+Contratacion ..> PoliticaCancelacion : repartirRetenido
 PromocionDecorator ..|> PrecioPublicacion
 PromocionDecorator o-- PrecioPublicacion
 ```
@@ -184,12 +187,12 @@ Notas de importación a StarUML: poner multiplicidades en ambos extremos, las in
 | Patrón | Dónde | Variación que resuelve | Evidencia (tests) |
 |---|---|---|---|
 | **State** | `publicacion/estado/*` (5 estados), `contratacion/estado/*` (7 estados) + `EstadoXFactory.desdeNombre` | Qué acciones son válidas en cada estado; las inválidas lanzan `TransicionInvalidaException` | `PublicacionTest`, `FranjaYEstadosTest`, `ContratacionTest`, casos 2, 3, 5 |
-| **Strategy** | `PoliticaCancelacion` (`Flexible` 100/50/0 con 24 h/2 h; `Estricta` con 72 h/48 h) y `EstrategiaRecomendacion` (`Afinidad`, `Popularidad`) | Cálculo de reintegro y de recomendación intercambiables | `PoliticaCancelacionTest`, `RecomendacionTest`, casos 6 y 7 |
-| **Decorator** | `PrecioPublicacion` → `PrecioBase` → `PromocionPorcentaje` / `PromocionMontoFijo` | Promociones acumulables; cada una descuenta sobre el resultado anterior y el total se acota en 0 | `PrecioPublicacionTest`, caso 9 |
-| **Observer** | `Contratacion` (Subject) acumula eventos; `NotificadorObserver` los atiende **después del commit** | Notificar a las partes sin acoplar el dominio a email/push | `NotificadorObserverTest`, caso 8 |
+| **Strategy** | `PoliticaCancelacion` en `domain.model.politica` (`Flexible` 100/50/0 con 24 h/2 h; `Estricta` con 72 h/48 h); el contexto es `Contratacion.repartirRetenido`. `EstrategiaRecomendacion` en `application.recomendacion` (`Afinidad`, `Popularidad`) | Cálculo de reintegro y de recomendación intercambiables | `PoliticaCancelacionTest`, `ContratacionTest` (reparto), `RecomendacionTest`, casos 6 y 7 |
+| **Decorator** | `domain.model.precio`: `PrecioPublicacion` → `PrecioBase` → `PromocionPorcentaje` / `PromocionMontoFijo` | Promociones acumulables; cada una descuenta sobre el resultado anterior y el total se acota en 0 | `PrecioPublicacionTest`, caso 9 |
+| **Observer** | `Contratacion` (Subject) acumula eventos; la lista de observers se arma una sola vez en `Composicion` (hoy `NotificadorObserver`) y `ContratacionService` la suscribe y notifica **después del commit** | Notificar a las partes sin acoplar el dominio a email/push | `NotificadorObserverTest`, `ContratacionServiceTest`, caso 8 |
 | **Adapter** | `IdentidadMockAdapter` → `ServicioIdentidadExterno`; `Email/PushCanalAdapter` → `EmailSdkMock`/`PushSdkMock` | Proveedores externos con API propia detrás de puertos de la aplicación | `IdentidadMockAdapterTest`, `CanalesNotificacionTest`, caso 8 |
-| **Simple Factory** | `CanalNotificacionFactoryImpl`, `PoliticaCancelacionFactory`, `EstrategiaRecomendacionFactory`, `PrecioPublicacionFactory`, `EstadoXFactory` | Elegir canal/estrategia/estado a partir de un valor (preferencia del usuario, texto persistido) | `CanalesNotificacionTest` |
-| **Facade** | `PerfilService.verPerfilPublico` | Vista resumida del perfil (datos + reputación + últimas calificaciones + publicaciones activas) | `PerfilServiceTest` |
+| **Simple Factory** | `CanalNotificacionFactoryImpl` (crea el adapter en cada pedido), `PoliticaCancelacionFactory`, `EstrategiaRecomendacionFactory`, `PrecioPublicacionFactory`, `EstadoXFactory` | Elegir canal/estrategia/estado a partir de un valor (preferencia del usuario, texto persistido) | `CanalesNotificacionTest`, `PoliticaCancelacionTest`, `RecomendacionTest` |
+| **Facade** | `PerfilPublicoFacade` (`application.facade`, puerto `PerfilPublicoUseCase`): coordina `PerfilUseCase`, `CalificacionUseCase` y `PublicacionUseCase` | Vista resumida del perfil (datos + reputación + últimas calificaciones + publicaciones activas) sin que el controller conozca esos tres casos de uso | `PerfilPublicoFacadeTest` |
 
 Descartados a propósito (justificar en el informe): **Composite** (no hay jerarquía real de categorías en el alcance), **Singleton** (no hace falta una única instancia; el compositor arma todo explícitamente).
 
@@ -214,7 +217,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 |---|---|---|---|
 | 4.1 | Registrar perfil con `userId` de identidad externa | ✅ | `PerfilService.registrar`, `IdentidadPort` |
 | 4.1 | Nombre, bio, zona horaria, habilidades, intereses, disponibilidad | ✅ | `Perfil.actualizarDatos`, `ActualizarPerfilCommand` |
-| 4.1 | Perfil público con reputación, publicaciones activas e **historial resumido** | ✅ (interpretación, ver pendientes) | `PerfilPublicoDto`: reputación + últimas calificaciones + publicaciones activas |
+| 4.1 | Perfil público con reputación, publicaciones activas e **historial resumido** | ✅ (interpretación, ver pendientes) | `PerfilPublicoFacade` → `PerfilPublicoDto`: reputación + últimas calificaciones + publicaciones activas |
 | 4.1 | Reputación recalculada desde calificaciones verificadas, no editable | ✅ | `Perfil.recalcularReputacion` (sin setter), `CalificacionService` |
 | 4.2 | Mentoría/servicio (profesional) y desafío (organización) con todos los campos | ✅ | `Publicacion.crearBorrador`, `TipoPerfil` |
 | 4.2 | 5 estados + transiciones inválidas rechazadas + publicar exige título, categoría, precio ≥ 0 y franja | ✅ | `publicacion/estado/*`, `validarCompletaParaPublicar` |
@@ -239,7 +242,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 9 | Controllers delgados, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `Resultado` (ver nota de nombres abajo) |
 | 10 | Mock UI Kit conectado por interfaces | ⬜ | `I*Controller` son el contrato |
 | 11 | Entregas incrementales | ⬜ | — |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 589 tests (ver Estado al principio) |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 597 tests (ver Estado al principio) |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases en StarUML | 🟡 | `Diagrama UML.mdj` (base: Mermaid de la sección 3) |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
@@ -248,7 +251,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 
 **Pendientes y puntos abiertos de la matriz:**
 
-- **4.1 Historial resumido:** falta decidir si exige también las contrataciones completadas. En ese caso, sumar un contador (requiere `ContratacionRepository` en `PerfilService`).
+- **4.1 Historial resumido:** falta decidir si exige también las contrataciones completadas. En ese caso, sumar un contador en `PerfilPublicoFacade` (a través de `ContratacionUseCase` o de un método nuevo en su repositorio).
 - **4.3 Relevancia:** hoy ordena por título > reputación > fecha; se puede enriquecer.
 - **4.3 Popularidad reciente:** hoy usa cupo ocupado + reputación; evaluar agregar una ventana temporal.
 - **6 y 7 (informe):** dibujar el diagrama de capas y justificar cada patrón (problema, alternativa, consecuencias, evidencia).
@@ -298,10 +301,10 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 
 Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a mencionar (o cerrar) antes de la defensa:
 
-1. **Escrow vs transferencia directa.** Se eligió escrow (el monto queda retenido hasta completar). Alternativa: acreditar al proveedor al pagar.
+1. **Escrow vs transferencia directa.** Se eligió escrow (el monto queda retenido hasta completar). Alternativa: acreditar al proveedor al pagar. Al cancelar, `Contratacion.repartirRetenido` decide el reintegro y la compensación.
 2. **Reserva sin entidad propia.** Vive dentro de `Contratacion`. Si la cátedra espera una tabla `reserva`, se extrae.
 3. **Organización como `TipoPerfil.ORGANIZACION`.** No hay entidad aparte; solo ellas publican desafíos.
-4. **Política de cancelación por publicación** (enum persistido) con umbrales globales configurables en `SkillSwapConfig`/`ConfiguracionCancelacion`. Nota: `ContratacionService` tiene un segundo constructor con `PoliticaCancelacionFactory`; el compositor hoy usa el de umbrales por defecto.
+4. **Política de cancelación por publicación** (enum persistido) con umbrales globales configurables en `SkillSwapConfig`/`ConfiguracionCancelacion`. El compositor arma la `PoliticaCancelacionFactory` con `config.cancelacion()` y se la pasa a `ContratacionService`.
 5. **Cancelar o cerrar una publicación no toca sus contrataciones activas** (con dinero retenido): no hay reintegro automático. Lo mismo al dar de baja un perfil (aunque sí pausa sus publicaciones publicadas). Propuesta: impedir cancelar/cerrar con contrataciones ACEPTADA/CONFIRMADA/EN_CURSO, o cancelarlas en cascada con reintegro total.
 6. **El cliente no puede retirar una solicitud PENDIENTE** (el dominio solo permite al proveedor rechazar).
 7. **El cupo no se libera al completar** (cupo = capacidad total de la publicación).
@@ -334,8 +337,10 @@ Cualquier ajuste debería quedar contenido en `infrastructure/persistence/**` y 
 ## 10. Guía rápida para la defensa
 
 - **Recorrido principal** (sec. 13): `./mvnw compile exec:java -Dexec.args="--h2"` (en PowerShell: `chcp 65001` y después `.\mvnw.cmd compile exec:java "-Dexec.args=--h2"`) y mostrar cada paso con su estado y saldos.
-- **"¿Dónde está la regla X?"** → casi siempre en el dominio (Information Expert): `Contratacion`/`Publicacion` deciden transiciones, `Wallet` decide saldos, `Calificacion.registrar` decide quién puede calificar. Los servicios solo orquestan.
+- **"¿Dónde está la regla X?"** → casi siempre en el dominio (Information Expert): `Contratacion`/`Publicacion` deciden transiciones, `Contratacion.repartirRetenido` decide cuánto se reintegra al cancelar, `Wallet` decide saldos, `Calificacion.registrar` decide quién puede calificar. Los servicios solo orquestan.
 - **"¿Cómo evitás la sobreventa?"** → `Publicacion.reservarFranja` (franja ocupada / cupo) + `@Version` + transacción única en `aceptar`; caso 4.
-- **"¿Cómo agrego un canal de notificación nuevo?"** → una clase que implementa `CanalNotificacionPort` + una línea en `CanalNotificacionFactoryImpl` + valor en el enum `CanalNotificacion`. No se toca el dominio ni los servicios.
+- **"¿Cómo agrego un canal de notificación nuevo?"** → una clase que implementa `CanalNotificacionPort` + un `case` en el `switch` de `CanalNotificacionFactoryImpl` + valor en el enum `CanalNotificacion`. No se toca el dominio ni los servicios.
 - **"¿Cómo agrego una política/estrategia/promoción?"** → implementar la interfaz y registrarla en su factory.
+- **"¿Cómo agrego otro interesado en los eventos de una contratación?"** → una clase que implementa `ContratacionObserver` y se suma a la lista que arma `Composicion`.
+- **"¿Por qué la recomendación no está en el dominio?"** → sección 3 (diseño clave): no es una regla de negocio sino un criterio de orden de un listado que combina datos de varios agregados.
 - **"¿Por qué no hay Composite/Singleton?"** → sección 4.
