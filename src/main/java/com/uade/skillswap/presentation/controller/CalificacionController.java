@@ -8,7 +8,7 @@ import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
-/** Adaptador delgado: traduce la UI a CalificacionUseCase. */
+/** Adaptador delgado: valida la entrada y la traduce a CalificacionUseCase. */
 public class CalificacionController implements ICalificacionController {
 
     private final CalificacionUseCase calificaciones;
@@ -21,16 +21,34 @@ public class CalificacionController implements ICalificacionController {
 
     @Override
     public Resultado<CalificacionDto> calificar(CalificarCommand comando) {
-        return Ejecucion.conActor(sesion, actor -> calificaciones.calificar(actor, comando));
+        return Ejecucion.conActor(sesion, actor -> {
+            validar(comando);
+            return calificaciones.calificar(actor, comando);
+        });
     }
 
     @Override
     public Resultado<Pagina<CalificacionDto>> recibidasDe(Long perfilId, PaginaRequest pagina) {
-        return Ejecucion.sinActor(() -> calificaciones.listarRecibidas(perfilId, pagina));
+        return Ejecucion.sinActor(() -> {
+            ValidadorEntrada.exigirId(perfilId, "el perfil");
+            ValidadorEntrada.exigirPagina(pagina);
+            return calificaciones.listarRecibidas(perfilId, pagina);
+        });
     }
 
     @Override
     public Resultado<Pagina<CalificacionDto>> misRecibidas(PaginaRequest pagina) {
-        return Ejecucion.conActor(sesion, actor -> calificaciones.listarRecibidas(actor, pagina));
+        return Ejecucion.conActor(sesion, actor -> {
+            ValidadorEntrada.exigirPagina(pagina);
+            return calificaciones.listarRecibidas(actor, pagina);
+        });
+    }
+
+    private static void validar(CalificarCommand c) {
+        ValidadorEntrada.exigir(c, "los datos de la calificacion");
+        ValidadorEntrada.exigirId(c.contratacionId(), "la contratacion");
+        ValidadorEntrada.exigirEntre(c.puntaje(), ValidadorEntrada.PUNTAJE_MINIMO, ValidadorEntrada.PUNTAJE_MAXIMO,
+                "el puntaje");
+        ValidadorEntrada.exigirLargo(c.comentario(), ValidadorEntrada.LARGO_COMENTARIO, "el comentario");
     }
 }

@@ -7,7 +7,7 @@ import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
-/** Adaptador delgado: traduce la UI a NotificacionUseCase. */
+/** Adaptador delgado: valida la entrada y la traduce a NotificacionUseCase. */
 public class NotificacionController implements INotificacionController {
 
     private final NotificacionUseCase notificaciones;
@@ -20,11 +20,17 @@ public class NotificacionController implements INotificacionController {
 
     @Override
     public Resultado<Pagina<NotificacionDto>> listar(boolean soloNoLeidas, PaginaRequest pagina) {
-        return Ejecucion.conActor(sesion, actor -> notificaciones.listar(actor, soloNoLeidas, pagina));
+        return Ejecucion.conActor(sesion, actor -> {
+            ValidadorEntrada.exigirPagina(pagina);
+            return notificaciones.listar(actor, soloNoLeidas, pagina);
+        });
     }
 
     @Override
     public Resultado<NotificacionDto> marcarLeida(Long notificacionId) {
-        return Ejecucion.conActor(sesion, actor -> notificaciones.marcarLeida(actor, notificacionId));
+        return Ejecucion.conActor(sesion, actor -> {
+            ValidadorEntrada.exigirId(notificacionId, "la notificacion");
+            return notificaciones.marcarLeida(actor, notificacionId);
+        });
     }
 }

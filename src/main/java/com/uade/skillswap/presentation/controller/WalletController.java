@@ -8,7 +8,7 @@ import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
-/** Adaptador delgado: traduce la UI a WalletUseCase. */
+/** Adaptador delgado: valida la entrada y la traduce a WalletUseCase. */
 public class WalletController implements IWalletController {
 
     private final WalletUseCase wallet;
@@ -26,6 +26,9 @@ public class WalletController implements IWalletController {
 
     @Override
     public Resultado<Pagina<MovimientoDto>> movimientos(PaginaRequest pagina) {
-        return Ejecucion.conActor(sesion, actor -> wallet.movimientos(actor, pagina));
+        return Ejecucion.conActor(sesion, actor -> {
+            ValidadorEntrada.exigirPagina(pagina);
+            return wallet.movimientos(actor, pagina);
+        });
     }
 }
