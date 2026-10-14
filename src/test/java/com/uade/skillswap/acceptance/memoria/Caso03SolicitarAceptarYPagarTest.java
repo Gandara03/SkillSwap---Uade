@@ -63,7 +63,7 @@ class Caso03SolicitarAceptarYPagarTest {
         assertEquals(solicitud.id(), ultimo.contratacionId());
 
         // historial de estados: PENDIENTE -> ACEPTADA -> CONFIRMADA
-        List<String> destinos = e.app.contratacionUseCase.historial(bruno.id(), solicitud.id()).stream()
+        List<String> destinos = e.app.contratacionUseCase.historial(bruno.id(), solicitud.id(), e.primeraPagina()).contenido().stream()
                 .map(h -> h.estadoNuevo()).toList();
         assertEquals(List.of("PENDIENTE", "ACEPTADA", "CONFIRMADA"), destinos);
     }

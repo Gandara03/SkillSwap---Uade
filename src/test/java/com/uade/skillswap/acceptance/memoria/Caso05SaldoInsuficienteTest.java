@@ -35,7 +35,7 @@ class Caso05SaldoInsuficienteTest {
         ContratacionDto solicitud = e.solicitar(bruno.id(), cara, 0);
         e.app.contratacionUseCase.aceptar(ana.id(), solicitud.id());
         long movimientosAntes = e.app.walletUseCase.movimientos(bruno.id(), e.primeraPagina()).totalElementos();
-        int historialAntes = e.app.contratacionUseCase.historial(bruno.id(), solicitud.id()).size();
+        long historialAntes = e.app.contratacionUseCase.historial(bruno.id(), solicitud.id(), e.primeraPagina()).totalElementos();
 
         SaldoInsuficienteException error = assertThrows(SaldoInsuficienteException.class,
                 () -> e.app.contratacionUseCase.pagar(bruno.id(), solicitud.id()));
@@ -48,7 +48,7 @@ class Caso05SaldoInsuficienteTest {
         ContratacionDto tras = e.app.contratacionUseCase.obtener(bruno.id(), solicitud.id());
         assertEquals("ACEPTADA", tras.estado());
         assertNull(tras.pagadaEn());
-        assertEquals(historialAntes, e.app.contratacionUseCase.historial(bruno.id(), solicitud.id()).size());
+        assertEquals(historialAntes, e.app.contratacionUseCase.historial(bruno.id(), solicitud.id(), e.primeraPagina()).totalElementos());
         // no hay movimientos nuevos en la wallet del cliente
         assertEquals(movimientosAntes, e.app.walletUseCase.movimientos(bruno.id(), e.primeraPagina()).totalElementos());
         // y el proveedor no recibio el aviso de pago confirmado

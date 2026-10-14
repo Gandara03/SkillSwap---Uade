@@ -8,8 +8,6 @@ import com.uade.skillswap.application.dto.ResultadoCancelacionDto;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 
-import java.util.List;
-
 /**
  * Cada operacion que cambia estado corre en UNA transaccion (cambio de estado + franja/cupo + wallet).
  * Las notificaciones (Observer) se despachan despues del commit.
@@ -43,7 +41,8 @@ public interface ContratacionUseCase {
 
     ComprobanteDto comprobante(Long actorId, Long contratacionId);
 
-    List<HistorialDto> historial(Long actorId, Long contratacionId);
+    /** Transiciones en orden cronologico, paginadas. Solo los participantes. */
+    Pagina<HistorialDto> historial(Long actorId, Long contratacionId, PaginaRequest pagina);
 
     Pagina<ContratacionDto> listarMias(Long actorId, PaginaRequest pagina);
 }

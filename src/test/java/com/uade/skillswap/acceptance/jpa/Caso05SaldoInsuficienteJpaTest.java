@@ -28,7 +28,7 @@ class Caso05SaldoInsuficienteJpaTest extends AceptacionJpaBase {
         aceptar("u-ana", solicitud.id());
         como("u-bruno");
         long movimientosAntes = ok(app.getWalletController().movimientos(primeraPagina())).totalElementos();
-        int historialAntes = ok(app.getContratacionController().historial(solicitud.id())).size();
+        long historialAntes = ok(app.getContratacionController().historial(solicitud.id(), primeraPagina())).totalElementos();
 
         Resultado<ContratacionDto> intento = app.getContratacionController().pagar(solicitud.id());
 
@@ -41,7 +41,7 @@ class Caso05SaldoInsuficienteJpaTest extends AceptacionJpaBase {
         ContratacionDto tras = contratacionVista("u-bruno", solicitud.id());
         assertEquals("ACEPTADA", tras.estado());
         assertNull(tras.pagadaEn());
-        assertEquals(historialAntes, ok(app.getContratacionController().historial(solicitud.id())).size());
+        assertEquals(historialAntes, ok(app.getContratacionController().historial(solicitud.id(), primeraPagina())).totalElementos());
         assertEquals(movimientosAntes, ok(app.getWalletController().movimientos(primeraPagina())).totalElementos());
         // el proveedor no recibio el aviso de pago confirmado
         como("u-ana");

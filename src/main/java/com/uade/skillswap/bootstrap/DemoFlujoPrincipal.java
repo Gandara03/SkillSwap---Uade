@@ -105,9 +105,9 @@ public final class DemoFlujoPrincipal {
                 pagina -> listar(pagina.contenido(), Formato::publicacion, pagina.totalElementos() + " resultado(s)"));
         for (TipoEstrategiaRecomendacion estrategia : TipoEstrategiaRecomendacion.values()) {
             paso(bruno, "pide recomendaciones por " + estrategia, false,
-                    () -> app.getRecomendacionController().recomendar(estrategia),
-                    lista -> listar(lista.stream().limit(3).toList(), Formato::publicacion,
-                            lista.size() + " recomendación(es), se muestran hasta 3"));
+                    () -> app.getRecomendacionController().recomendar(estrategia, PaginaRequest.de(0, 3)),
+                    pagina -> listar(pagina.contenido(), Formato::publicacion,
+                            pagina.totalElementos() + " recomendación(es), se muestran hasta 3"));
         }
     }
 
@@ -228,8 +228,8 @@ public final class DemoFlujoPrincipal {
         paso(bruno, "consulta su reputación", false, () -> app.getPerfilController().miPerfil(),
                 p -> "reputación %.1f (%d calificación(es))".formatted(p.reputacion(), p.cantidadCalificaciones()));
         paso(bruno, "revisa el historial de estados de la contratación #" + contratacionPrincipal, false,
-                () -> app.getContratacionController().historial(contratacionPrincipal),
-                h -> listar(h, Formato::historial, h.size() + " transición(es)"));
+                () -> app.getContratacionController().historial(contratacionPrincipal, PAGINA),
+                h -> listar(h.contenido(), Formato::historial, h.totalElementos() + " transición(es)"));
         for (Actor actor : List.of(ana, bruno)) {
             paso(actor, "revisa su bandeja de notificaciones", false,
                     () -> app.getNotificacionController().listar(false, PaginaRequest.de(0, 50)),

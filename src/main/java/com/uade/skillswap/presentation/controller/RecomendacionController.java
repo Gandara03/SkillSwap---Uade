@@ -4,11 +4,11 @@ import com.uade.skillswap.application.dto.PublicacionResumenDto;
 import com.uade.skillswap.application.port.in.RecomendacionUseCase;
 import com.uade.skillswap.application.port.in.SesionUseCase;
 import com.uade.skillswap.application.recomendacion.TipoEstrategiaRecomendacion;
+import com.uade.skillswap.domain.query.Pagina;
+import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
-import java.util.List;
-
-/** Adaptador delgado: recomienda para el usuario con sesion iniciada. */
+/** Adaptador delgado: valida la entrada y recomienda para el usuario con sesion iniciada. */
 public class RecomendacionController implements IRecomendacionController {
 
     private final RecomendacionUseCase recomendaciones;
@@ -20,7 +20,12 @@ public class RecomendacionController implements IRecomendacionController {
     }
 
     @Override
-    public Resultado<List<PublicacionResumenDto>> recomendar(TipoEstrategiaRecomendacion estrategia) {
-        return Ejecucion.conActor(sesion, actor -> recomendaciones.recomendar(actor, estrategia));
+    public Resultado<Pagina<PublicacionResumenDto>> recomendar(TipoEstrategiaRecomendacion estrategia,
+                                                              PaginaRequest pagina) {
+        // la estrategia es opcional: sin estrategia, la factory usa AFINIDAD
+        return Ejecucion.conActor(sesion, actor -> {
+            ValidadorEntrada.exigirPagina(pagina);
+            return recomendaciones.recomendar(actor, estrategia, pagina);
+        });
     }
 }

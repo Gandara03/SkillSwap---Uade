@@ -257,8 +257,11 @@ public class ContratacionService implements ContratacionUseCase {
     }
 
     @Override
-    public List<HistorialDto> historial(Long actorId, Long contratacionId) {
-        return Mapeador.historial(cargarComoParticipante(actorId, contratacionId).getHistorial());
+    public Pagina<HistorialDto> historial(Long actorId, Long contratacionId, PaginaRequest pagina) {
+        Entradas.exigirPagina(pagina);
+        // el historial viene completo con el agregado (que igual se carga para validar al participante)
+        return Pagina.recortar(Mapeador.historial(cargarComoParticipante(actorId, contratacionId).getHistorial()),
+                pagina);
     }
 
     @Override

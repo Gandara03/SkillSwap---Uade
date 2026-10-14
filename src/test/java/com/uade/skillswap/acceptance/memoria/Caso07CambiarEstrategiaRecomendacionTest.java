@@ -59,8 +59,8 @@ class Caso07CambiarEstrategiaRecomendacionTest {
         Escenario s = armar();
         RecomendacionUseCase recomendador = s.e().app.recomendacionUseCase; // un unico consumidor
 
-        List<Long> porAfinidad = ids(recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.AFINIDAD));
-        List<Long> porPopularidad = ids(recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.POPULARIDAD));
+        List<Long> porAfinidad = ids(recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.AFINIDAD, s.e().primeraPagina()).contenido());
+        List<Long> porPopularidad = ids(recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.POPULARIDAD, s.e().primeraPagina()).contenido());
 
         assertEquals(List.of(s.javaAFondo().id(), s.backend().id()), porAfinidad, "primero la que mas coincide con sus intereses");
         assertEquals(List.of(s.backend().id(), s.javaAFondo().id()), porPopularidad, "primero la mas contratada");
@@ -73,9 +73,9 @@ class Caso07CambiarEstrategiaRecomendacionTest {
         Escenario s = armar();
         RecomendacionUseCase recomendador = s.e().app.recomendacionUseCase;
 
-        List<Long> primera = ids(recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.AFINIDAD));
-        recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.POPULARIDAD);
-        List<Long> segunda = ids(recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.AFINIDAD));
+        List<Long> primera = ids(recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.AFINIDAD, s.e().primeraPagina()).contenido());
+        recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.POPULARIDAD, s.e().primeraPagina()).contenido();
+        List<Long> segunda = ids(recomendador.recomendar(s.dario().id(), TipoEstrategiaRecomendacion.AFINIDAD, s.e().primeraPagina()).contenido());
 
         assertEquals(primera, segunda);
     }
@@ -86,7 +86,7 @@ class Caso07CambiarEstrategiaRecomendacionTest {
         Escenario s = armar();
 
         PublicacionResumenDto primera = s.e().app.recomendacionUseCase
-                .recomendar(s.dario().id(), TipoEstrategiaRecomendacion.POPULARIDAD).get(0);
+                .recomendar(s.dario().id(), TipoEstrategiaRecomendacion.POPULARIDAD, s.e().primeraPagina()).contenido().get(0);
 
         assertEquals("Charla de backend", primera.titulo());
         assertEquals("Ana", primera.autorNombre());

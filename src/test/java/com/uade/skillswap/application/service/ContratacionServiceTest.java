@@ -588,7 +588,7 @@ class ContratacionServiceTest {
         ContratacionDto completada = e.completada(bruno, ana, publicada, 0);
 
         assertThrows(NoAutorizadoException.class, () -> app.contratacionUseCase.comprobante(dario.id(), completada.id()));
-        assertThrows(NoAutorizadoException.class, () -> app.contratacionUseCase.historial(dario.id(), completada.id()));
+        assertThrows(NoAutorizadoException.class, () -> app.contratacionUseCase.historial(dario.id(), completada.id(), PaginaRequest.de(0, 10)));
         assertThrows(NoAutorizadoException.class, () -> app.contratacionUseCase.obtener(dario.id(), completada.id()));
     }
 
@@ -598,7 +598,7 @@ class ContratacionServiceTest {
         PublicacionDto publicada = e.publicada(ana);
         ContratacionDto completada = e.completada(bruno, ana, publicada, 0);
 
-        List<HistorialDto> historial = app.contratacionUseCase.historial(bruno.id(), completada.id());
+        List<HistorialDto> historial = app.contratacionUseCase.historial(bruno.id(), completada.id(), PaginaRequest.de(0, 10)).contenido();
 
         assertEquals(List.of("PENDIENTE", "ACEPTADA", "CONFIRMADA", "EN_CURSO", "COMPLETADA"),
                 historial.stream().map(HistorialDto::estadoNuevo).toList());
@@ -606,7 +606,22 @@ class ContratacionServiceTest {
         assertEquals("PENDIENTE", historial.get(1).estadoAnterior());
         assertEquals(List.of(bruno.id(), ana.id(), bruno.id(), ana.id(), ana.id()),
                 historial.stream().map(HistorialDto::actorId).toList());
-        assertEquals(historial, app.contratacionUseCase.historial(ana.id(), completada.id()));
+        assertEquals(historial, app.contratacionUseCase.historial(ana.id(), completada.id(), PaginaRequest.de(0, 10)).contenido());
+    }
+
+    @Test
+    @DisplayName("el historial se pagina en orden cronologico y exige la pagina")
+    void historialPaginado() {
+        PublicacionDto publicada = e.publicada(ana);
+        ContratacionDto completada = e.completada(bruno, ana, publicada, 0);
+
+        Pagina<HistorialDto> primera = app.contratacionUseCase.historial(bruno.id(), completada.id(), PaginaRequest.de(0, 2));
+        Pagina<HistorialDto> ultima = app.contratacionUseCase.historial(bruno.id(), completada.id(), PaginaRequest.de(2, 2));
+
+        assertEquals(List.of("PENDIENTE", "ACEPTADA"), primera.contenido().stream().map(HistorialDto::estadoNuevo).toList());
+        assertEquals(5L, primera.totalElementos());
+        assertEquals(List.of("COMPLETADA"), ultima.contenido().stream().map(HistorialDto::estadoNuevo).toList());
+        assertThrows(ValidacionException.class, () -> app.contratacionUseCase.historial(bruno.id(), completada.id(), null));
     }
 
     @Test

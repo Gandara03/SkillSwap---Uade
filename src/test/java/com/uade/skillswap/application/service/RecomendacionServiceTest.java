@@ -13,6 +13,8 @@ import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.domain.model.politica.ConfiguracionCancelacion;
 import com.uade.skillswap.application.recomendacion.TipoEstrategiaRecomendacion;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
+import com.uade.skillswap.domain.query.Pagina;
+import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.support.AplicacionEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,12 +24,15 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("RecomendacionService: Strategy intercambiable por parametro sobre el mismo servicio")
 class RecomendacionServiceTest {
+
+    private static final PaginaRequest TODAS = PaginaRequest.de(0, 20);
 
     private Escenario e;
     private AplicacionEnMemoria app;
@@ -60,7 +65,7 @@ class RecomendacionServiceTest {
     }
 
     private List<String> titulos(PerfilDto actor, TipoEstrategiaRecomendacion estrategia) {
-        return app.recomendacionUseCase.recomendar(actor.id(), estrategia).stream().map(PublicacionResumenDto::titulo).toList();
+        return app.recomendacionUseCase.recomendar(actor.id(), estrategia, TODAS).contenido().stream().map(PublicacionResumenDto::titulo).toList();
     }
 
     /** Califica al autor con un cliente, sobre una publicacion aparte que luego se cierra (para no alterar el catalogo). */
@@ -136,14 +141,14 @@ class RecomendacionServiceTest {
         chico.publicada(autora, chico.oferta().titulo("Uno").habilidades("java"));
         chico.publicada(autora, chico.oferta().titulo("Dos").habilidades("java"));
 
-        assertEquals(1, chico.app.recomendacionUseCase.recomendar(cliente.id(), TipoEstrategiaRecomendacion.POPULARIDAD).size());
-        assertEquals(1, chico.app.recomendacionUseCase.recomendar(cliente.id(), TipoEstrategiaRecomendacion.AFINIDAD).size());
+        assertEquals(1L, chico.app.recomendacionUseCase.recomendar(cliente.id(), TipoEstrategiaRecomendacion.POPULARIDAD, TODAS).totalElementos());
+        assertEquals(1L, chico.app.recomendacionUseCase.recomendar(cliente.id(), TipoEstrategiaRecomendacion.AFINIDAD, TODAS).totalElementos());
     }
 
     @Test
     @DisplayName("las filas traen autor, reputacion y precio final listos para mostrar")
     void filasCompletas() {
-        PublicacionResumenDto fila = app.recomendacionUseCase.recomendar(cecilia.id(), TipoEstrategiaRecomendacion.AFINIDAD).get(0);
+        PublicacionResumenDto fila = app.recomendacionUseCase.recomendar(cecilia.id(), TipoEstrategiaRecomendacion.AFINIDAD, TODAS).contenido().get(0);
 
         assertEquals("Ana", fila.autorNombre());
         assertEquals(ana.id(), fila.autorId());
@@ -167,8 +172,29 @@ class RecomendacionServiceTest {
     void actorInvalido() {
         app.perfilUseCase.darDeBaja(dario.id());
 
-        assertThrows(NoAutorizadoException.class, () -> app.recomendacionUseCase.recomendar(dario.id(), TipoEstrategiaRecomendacion.AFINIDAD));
-        assertThrows(RecursoNoEncontradoException.class, () -> app.recomendacionUseCase.recomendar(999L, TipoEstrategiaRecomendacion.AFINIDAD));
-        assertThrows(ValidacionException.class, () -> app.recomendacionUseCase.recomendar(null, TipoEstrategiaRecomendacion.AFINIDAD));
+        assertThrows(NoAutorizadoException.class, () -> app.recomendacionUseCase.recomendar(dario.id(), TipoEstrategiaRecomendacion.AFINIDAD, TODAS));
+        assertThrows(RecursoNoEncontradoException.class, () -> app.recomendacionUseCase.recomendar(999L, TipoEstrategiaRecomendacion.AFINIDAD, TODAS));
+        assertThrows(ValidacionException.class, () -> app.recomendacionUseCase.recomendar(null, TipoEstrategiaRecomendacion.AFINIDAD, TODAS));
+    }
+
+    @Test
+    @DisplayName("el ranking se pagina: cada pagina trae su parte en orden y el total es el del ranking")
+    void rankingPaginado() {
+        PerfilDto sinIntereses = e.registrar("u-nuevo", "Nuevo", TipoPerfil.PROFESIONAL, CanalNotificacion.INTERNA, Set.of(), Set.of("cocina"));
+
+        Pagina<PublicacionResumenDto> primera = app.recomendacionUseCase.recomendar(sinIntereses.id(), TipoEstrategiaRecomendacion.POPULARIDAD, PaginaRequest.de(0, 3));
+        Pagina<PublicacionResumenDto> segunda = app.recomendacionUseCase.recomendar(sinIntereses.id(), TipoEstrategiaRecomendacion.POPULARIDAD, PaginaRequest.de(1, 3));
+
+        assertEquals(List.of("SQL", "Java", "Kotlin"), primera.contenido().stream().map(PublicacionResumenDto::titulo).toList());
+        assertEquals(4L, primera.totalElementos());
+        assertTrue(primera.tieneSiguiente());
+        assertEquals(List.of("Mi propia mentoria"), segunda.contenido().stream().map(PublicacionResumenDto::titulo).toList());
+        assertFalse(segunda.tieneSiguiente());
+    }
+
+    @Test
+    @DisplayName("recomendar sin pagina es un error de validacion")
+    void sinPagina() {
+        assertThrows(ValidacionException.class, () -> app.recomendacionUseCase.recomendar(cecilia.id(), TipoEstrategiaRecomendacion.AFINIDAD, null));
     }
 }

@@ -125,7 +125,8 @@ public class MenuConsola {
         }
         TipoEstrategiaRecomendacion estrategia = "2".equals(tipo.trim())
                 ? TipoEstrategiaRecomendacion.POPULARIDAD : TipoEstrategiaRecomendacion.AFINIDAD;
-        mostrarLista(recomendaciones.recomendar(estrategia), "No hay recomendaciones por ahora.");
+        mostrarLista(recomendaciones.recomendar(estrategia, PAGINA).mapear(p -> p.contenido()),
+                "No hay recomendaciones por ahora.");
     }
 
     private void misContrataciones() {

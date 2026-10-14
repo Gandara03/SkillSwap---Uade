@@ -47,7 +47,7 @@ class Caso07CambiarEstrategiaRecomendacionJpaTest extends AceptacionJpaBase {
 
     private List<Long> recomendar(TipoEstrategiaRecomendacion estrategia) {
         como("u-bruno");
-        return ok(app.getRecomendacionController().recomendar(estrategia)).stream()
+        return ok(app.getRecomendacionController().recomendar(estrategia, primeraPagina())).contenido().stream()
                 .map(PublicacionResumenDto::id).toList();
     }
 

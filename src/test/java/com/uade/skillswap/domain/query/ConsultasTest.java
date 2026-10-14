@@ -50,6 +50,28 @@ class ConsultasTest {
     }
 
     @Test
+    @DisplayName("Pagina.recortar corta una lista ordenada: primera pagina, ultima incompleta y fuera de rango")
+    void recortar() {
+        List<Integer> ordenados = List.of(1, 2, 3, 4, 5);
+
+        Pagina<Integer> primera = Pagina.recortar(ordenados, PaginaRequest.de(0, 2));
+        assertEquals(List.of(1, 2), primera.contenido());
+        assertEquals(5L, primera.totalElementos());
+        assertTrue(primera.tieneSiguiente());
+
+        Pagina<Integer> ultima = Pagina.recortar(ordenados, PaginaRequest.de(2, 2));
+        assertEquals(List.of(5), ultima.contenido());
+        assertEquals(2, ultima.pagina());
+        assertFalse(ultima.tieneSiguiente());
+
+        Pagina<Integer> afuera = Pagina.recortar(ordenados, PaginaRequest.de(7, 2));
+        assertTrue(afuera.contenido().isEmpty());
+        assertEquals(5L, afuera.totalElementos(), "una pagina fuera de rango igual informa el total");
+
+        assertEquals(0L, Pagina.recortar(List.<Integer>of(), PaginaRequest.de(0, 10)).totalElementos());
+    }
+
+    @Test
     @DisplayName("FiltroBusqueda.vacio no filtra y ordena por RECIENTES; orden nulo equivale a RECIENTES")
     void filtro() {
         FiltroBusqueda f = FiltroBusqueda.vacio();

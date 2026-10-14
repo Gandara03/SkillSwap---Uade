@@ -11,8 +11,6 @@ import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
-import java.util.List;
-
 /** Adaptador delgado: cada metodo valida la entrada y delega en ContratacionUseCase con el actor de la sesion. */
 public class ContratacionController implements IContratacionController {
 
@@ -118,10 +116,11 @@ public class ContratacionController implements IContratacionController {
     }
 
     @Override
-    public Resultado<List<HistorialDto>> historial(Long contratacionId) {
+    public Resultado<Pagina<HistorialDto>> historial(Long contratacionId, PaginaRequest pagina) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
-            return contrataciones.historial(actor, contratacionId);
+            ValidadorEntrada.exigirPagina(pagina);
+            return contrataciones.historial(actor, contratacionId, pagina);
         });
     }
 

@@ -11,6 +11,7 @@ import com.uade.skillswap.domain.exception.FranjaNoDisponibleException;
 import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
 import com.uade.skillswap.domain.exception.TransicionInvalidaException;
 import com.uade.skillswap.domain.model.contratacion.TipoEventoContratacion;
+import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.support.AplicacionEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -283,7 +284,7 @@ class ContratacionReprogramacionServiceTest {
         app.contratacionUseCase.proponerReprogramacion(bruno.id(), aceptada.id(), franja(1));
         app.contratacionUseCase.responderReprogramacion(ana.id(), aceptada.id(), true);
 
-        var historial = app.contratacionUseCase.historial(bruno.id(), aceptada.id());
+        var historial = app.contratacionUseCase.historial(bruno.id(), aceptada.id(), PaginaRequest.de(0, 20)).contenido();
 
         List<String> motivos = historial.stream().map(h -> h.motivo()).toList();
         assertTrue(motivos.contains("Reprogramacion propuesta"));

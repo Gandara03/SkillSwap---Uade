@@ -9,8 +9,6 @@ import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
-import java.util.List;
-
 /** Contrato de la UI para el ciclo de vida de una contratacion. */
 public interface IContratacionController {
 
@@ -36,7 +34,7 @@ public interface IContratacionController {
 
     Resultado<ComprobanteDto> comprobante(Long contratacionId);
 
-    Resultado<List<HistorialDto>> historial(Long contratacionId);
+    Resultado<Pagina<HistorialDto>> historial(Long contratacionId, PaginaRequest pagina);
 
     Resultado<Pagina<ContratacionDto>> misContrataciones(PaginaRequest pagina);
 }

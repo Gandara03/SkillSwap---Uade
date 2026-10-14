@@ -51,7 +51,7 @@ class Caso03SolicitarAceptarYPagarJpaTest extends AceptacionJpaBase {
         assertEquals(TipoMovimiento.PAGO, ultimo.tipo());
         assertEquals(0, sc(40).compareTo(ultimo.monto()));
         assertEquals(0, sc(60).compareTo(ultimo.saldoResultante()));
-        List<String> destinos = ok(app.getContratacionController().historial(solicitud.id())).stream()
+        List<String> destinos = ok(app.getContratacionController().historial(solicitud.id(), primeraPagina())).contenido().stream()
                 .map(h -> h.estadoNuevo()).toList();
         assertEquals(List.of("PENDIENTE", "ACEPTADA", "CONFIRMADA"), destinos);
         assertEquals(ana.id(), pagada.proveedorId());
