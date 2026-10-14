@@ -3,11 +3,31 @@
 Marketplace de talento, mentorías y proyectos. Java 17, Clean Architecture, Hibernate/JPA + MySQL, Flyway, JUnit 5. **Sin Spring.**
 Los profesionales publican mentorías o servicios, las organizaciones publican desafíos y todo se paga con créditos ficticios (**SkillCoins**).
 
-> **Leé esto primero (estado honesto de la verificación).**
-> En el entorno donde se generó este proyecto Maven Central estaba bloqueado, así que **nunca se corrió `mvn verify`** ni se ejecutó nada contra Hibernate, H2, Flyway o MySQL reales.
-> Lo que sí se verificó: todo el código **compila** (JDK 17) contra stubs de la API de `jakarta.persistence`/Flyway/slf4j, y **481 tests** (dominio, aplicación, adapters, los 10 casos de aceptación en memoria) **pasan** con un runner de JUnit casero.
-> Lo que **no** se pudo ejecutar: los 86 tests JPA (`infrastructure/persistence/jpa/**`) y los 22 tests de aceptación sobre JPA/H2 (`acceptance/jpa/**`), el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` y todas las consultas JPQL.
-> **Tu primer paso es correr `mvn verify` en tu máquina** (sección 2). Si algo del mapeo JPA falla, es esperable: la sección 9 lista los puntos de riesgo y dónde mirar.
+## Estado
+
+`mvnw verify` pasa completo: **589 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+
+| Grupo de tests | Carpeta | Tests |
+|---|---|---|
+| Dominio | `domain/**` | 168 |
+| Aplicación | `application/**` | 234 |
+| Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 45 |
+| Persistencia JPA | `infrastructure/persistence/jpa/**` | 86 |
+| Aceptación en memoria | `acceptance/memoria/**` | 34 |
+| Aceptación sobre JPA/H2 | `acceptance/jpa/**` | 22 |
+
+Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación):
+
+| Capa | Líneas | Ramas |
+|---|---|---|
+| `domain` | 99,3 % | 95,8 % |
+| `application` | 99,5 % | 93,6 % |
+| `infrastructure` | 92,3 % | 85,0 % |
+| `presentation` | 33,9 % | 18,5 % |
+| `bootstrap` y `Main` | 14,6 % | 0,0 % |
+| **Total** | **83,6 %** | **78,2 %** |
+
+`presentation` y `bootstrap` se ejercitan con la demo (sección 2), no con tests. El camino contra MySQL real (`--mysql`) no forma parte de `verify`.
 
 ---
 
@@ -17,7 +37,9 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 skillswap/
 ├── pom.xml                      Java 17 · Hibernate 6.5.2 · MySQL 9.0.0 · Flyway 10.17 · H2 2.2 · JUnit 5.10 · JaCoCo
 ├── README.md                    este archivo
-├── docs/CONTRATO_TECNICO.md     reglas de trabajo entre paquetes (útil si seguís con varios agentes)
+├── mvnw, mvnw.cmd, .mvn/        Maven Wrapper (descarga Maven 3.9.16; no hace falta tener Maven instalado)
+├── Diagrama UML.mdj             diagrama de clases (StarUML)
+├── Informe_SkillSwap.pdf        informe de decisiones de diseño
 └── src/
     ├── main/java/com/uade/skillswap/
     │   ├── domain/              entidades, VOs, State, Observer (interfaces + evento), historial
@@ -31,21 +53,37 @@ skillswap/
     └── test/java/               domain · application · infrastructure · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 215 clases de producción, 83 de test, ~10.6 mil líneas de código y ~12.3 mil de tests.
+Números: 215 clases de producción, 83 clases de test (589 tests), ~10.6 mil líneas de código y ~12.3 mil de tests.
 
 ---
 
 ## 2. Cómo ejecutar
 
-Requisitos: JDK 17+, Maven 3.9+. MySQL 8/9 **solo** si querés correr contra MySQL (para todo lo demás alcanza H2 en memoria).
+Requisitos: JDK 17 o superior. No hace falta instalar Maven: el wrapper (`mvnw` / `mvnw.cmd`) descarga Maven 3.9.16 la primera vez. MySQL 8/9 solo para correr contra MySQL; para todo lo demás alcanza H2 en memoria.
+
+`exec:java` no compila por su cuenta, por eso los comandos de la demo llevan `compile` adelante.
+
+**Linux, macOS o Git Bash:**
 
 ```bash
-mvn verify                                  # compila, corre TODOS los tests (incluye JPA/H2 y aceptación) y genera cobertura JaCoCo
-open target/site/jacoco/index.html          # cobertura (meta sugerida de la consigna: 80 % en dominio y aplicación)
+./mvnw verify                                        # compila, corre TODOS los tests (incluye JPA/H2 y aceptación) y genera cobertura JaCoCo
+open target/site/jacoco/index.html                   # reporte de cobertura (en Linux: xdg-open)
 
-mvn exec:java -Dexec.args="--h2"            # demo completa sobre H2 en memoria (no necesita MySQL)
-mvn exec:java -Dexec.args="--h2 --menu"     # demo y después menú de consola (login por userId: u-ana, u-bruno, u-cecilia, u-techcorp)
-mvn exec:java -Dexec.args="--sin-demo --menu"
+./mvnw compile exec:java -Dexec.args="--h2"          # demo completa sobre H2 en memoria (no necesita MySQL)
+./mvnw compile exec:java -Dexec.args="--h2 --menu"   # demo y después menú de consola (login por userId: u-ana, u-bruno, u-cecilia, u-techcorp)
+./mvnw compile exec:java -Dexec.args="--sin-demo --menu"
+```
+
+**Windows (PowerShell):** los argumentos `-D…` van completos entre comillas, porque PowerShell los corta en el punto. Antes de la demo conviene correr `chcp 65001` en la consola para que se vean bien los acentos.
+
+```powershell
+.\mvnw.cmd verify
+start target\site\jacoco\index.html
+
+chcp 65001
+.\mvnw.cmd compile exec:java "-Dexec.args=--h2"
+.\mvnw.cmd compile exec:java "-Dexec.args=--h2 --menu"
+.\mvnw.cmd compile exec:java "-Dexec.args=--sin-demo --menu"
 ```
 
 **MySQL real:**
@@ -54,11 +92,18 @@ mvn exec:java -Dexec.args="--sin-demo --menu"
 export SKILLSWAP_DB_URL="jdbc:mysql://localhost:3306/skillswap?createDatabaseIfNotExist=true&serverTimezone=UTC"
 export SKILLSWAP_DB_USER=root
 export SKILLSWAP_DB_PASSWORD=tu_clave
-mvn exec:java -Dexec.args="--mysql"
+./mvnw compile exec:java -Dexec.args="--mysql"
+```
+
+```powershell
+$env:SKILLSWAP_DB_URL = "jdbc:mysql://localhost:3306/skillswap?createDatabaseIfNotExist=true&serverTimezone=UTC"
+$env:SKILLSWAP_DB_USER = "root"
+$env:SKILLSWAP_DB_PASSWORD = "tu_clave"
+.\mvnw.cmd compile exec:java "-Dexec.args=--mysql"
 ```
 
 Flyway crea/actualiza el esquema al arrancar. Hibernate corre con `hbm2ddl=validate` (nunca `create`/`update`). Con `SKILLSWAP_SHOW_SQL=true` se imprimen las sentencias.
-La demo no es repetible sobre la misma base MySQL (los saldos y cupos ya fueron consumidos); para repetirla usá `--h2` o una base nueva.
+La demo no es repetible sobre la misma base MySQL (los saldos y cupos ya fueron consumidos); para repetirla, usar `--h2` o una base nueva.
 
 **Qué imprime la demo** (`DemoFlujoPrincipal`): publicar → solicitar → aceptar → pagar → iniciar → completar → calificar, mostrando actor, estado y saldos de cada paso; una cancelación con reintegro parcial (reintegro + compensación al proveedor); un pago con saldo insuficiente como error controlado; y reputación final.
 
@@ -78,7 +123,7 @@ presentation ──▶ application (port/in) ──▶ domain ◀── applicat
 | **Infraestructura** | `JpaContexto`, `BaseDeDatos`, `JpaTransaccionAdapter`, entidades `*JpaEntity` + mappers + 7 repositorios JPA, `IdentidadMockAdapter`, `Email/Push/InternaCanalAdapter`, `CanalNotificacionFactoryImpl`, `RelojSistema`, Flyway | Decisiones de negocio |
 | **Presentación** | 8 interfaces `I*Controller` y sus implementaciones, `Resultado<T>`, `ManejadorErrores`, `MenuConsola` | Persistencia y reglas de negocio |
 
-Reglas que se respetan (y que podés verificar con un `grep` de imports): `domain` no importa nada de las otras capas ni `jakarta.persistence`; `application` solo importa `domain`; `presentation` solo usa `port/in`, DTOs, commands, `domain.query` y enums; el compositor `bootstrap/Composicion` es el único lugar que conoce todas las capas.
+Reglas que se respetan (verificables con un `grep` de imports): `domain` no importa nada de las otras capas ni `jakarta.persistence`; `application` solo importa `domain`; `presentation` solo usa `port/in`, DTOs, commands, `domain.query` y enums; el compositor `bootstrap/Composicion` es el único lugar que conoce todas las capas.
 
 **Diseño clave:**
 
@@ -130,7 +175,7 @@ PromocionDecorator ..|> PrecioPublicacion
 PromocionDecorator o-- PrecioPublicacion
 ```
 
-Notas de importación a StarUML (aprendidas con el diagrama del Envío): poner multiplicidades en ambos extremos, las interfaces con *Stereotype Display = Icon*, evitar genéricos de varios parámetros, y armar a mano los paquetes de capas.
+Notas de importación a StarUML: poner multiplicidades en ambos extremos, las interfaces con *Stereotype Display = Icon*, evitar genéricos de varios parámetros, y armar a mano los paquetes de capas.
 
 ---
 
@@ -163,43 +208,54 @@ Descartados a propósito (justificar en el informe): **Composite** (no hay jerar
 
 ## 6. Matriz de la consigna (secciones 4.1 a 15)
 
-Estado: ✅ implementado y verificado con el arnés local · 🟡 implementado pero **no ejecutado** contra JPA/MySQL reales · ⬜ pendiente (no se puede hacer desde el código).
+Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión en el repo, falta revisarla o completarla · ⬜ pendiente (fuera del código).
 
-| Sec. | Requisito | Estado | Dónde / evidencia | Qué te toca hacer |
-|---|---|---|---|---|
-| 4.1 | Registrar perfil con `userId` de identidad externa | ✅ | `PerfilService.registrar`, `IdentidadPort` | Nada; explicalo en la defensa |
-| 4.1 | Nombre, bio, zona horaria, habilidades, intereses, disponibilidad | ✅ | `Perfil.actualizarDatos`, `ActualizarPerfilCommand` | — |
-| 4.1 | Perfil público con reputación, publicaciones activas e **historial resumido** | ✅ (interpretación) | `PerfilPublicoDto`: reputación + últimas calificaciones + publicaciones activas | Decidir si "historial resumido" exige también contrataciones completadas; si sí, sumar contador (necesita `ContratacionRepository` en `PerfilService`) |
-| 4.1 | Reputación recalculada desde calificaciones verificadas, no editable | ✅ | `Perfil.recalcularReputacion` (sin setter), `CalificacionService` | — |
-| 4.2 | Mentoría/servicio (profesional) y desafío (organización) con todos los campos | ✅ | `Publicacion.crearBorrador`, `TipoPerfil` | — |
-| 4.2 | 5 estados + transiciones inválidas rechazadas + publicar exige título, categoría, precio ≥ 0 y franja | ✅ | `publicacion/estado/*`, `validarCompletaParaPublicar` | — |
-| 4.3 | Buscar por texto, categoría, modalidad, rango de precio, habilidad, reputación mínima | ✅ / 🟡 | `FiltroBusqueda`; JPQL en `JpaPublicacionRepository` (🟡) | Correr `JpaBusquedaPublicacionTest` |
-| 4.3 | Ordenar por relevancia, reputación, menor precio, más reciente | ✅ / 🟡 | `CriterioOrden` (`RELEVANCIA`, `REPUTACION`, `PRECIO_ASC`, `PRECIO_DESC`, `RECIENTES`) | Definir si querés una relevancia más rica (hoy: título > reputación > fecha) |
-| 4.3 | ≥ 2 estrategias de recomendación intercambiables | ✅ | `RecomendacionPorAfinidad`, `RecomendacionPorPopularidad` | "Popularidad reciente": hoy usa cupo ocupado + reputación; evaluar si agregar ventana temporal |
-| 4.3 | Paginar todos los listados | ✅ | `Pagina`/`PaginaRequest` en cada listado | — |
-| 4.4 | Solicitar, aceptar/rechazar (reserva + cupo transaccional), pagar sin saldo negativo ni doble cobro | ✅ / 🟡 | `ContratacionService`, `Wallet`, casos 3, 4, 5 | Correr casos 3-5 sobre JPA |
-| 4.4 | Reprogramar antes de comenzar si ambas partes aceptan | ✅ | `proponerReprogramacion`/`responderReprogramacion` | — |
-| 4.4 | Calificación por cada parte, nadie se califica a sí mismo | ✅ | `Calificacion.registrar`, caso 10 | — |
-| 4.5 | Tabla de estados de contratación | ✅ | `contratacion/estado/*` | — |
-| 4.6 | Notificar los 6 eventos; email/push/interna por usuario; proveedores simulados detrás de interfaces | ✅ | `NotificadorObserver`, adapters, factory | — |
-| 5 | Reglas mínimas (autor no solicita lo propio, publicación no publicada no admite solicitudes, franja/cupo, débito+crédito atómico, reintegro 100/50/0, promociones sin total negativo, calificar una vez, historial inmutable, baja lógica, permisos) | ✅ | tests por regla en `domain/**` y `application/**` | — |
-| 6 | Clean Architecture con la separación pedida | ✅ | sección 3 | Dibujar el diagrama de capas en el informe |
-| 7 | ≥ 4 patrones, justificados y con pruebas | ✅ | sección 4 | Escribir la justificación en el informe (problema, alternativa, consecuencias, evidencia) |
-| 8 | Persistir todas las entidades pedidas, unicidad e índices | 🟡 | `V1__esquema.sql`, entidades | Correr `mvn verify` y mirar `hbm2ddl=validate` |
-| 8 | Migraciones Flyway, sin `create` | 🟡 | `BaseDeDatos`, `V1__esquema.sql` | Idem |
-| 8 | Límites transaccionales | ✅ / 🟡 | sección 5 | — |
-| 8 | Evitar N+1 y justificar fetch plans | ✅ / 🟡 | sección 5 | Justificarlo en el informe; opcional: test que cuente sentencias SQL |
-| 8 | Datos de demostración reproducibles | ✅ / 🟡 | `DatosDemo`, `Main --h2` | — |
-| 8 | Optimistic locking contra sobreventa | 🟡 | `@Version`, caso 4 JPA (concurrente) | Correr `Caso04UltimoCupoJpaTest`; es el test más sensible a H2 |
-| 9 | Controllers delgados, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `Resultado` | Ver nota de nombres abajo |
-| 10 | Mock UI Kit conectado por interfaces | ⬜ | `I*Controller` son el contrato | **Pedir el Mock UI Kit a la cátedra** y ajustar las firmas de las interfaces a las suyas (es lo único que probablemente cambie) |
-| 11 | Entregas incrementales | ⬜ | — | Planificar con el equipo |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ / 🟡 | 481 tests locales + 108 JPA/H2 sin ejecutar | `mvn verify`; revisar JaCoCo (meta 80 %) |
-| 12 | README reproducible | ✅ | este archivo | Ajustarlo si cambian comandos |
-| 13 | Diagrama de clases en StarUML | ⬜ | Mermaid de la sección 3 como base | Armarlo en StarUML con multiplicidades y patrones marcados |
-| 13 | Informe PDF de decisiones | ⬜ | secciones 3-5 y 8 de este README como insumo | Escribirlo (problema, alternativa, consecuencias, evidencia) |
-| 13 | Demo en vivo del recorrido principal | ✅ / 🟡 | `mvn exec:java -Dexec.args="--h2"` | Ensayarla |
-| 15 | **10 casos de aceptación** | ✅ memoria / 🟡 JPA | `acceptance/memoria/Caso01…Caso10`, `acceptance/jpa/Caso01…Caso10…JpaTest` | Correr ambos juegos |
+| Sec. | Requisito | Estado | Dónde / evidencia |
+|---|---|---|---|
+| 4.1 | Registrar perfil con `userId` de identidad externa | ✅ | `PerfilService.registrar`, `IdentidadPort` |
+| 4.1 | Nombre, bio, zona horaria, habilidades, intereses, disponibilidad | ✅ | `Perfil.actualizarDatos`, `ActualizarPerfilCommand` |
+| 4.1 | Perfil público con reputación, publicaciones activas e **historial resumido** | ✅ (interpretación, ver pendientes) | `PerfilPublicoDto`: reputación + últimas calificaciones + publicaciones activas |
+| 4.1 | Reputación recalculada desde calificaciones verificadas, no editable | ✅ | `Perfil.recalcularReputacion` (sin setter), `CalificacionService` |
+| 4.2 | Mentoría/servicio (profesional) y desafío (organización) con todos los campos | ✅ | `Publicacion.crearBorrador`, `TipoPerfil` |
+| 4.2 | 5 estados + transiciones inválidas rechazadas + publicar exige título, categoría, precio ≥ 0 y franja | ✅ | `publicacion/estado/*`, `validarCompletaParaPublicar` |
+| 4.3 | Buscar por texto, categoría, modalidad, rango de precio, habilidad, reputación mínima | ✅ | `FiltroBusqueda`; JPQL en `JpaPublicacionRepository` (`JpaBusquedaPublicacionTest`) |
+| 4.3 | Ordenar por relevancia, reputación, menor precio, más reciente | ✅ | `CriterioOrden` (`RELEVANCIA`, `REPUTACION`, `PRECIO_ASC`, `PRECIO_DESC`, `RECIENTES`) |
+| 4.3 | ≥ 2 estrategias de recomendación intercambiables | ✅ | `RecomendacionPorAfinidad`, `RecomendacionPorPopularidad` |
+| 4.3 | Paginar todos los listados | ✅ | `Pagina`/`PaginaRequest` en cada listado |
+| 4.4 | Solicitar, aceptar/rechazar (reserva + cupo transaccional), pagar sin saldo negativo ni doble cobro | ✅ | `ContratacionService`, `Wallet`, casos 3, 4, 5 (memoria y JPA) |
+| 4.4 | Reprogramar antes de comenzar si ambas partes aceptan | ✅ | `proponerReprogramacion`/`responderReprogramacion` |
+| 4.4 | Calificación por cada parte, nadie se califica a sí mismo | ✅ | `Calificacion.registrar`, caso 10 |
+| 4.5 | Tabla de estados de contratación | ✅ | `contratacion/estado/*` |
+| 4.6 | Notificar los 6 eventos; email/push/interna por usuario; proveedores simulados detrás de interfaces | ✅ | `NotificadorObserver`, adapters, factory |
+| 5 | Reglas mínimas (autor no solicita lo propio, publicación no publicada no admite solicitudes, franja/cupo, débito+crédito atómico, reintegro 100/50/0, promociones sin total negativo, calificar una vez, historial inmutable, baja lógica, permisos) | ✅ | tests por regla en `domain/**` y `application/**` |
+| 6 | Clean Architecture con la separación pedida | ✅ | sección 3 |
+| 7 | ≥ 4 patrones, justificados y con pruebas | ✅ | sección 4 |
+| 8 | Persistir todas las entidades pedidas, unicidad e índices | ✅ | `V1__esquema.sql`, entidades; `hbm2ddl=validate` pasa en cada test JPA |
+| 8 | Migraciones Flyway, sin `create` | ✅ | `BaseDeDatos`, `V1__esquema.sql` |
+| 8 | Límites transaccionales | ✅ | sección 5 |
+| 8 | Evitar N+1 y justificar fetch plans | ✅ | sección 5 |
+| 8 | Datos de demostración reproducibles | ✅ | `DatosDemo`, `Main --h2` |
+| 8 | Optimistic locking contra sobreventa | ✅ | `@Version`, caso 4 sobre JPA con hilos concurrentes (`Caso04UltimoCupoJpaTest`) |
+| 9 | Controllers delgados, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `Resultado` (ver nota de nombres abajo) |
+| 10 | Mock UI Kit conectado por interfaces | ⬜ | `I*Controller` son el contrato |
+| 11 | Entregas incrementales | ⬜ | — |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 589 tests (ver Estado al principio) |
+| 12 | README reproducible | ✅ | este archivo |
+| 13 | Diagrama de clases en StarUML | 🟡 | `Diagrama UML.mdj` (base: Mermaid de la sección 3) |
+| 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
+| 13 | Demo en vivo del recorrido principal | ✅ | `mvnw compile exec:java` con `--h2` (sección 2) |
+| 15 | **10 casos de aceptación** | ✅ | `acceptance/memoria/Caso01…Caso10`, `acceptance/jpa/Caso01…Caso10…JpaTest` |
+
+**Pendientes y puntos abiertos de la matriz:**
+
+- **4.1 Historial resumido:** falta decidir si exige también las contrataciones completadas. En ese caso, sumar un contador (requiere `ContratacionRepository` en `PerfilService`).
+- **4.3 Relevancia:** hoy ordena por título > reputación > fecha; se puede enriquecer.
+- **4.3 Popularidad reciente:** hoy usa cupo ocupado + reputación; evaluar agregar una ventana temporal.
+- **6 y 7 (informe):** dibujar el diagrama de capas y justificar cada patrón (problema, alternativa, consecuencias, evidencia).
+- **8 (informe):** justificar los fetch plans; opcional: un test que cuente sentencias SQL.
+- **10 Mock UI Kit:** pedirlo a la cátedra y ajustar las firmas de las interfaces `I*Controller` a las suyas (es lo único que probablemente cambie).
+- **11 Entregas incrementales:** planificarlas con el equipo.
+- **13:** revisar y completar el diagrama StarUML (multiplicidades y patrones marcados) y el informe; ensayar la demo.
 
 Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (≈ `crearPerfil`), `miPerfil`/`verPerfilPublico(id)` (≈ `verPerfil`) y `cambiarEstado(id, AccionPublicacion, motivo)` además de `publicar/pausar/...`. Son orientativos; se alinean cuando llegue el Mock UI Kit.
 
@@ -220,31 +276,29 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 
 ---
 
-## 7. Trabajo repartido (para varios agentes o para el equipo)
+## 7. Organización del trabajo por módulos
 
-El proyecto se armó contract-first: `domain` + `application/port|command|dto|exception|config` son el contrato; cada paquete de trabajo escribe solo su carpeta. Reglas y constructores exactos en `docs/CONTRATO_TECNICO.md`.
+`domain` y `application/port|command|dto|exception|config` son el contrato entre módulos: cada módulo trabaja en sus carpetas, y un cambio de firma en esos paquetes se acuerda antes con el equipo porque afecta a los demás.
 
-| Paquete | Carpeta(s) | Estado | Próximas tareas |
+| Módulo | Carpeta(s) | Estado | Próximas tareas |
 |---|---|---|---|
 | **A — Servicios** | `application/service`, `application/notificacion`, `application/mapper` | ✅ | Decidir los huecos de la sección 8 (publicación cancelada con contrataciones activas, retiro de solicitud pendiente) |
-| **B — Persistencia** | `infrastructure/persistence/**`, `persistence.xml`, `db/migration` | 🟡 sin ejecutar | Correr tests JPA, corregir mapeo/SQL si `validate` falla, test que cuente sentencias SQL |
-| **C — Presentación y demo** | `presentation/**`, `bootstrap/**`, `Main` | ✅ / 🟡 | Conectar el Mock UI Kit, ajustar firmas `I*Controller` |
-| **D — Adapters y soporte de tests** | `infrastructure/{identidad,notificacion,time}`, `src/test/.../support` | ✅ | Agregar rollback simulado a `TransaccionSimulada` si querés que los fakes reflejen JPA |
-| **E — Tests de aplicación** | `src/test/.../application` | ✅ | Subir cobertura según JaCoCo |
-| **F — Aceptación** | `src/test/.../acceptance` | ✅ memoria / 🟡 JPA | Ejecutar y ajustar `Caso04UltimoCupoJpaTest` (concurrencia) |
-| **G — UML (StarUML)** | fuera del código | ⬜ | Diagrama de dominio + aplicación con multiplicidades y patrones marcados |
-| **H — Informe PDF** | fuera del código | ⬜ | Por decisión: problema, alternativa, consecuencias, evidencia (código/tests) |
+| **B — Persistencia** | `infrastructure/persistence/**`, `persistence.xml`, `db/migration` | ✅ | Probar el camino contra MySQL real; opcional: test que cuente sentencias SQL |
+| **C — Presentación y demo** | `presentation/**`, `bootstrap/**`, `Main` | ✅ | Conectar el Mock UI Kit, ajustar firmas `I*Controller` |
+| **D — Adapters y soporte de tests** | `infrastructure/{identidad,notificacion,time}`, `src/test/.../support` | ✅ | Opcional: rollback simulado en `TransaccionSimulada` para que los fakes reflejen JPA |
+| **E — Tests de aplicación** | `src/test/.../application` | ✅ | Mantener la cobertura al agregar casos (hoy 99,5 % de líneas en `application`) |
+| **F — Aceptación** | `src/test/.../acceptance` | ✅ | Mantener alineados los juegos en memoria y sobre JPA |
+| **G — UML (StarUML)** | `Diagrama UML.mdj` | 🟡 | Revisar que el diagrama de dominio + aplicación tenga multiplicidades y patrones marcados |
+| **H — Informe PDF** | `Informe_SkillSwap.pdf` | 🟡 | Revisar que cada decisión tenga problema, alternativa, consecuencias y evidencia (código/tests) |
 | **I — Defensa** | — | ⬜ | Cada integrante elige una parte (p. ej. State, persistencia, Observer, Decorator, controllers) y practica modificarla en vivo |
-
-Para seguir con agentes, un prompt útil por paquete: *"Leé `docs/CONTRATO_TECNICO.md` y el README. Trabajá solo en `<carpeta>`. Tarea: `<tarea>`. Verificá con `mvn verify`."*
 
 ---
 
 ## 8. Decisiones abiertas y límites conocidos
 
-Cosas que dejé decididas de una forma razonable pero que podés querer cambiar, y huecos que conviene mencionar (o cerrar) antes de la defensa:
+Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a mencionar (o cerrar) antes de la defensa:
 
-1. **Escrow vs transferencia directa.** Elegí escrow (el monto queda retenido hasta completar). Alternativa: acreditar al proveedor al pagar.
+1. **Escrow vs transferencia directa.** Se eligió escrow (el monto queda retenido hasta completar). Alternativa: acreditar al proveedor al pagar.
 2. **Reserva sin entidad propia.** Vive dentro de `Contratacion`. Si la cátedra espera una tabla `reserva`, se extrae.
 3. **Organización como `TipoPerfil.ORGANIZACION`.** No hay entidad aparte; solo ellas publican desafíos.
 4. **Política de cancelación por publicación** (enum persistido) con umbrales globales configurables en `SkillSwapConfig`/`ConfiguracionCancelacion`. Nota: `ContratacionService` tiene un segundo constructor con `PoliticaCancelacionFactory`; el compositor hoy usa el de umbrales por defecto.
@@ -254,23 +308,24 @@ Cosas que dejé decididas de una forma razonable pero que podés querer cambiar,
 8. **Solicitar la propia publicación** lanza `ReglaDeNegocioException` (regla del dominio), no `NoAutorizadoException`.
 9. **Fakes sin rollback.** `TransaccionSimulada` no revierte: en los tests en memoria, un fallo a mitad de `aceptar`/`reprogramar` puede dejar mutado el objeto en memoria. Con JPA la transacción hace rollback y se recarga el agregado, así que no pasa. Los tests en memoria no dependen de eso.
 10. **Disponibilidad en la búsqueda:** el fake y el JPA definen "franja libre con inicio ≥ desde y fin ≤ hasta"; la consigna no lo precisa.
-11. **Mock UI Kit no disponible** en la carpeta: las interfaces de controllers son propias.
+11. **Mock UI Kit no disponible todavía:** las interfaces de controllers son propias.
 12. **Comisiones** (Decorator de comisión de plataforma) y **Composite de categorías** quedaron fuera a propósito.
 
 ---
 
-## 9. Riesgos del runtime JPA (para cuando corras `mvn verify`)
+## 9. Puntos sensibles de la capa JPA
 
-Todo esto se escribió y se type-checkeó pero nunca se ejecutó. Si algo falla, mirá en este orden:
+`mvnw verify` ejecuta todo esto contra H2 en modo MySQL y pasa. Son las partes más delicadas del mapeo: si un cambio rompe un test de persistencia, conviene mirar acá primero, en este orden:
 
-1. **Arranque (`hbm2ddl=validate`)**: tipos `DECIMAL`/`DOUBLE`/`TIME` y `BOOLEAN` (`TINYINT(1)`) entre `V1__esquema.sql` y las entidades. Hay un contraste de columnas/tipos hecho con script, pero no contra Hibernate.
-2. **H2 en modo MySQL + Flyway**: si no migra, probar agregar `DATABASE_TO_LOWER=TRUE` a la URL de `BaseDeDatos.iniciarH2()`.
-3. **HQL de colecciones básicas**: `join ph.habilidades h where h = :x`, `lower(...)` sobre el alias del elemento y `escape '!'` en `JpaPublicacionRepository` son los puntos más dudosos de Hibernate 6.5. También el orden `RELEVANCIA` (`case when ... like :texto`).
+1. **Arranque (`hbm2ddl=validate`)**: los tipos `DECIMAL`/`DOUBLE`/`TIME` y `BOOLEAN` (`TINYINT(1)`) tienen que coincidir entre `V1__esquema.sql` y las entidades.
+2. **H2 en modo MySQL + Flyway**: hoy migra sin ajustes; si deja de hacerlo, probar agregar `DATABASE_TO_LOWER=TRUE` a la URL de `BaseDeDatos.iniciarH2()`.
+3. **HQL de colecciones básicas**: `join ph.habilidades h where h = :x`, `lower(...)` sobre el alias del elemento y `escape '!'` en `JpaPublicacionRepository` son las construcciones más delicadas para Hibernate 6.5. También el orden `RELEVANCIA` (`case when ... like :texto`).
 4. **`autor`** como `@ManyToOne` de solo lectura sobre `autor_id` (usado en `join p.autor a` para reputación y orden).
-5. **Tests de unicidad y FK** esperan `PersistenceException`; si Hibernate lanza otra subclase, ajustar el `assertThrows`.
+5. **Tests de unicidad y FK** esperan `PersistenceException`; si otra versión de Hibernate lanza otra subclase, ajustar el `assertThrows`.
 6. **"Guardar sin cambios no incrementa la versión"** depende de que el dirty-checking no vea cambios espurios (las fechas se truncan a microsegundos antes de escribir para evitarlo).
 7. **Concurrencia con hilos** (`Caso04UltimoCupoJpaTest`, test de wallet): asume `READ_COMMITTED` en H2; un `ERROR_INTERNO` por timeout de lock haría fallar el test.
-8. **Flyway 10 con H2**: si pide un módulo de base de datos adicional, agregar la dependencia correspondiente al `pom.xml`.
+8. **Flyway 10**: con H2 alcanza `flyway-core`; para MySQL el `pom.xml` ya incluye `flyway-mysql`.
+9. **MySQL real**: `verify` no lo ejecuta. Los puntos anteriores pueden comportarse distinto contra MySQL 8/9, así que conviene probar `--mysql` antes de la demo si se va a usar esa base.
 
 Cualquier ajuste debería quedar contenido en `infrastructure/persistence/**` y `db/migration/**`: el resto del sistema no se entera del motor.
 
@@ -278,7 +333,7 @@ Cualquier ajuste debería quedar contenido en `infrastructure/persistence/**` y 
 
 ## 10. Guía rápida para la defensa
 
-- **Recorrido principal** (sec. 13): `mvn exec:java -Dexec.args="--h2"` y mostrar cada paso con su estado y saldos.
+- **Recorrido principal** (sec. 13): `./mvnw compile exec:java -Dexec.args="--h2"` (en PowerShell: `chcp 65001` y después `.\mvnw.cmd compile exec:java "-Dexec.args=--h2"`) y mostrar cada paso con su estado y saldos.
 - **"¿Dónde está la regla X?"** → casi siempre en el dominio (Information Expert): `Contratacion`/`Publicacion` deciden transiciones, `Wallet` decide saldos, `Calificacion.registrar` decide quién puede calificar. Los servicios solo orquestan.
 - **"¿Cómo evitás la sobreventa?"** → `Publicacion.reservarFranja` (franja ocupada / cupo) + `@Version` + transacción única en `aceptar`; caso 4.
 - **"¿Cómo agrego un canal de notificación nuevo?"** → una clase que implementa `CanalNotificacionPort` + una línea en `CanalNotificacionFactoryImpl` + valor en el enum `CanalNotificacion`. No se toca el dominio ni los servicios.
