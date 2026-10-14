@@ -3,6 +3,8 @@ package com.uade.skillswap.domain.model.contratacion;
 import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
 import com.uade.skillswap.domain.exception.TransicionInvalidaException;
 import com.uade.skillswap.domain.model.historial.HistorialEstado;
+import com.uade.skillswap.domain.model.politica.PoliticaEstricta;
+import com.uade.skillswap.domain.model.politica.PoliticaFlexible;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.support.Datos;
 import org.junit.jupiter.api.DisplayName;
@@ -403,6 +405,51 @@ class ContratacionTest {
         assertTrue(c.esParticipante(CLIENTE));
         assertTrue(c.esParticipante(PROVEEDOR));
         assertFalse(c.esParticipante(OTRO));
+    }
+
+    // ---------- reparto de lo retenido al cancelar ----------
+
+    @Test
+    @DisplayName("si cancela el cliente, la politica decide el reintegro y el resto compensa al proveedor")
+    void repartoCancelaCliente() {
+        Contratacion conPoco = Datos.confirmada();
+        conPoco.cancelar(CLIENTE, "No puedo", AHORA);
+        RepartoCancelacion parcial = conPoco.repartirRetenido(new PoliticaFlexible(), Datos.horas(10));
+        assertEquals(SkillCoins.de(50), parcial.getReintegro());
+        assertEquals(SkillCoins.de(50), parcial.getCompensacion());
+
+        Contratacion conTiempo = Datos.confirmada();
+        conTiempo.cancelar(CLIENTE, "No puedo", AHORA);
+        RepartoCancelacion total = conTiempo.repartirRetenido(new PoliticaFlexible(), Datos.horas(30));
+        assertEquals(SkillCoins.de(100), total.getReintegro());
+        assertEquals(SkillCoins.CERO, total.getCompensacion());
+    }
+
+    @Test
+    @DisplayName("si cancela el proveedor, el cliente recupera el 100 % aunque la politica no devolveria nada")
+    void repartoCancelaProveedor() {
+        Contratacion c = Datos.confirmada();
+        c.cancelar(PROVEEDOR, "Me surgio un imprevisto", AHORA);
+        RepartoCancelacion reparto = c.repartirRetenido(new PoliticaEstricta(), Datos.horas(1));
+        assertEquals(SkillCoins.de(100), reparto.getReintegro());
+        assertEquals(SkillCoins.CERO, reparto.getCompensacion());
+    }
+
+    @Test
+    @DisplayName("si no se habia pagado, no hay nada que repartir")
+    void repartoSinPago() {
+        Contratacion c = Datos.aceptada();
+        c.cancelar(CLIENTE, "Cambie de idea", AHORA);
+        RepartoCancelacion reparto = c.repartirRetenido(new PoliticaFlexible(), Datos.horas(30));
+        assertEquals(SkillCoins.CERO, reparto.getReintegro());
+        assertEquals(SkillCoins.CERO, reparto.getCompensacion());
+    }
+
+    @Test
+    @DisplayName("solo se reparte lo retenido de una contratacion cancelada")
+    void repartoSinCancelar() {
+        Contratacion c = Datos.confirmada();
+        assertThrows(ReglaDeNegocioException.class, () -> c.repartirRetenido(new PoliticaFlexible(), Datos.horas(30)));
     }
 
     // ---------- comprobante ----------

@@ -10,8 +10,10 @@ import com.uade.skillswap.domain.model.contratacion.observer.ContratacionObserve
 import com.uade.skillswap.domain.model.contratacion.observer.ContratacionSubject;
 import com.uade.skillswap.domain.model.historial.ContextoTransicion;
 import com.uade.skillswap.domain.model.historial.HistorialEstado;
+import com.uade.skillswap.domain.model.politica.PoliticaCancelacion;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -147,6 +149,25 @@ public class Contratacion implements ContratacionSubject {
         this.canceladaPorId = actorId;
         this.propuestaReprogramacion = null;
         registrarEvento(TipoEventoContratacion.CANCELACION, actorId, motivo, ahora);
+    }
+
+    /**
+     * Reparte lo retenido (escrow) de una contratacion cancelada. Si no se habia pagado, no hay nada que repartir.
+     * Si cancelo el proveedor, el cliente recupera el 100 %: la politica protege al proveedor de las cancelaciones
+     * tardias del cliente, no lo beneficia cuando cancela el. Si cancelo el cliente, el reintegro lo decide la
+     * politica de la publicacion (Strategy) segun la anticipacion. Lo que no se reintegra compensa al proveedor.
+     */
+    public RepartoCancelacion repartirRetenido(PoliticaCancelacion politica, Duration anticipacion) {
+        if (canceladaPorId == null) {
+            throw new ReglaDeNegocioException("Solo se reparte lo retenido de una contratacion cancelada");
+        }
+        if (!estaPagada()) {
+            return new RepartoCancelacion(SkillCoins.CERO, SkillCoins.CERO);
+        }
+        SkillCoins reintegro = proveedorId.equals(canceladaPorId)
+                ? precioFinal
+                : politica.calcularReintegro(precioFinal, anticipacion);
+        return new RepartoCancelacion(reintegro, precioFinal.restar(reintegro));
     }
 
     /** Cualquiera de las partes propone mover la reserva a otra franja (antes de comenzar). */

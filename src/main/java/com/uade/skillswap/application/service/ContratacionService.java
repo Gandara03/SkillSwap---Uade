@@ -16,6 +16,7 @@ import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
 import com.uade.skillswap.domain.exception.SaldoInsuficienteException;
 import com.uade.skillswap.domain.model.contratacion.Contratacion;
 import com.uade.skillswap.domain.model.contratacion.PropuestaReprogramacion;
+import com.uade.skillswap.domain.model.contratacion.RepartoCancelacion;
 import com.uade.skillswap.domain.model.contratacion.observer.ContratacionEvent;
 import com.uade.skillswap.domain.model.contratacion.observer.ContratacionObserver;
 import com.uade.skillswap.domain.model.perfil.Perfil;
@@ -190,7 +191,6 @@ public class ContratacionService implements ContratacionUseCase {
             Contratacion contratacion = cargarComoParticipante(actorId, contratacionId);
             Publicacion publicacion = Cargas.publicacion(publicacionRepository, contratacion.getPublicacionId());
             LocalDateTime ahora = reloj.ahora();
-            boolean estabaPagada = contratacion.estaPagada();
             Franja franja = publicacion.buscarFranja(contratacion.getFranjaId()).orElseThrow(
                     () -> new RecursoNoEncontradoException("Franja", contratacion.getFranjaId()));
             LocalDateTime inicioFranja = franja.getInicio();
@@ -198,26 +198,21 @@ public class ContratacionService implements ContratacionUseCase {
             contratacion.cancelar(actorId, motivo, ahora);
             publicacion.liberarFranja(contratacion.getFranjaId()); // devuelve franja y cupo
 
+            // El dominio decide cuanto vuelve al cliente y cuanto compensa al proveedor (escrow + politica).
             PoliticaCancelacion politica = politicas.crear(publicacion.getPoliticaCancelacion());
-            SkillCoins reintegro = SkillCoins.CERO;
-            SkillCoins compensacion = SkillCoins.CERO;
-            if (estabaPagada) {
-                // El reintegro depende de la anticipacion; lo no reintegrado compensa al proveedor.
-                // Si cancela el proveedor, el cliente recupera todo (la politica protege al proveedor, no lo penaliza a el).
-                reintegro = actorId.equals(contratacion.getProveedorId())
-                        ? contratacion.getPrecioFinal()
-                        : politica.calcularReintegro(contratacion.getPrecioFinal(), Duration.between(ahora, inicioFranja));
-                compensacion = contratacion.getPrecioFinal().restar(reintegro);
-            }
+            RepartoCancelacion reparto = contratacion.repartirRetenido(politica,
+                    Duration.between(ahora, inicioFranja));
 
             Contratacion guardada = contratacionRepository.guardar(contratacion);
             publicacionRepository.guardar(publicacion);
-            acreditar(contratacion.getClienteId(), reintegro, TipoMovimiento.REINTEGRO, contratacion.getId(), ahora);
-            acreditar(contratacion.getProveedorId(), compensacion, TipoMovimiento.COBRO, contratacion.getId(), ahora);
+            acreditar(contratacion.getClienteId(), reparto.getReintegro(), TipoMovimiento.REINTEGRO,
+                    contratacion.getId(), ahora);
+            acreditar(contratacion.getProveedorId(), reparto.getCompensacion(), TipoMovimiento.COBRO,
+                    contratacion.getId(), ahora);
 
             ContratacionDto dto = Mapeador.contratacion(guardada, publicacion.getTitulo());
-            return new Cambio<>(contratacion, guardada, new ResultadoCancelacionDto(dto,
-                    politica.getTipo().name(), Mapeador.monto(reintegro), Mapeador.monto(compensacion)));
+            return new Cambio<>(contratacion, guardada, new ResultadoCancelacionDto(dto, politica.getTipo().name(),
+                    Mapeador.monto(reparto.getReintegro()), Mapeador.monto(reparto.getCompensacion())));
         });
     }
 
