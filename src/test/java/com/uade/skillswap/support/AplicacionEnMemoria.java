@@ -24,6 +24,8 @@ import com.uade.skillswap.infrastructure.notificacion.CanalNotificacionFactoryIm
 import com.uade.skillswap.infrastructure.notificacion.sdk.EmailSdkMock;
 import com.uade.skillswap.infrastructure.notificacion.sdk.PushSdkMock;
 
+import java.util.List;
+
 /**
  * Compositor para tests: arma todos los servicios de aplicacion sobre repositorios en memoria, reloj fijo,
  * transaccion simulada, identidad fake y los adapters reales de notificacion (con SDK mock inspeccionables).
@@ -67,7 +69,7 @@ public final class AplicacionEnMemoria {
                 identidad, transaccion, reloj, config);
         this.publicacionUseCase = new PublicacionService(publicaciones, perfiles, promociones, transaccion, reloj);
         this.contratacionUseCase = new ContratacionService(contrataciones, publicaciones, perfiles, wallets,
-                promociones, notificador, transaccion, reloj);
+                promociones, List.of(notificador), transaccion, reloj);
         this.busquedaUseCase = new BusquedaService(publicaciones, perfiles, promociones, reloj);
         this.recomendacionUseCase = new RecomendacionService(publicaciones, perfiles, reloj, promociones, config);
         this.calificacionUseCase = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);

@@ -93,9 +93,9 @@ class ContratacionServiceTest {
         }
     }
 
-    private ContratacionService servicioCon(ContratacionObserver notificador) {
+    private ContratacionService servicioCon(ContratacionObserver... observers) {
         return new ContratacionService(app.contrataciones, app.publicaciones, app.perfiles, app.wallets,
-                app.promociones, notificador, app.transaccion, app.reloj);
+                app.promociones, List.of(observers), app.transaccion, app.reloj);
     }
 
     // ---------- solicitar ----------
@@ -656,6 +656,24 @@ class ContratacionServiceTest {
         assertTrue(espia.eventos.stream().allMatch(ev -> solicitud.id().equals(ev.getContratacionId())),
                 "el evento lleva el id de la contratacion ya guardada");
         assertEquals(List.of(false, false), espia.dentroDeTransaccion, "las notificaciones salen fuera de la transaccion");
+    }
+
+    @Test
+    @DisplayName("cada observer de la lista que arma el compositor recibe todos los eventos, una sola vez")
+    void todosLosObserversDeLaLista() {
+        Espia uno = new Espia(app);
+        Espia otro = new Espia(app);
+        ContratacionService servicio = servicioCon(uno, otro);
+        PublicacionDto publicada = e.publicada(ana);
+
+        ContratacionDto solicitud = servicio.solicitar(bruno.id(), new SolicitarContratacionCommand(publicada.id(),
+                e.franjaId(publicada, 0), "Hola", "Aprender"));
+        servicio.aceptar(ana.id(), solicitud.id());
+
+        List<TipoEventoContratacion> esperados =
+                List.of(TipoEventoContratacion.SOLICITUD_RECIBIDA, TipoEventoContratacion.SOLICITUD_ACEPTADA);
+        assertEquals(esperados, uno.eventos.stream().map(ContratacionEvent::getTipo).toList());
+        assertEquals(esperados, otro.eventos.stream().map(ContratacionEvent::getTipo).toList());
     }
 
     @Test

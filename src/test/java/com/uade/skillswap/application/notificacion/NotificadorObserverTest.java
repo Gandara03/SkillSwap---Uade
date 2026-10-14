@@ -256,7 +256,7 @@ class NotificadorObserverTest {
             return canalesReales().crear(canal);
         };
         ContratacionService servicio = new ContratacionService(app.contrataciones, app.publicaciones, app.perfiles,
-                app.wallets, app.promociones, observerCon(todoCaido), app.transaccion, app.reloj);
+                app.wallets, app.promociones, List.of(observerCon(todoCaido)), app.transaccion, app.reloj);
         PublicacionDto publicada = e.publicada(ana);
         Level nivel = silenciar(NotificadorObserver.class);
         try {

@@ -17,7 +17,6 @@ import com.uade.skillswap.domain.exception.SaldoInsuficienteException;
 import com.uade.skillswap.domain.model.contratacion.Contratacion;
 import com.uade.skillswap.domain.model.contratacion.PropuestaReprogramacion;
 import com.uade.skillswap.domain.model.contratacion.RepartoCancelacion;
-import com.uade.skillswap.domain.model.contratacion.observer.ContratacionEvent;
 import com.uade.skillswap.domain.model.contratacion.observer.ContratacionObserver;
 import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.politica.PoliticaCancelacion;
@@ -58,31 +57,32 @@ public class ContratacionService implements ContratacionUseCase {
     private final PublicacionRepository publicacionRepository;
     private final PerfilRepository perfilRepository;
     private final WalletRepository walletRepository;
-    private final ContratacionObserver notificador;
+    private final List<ContratacionObserver> observers;
     private final TransaccionPort transaccion;
     private final RelojPort reloj;
     private final CalculadorPrecios precios;
     private final PoliticaCancelacionFactory politicas;
 
+    /** {@code observers}: los interesados en los eventos de las contrataciones; los arma el compositor. */
     public ContratacionService(ContratacionRepository contratacionRepository,
                                PublicacionRepository publicacionRepository, PerfilRepository perfilRepository,
                                WalletRepository walletRepository, PromocionRepository promocionRepository,
-                               ContratacionObserver notificador, TransaccionPort transaccion, RelojPort reloj) {
+                               List<ContratacionObserver> observers, TransaccionPort transaccion, RelojPort reloj) {
         this(contratacionRepository, publicacionRepository, perfilRepository, walletRepository, promocionRepository,
-                notificador, transaccion, reloj, new PoliticaCancelacionFactory());
+                observers, transaccion, reloj, new PoliticaCancelacionFactory());
     }
 
     /** Permite inyectar umbrales de cancelacion propios (por ejemplo desde SkillSwapConfig.cancelacion()). */
     public ContratacionService(ContratacionRepository contratacionRepository,
                                PublicacionRepository publicacionRepository, PerfilRepository perfilRepository,
                                WalletRepository walletRepository, PromocionRepository promocionRepository,
-                               ContratacionObserver notificador, TransaccionPort transaccion, RelojPort reloj,
+                               List<ContratacionObserver> observers, TransaccionPort transaccion, RelojPort reloj,
                                PoliticaCancelacionFactory politicas) {
         this.contratacionRepository = contratacionRepository;
         this.publicacionRepository = publicacionRepository;
         this.perfilRepository = perfilRepository;
         this.walletRepository = walletRepository;
-        this.notificador = notificador;
+        this.observers = List.copyOf(observers);
         this.transaccion = transaccion;
         this.reloj = reloj;
         this.precios = new CalculadorPrecios(promocionRepository, reloj);
@@ -211,7 +211,7 @@ public class ContratacionService implements ContratacionUseCase {
                     contratacion.getId(), ahora);
 
             ContratacionDto dto = Mapeador.contratacion(guardada, publicacion.getTitulo());
-            return new Cambio<>(contratacion, guardada, new ResultadoCancelacionDto(dto, politica.getTipo().name(),
+            return new Cambio<>(contratacion, new ResultadoCancelacionDto(dto, politica.getTipo().name(),
                     Mapeador.monto(reparto.getReintegro()), Mapeador.monto(reparto.getCompensacion())));
         });
     }
@@ -278,42 +278,39 @@ public class ContratacionService implements ContratacionUseCase {
 
     // ---------- soporte ----------
 
-    /** Resultado de una operacion: la contratacion original (con sus eventos), la guardada y lo que se devuelve. */
-    private record Cambio<T>(Contratacion original, Contratacion guardada, T resultado) { }
+    /** Resultado de una operacion: la contratacion operada (con sus eventos pendientes) y lo que se devuelve. */
+    private record Cambio<T>(Contratacion contratacion, T resultado) { }
 
     private Cambio<ContratacionDto> cambio(Contratacion original, Contratacion guardada) {
         return cambio(original, guardada, titulo(guardada.getPublicacionId()));
     }
 
     private Cambio<ContratacionDto> cambio(Contratacion original, Contratacion guardada, String titulo) {
-        return new Cambio<>(original, guardada, Mapeador.contratacion(guardada, titulo));
+        return new Cambio<>(original, Mapeador.contratacion(guardada, titulo));
     }
 
     /** Ejecuta el trabajo en una transaccion y, una vez confirmada, notifica los eventos acumulados. */
     private <T> T operar(Supplier<Cambio<T>> trabajo) {
         Cambio<T> cambio = transaccion.ejecutar(trabajo);
-        despachar(cambio.original(), cambio.guardada());
+        despachar(cambio.contratacion());
         return cambio.resultado();
     }
 
     /**
-     * Registra el notificador en la contratacion y publica sus eventos pendientes (fuera de la transaccion).
-     * El repositorio puede devolver otra instancia con el id definitivo, y los eventos viven en la original,
-     * por eso el observador registrado reescribe el id del evento con el de la contratacion guardada.
+     * Suscribe a la contratacion los observers que armo el compositor y publica sus eventos pendientes, ya fuera
+     * de la transaccion. Se suscriben en cada operacion porque cada una trabaja con una instancia rehidratada.
+     * El repositorio le asigna el id al guardar, asi que los eventos de una solicitud nueva ya salen con su id.
      * Una falla de notificacion no deshace una operacion ya confirmada: se registra y se sigue.
      */
-    private void despachar(Contratacion original, Contratacion guardada) {
-        Long id = guardada.getId();
-        ContratacionObserver conIdDefinitivo = e -> notificador.actualizar(new ContratacionEvent(e.getTipo(), id,
-                e.getPublicacionId(), e.getClienteId(), e.getProveedorId(), e.getActorId(), e.getDetalle(),
-                e.getFecha()));
-        original.agregarObserver(conIdDefinitivo);
+    private void despachar(Contratacion contratacion) {
+        for (ContratacionObserver observer : observers) {
+            contratacion.agregarObserver(observer);
+        }
         try {
-            original.notificarEventosPendientes();
+            contratacion.notificarEventosPendientes();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "No se pudieron notificar los eventos de la contratacion " + id, e);
-        } finally {
-            original.quitarObserver(conIdDefinitivo);
+            LOG.log(Level.WARNING, "No se pudieron notificar los eventos de la contratacion "
+                    + contratacion.getId(), e);
         }
     }
 

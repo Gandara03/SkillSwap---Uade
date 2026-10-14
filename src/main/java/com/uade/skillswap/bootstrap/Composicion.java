@@ -51,6 +51,7 @@ import com.uade.skillswap.presentation.ui.MenuConsola;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.List;
 
 /**
  * Composition root: el unico lugar que conoce las clases concretas de todas las capas y las cablea a mano
@@ -109,9 +110,10 @@ public final class Composicion {
         var pushSdk = new PushSdkMock();
         CanalNotificacionFactory canales = new CanalNotificacionFactoryImpl(emailSdk, pushSdk, identidad);
 
-        // Observer de contrataciones: persiste y envia notificaciones despues del commit
-        ContratacionObserver notificador =
-                new NotificadorObserver(notificaciones, perfiles, canales, transaccion, reloj);
+        // Observer de contrataciones: la lista de interesados se arma una sola vez, aca. Hoy hay uno solo, que
+        // persiste y envia las notificaciones despues del commit; un interesado nuevo se agrega a esta lista.
+        List<ContratacionObserver> observadores =
+                List.of(new NotificadorObserver(notificaciones, perfiles, canales, transaccion, reloj));
 
         // Servicios de aplicacion (casos de uso)
         var sesion = new SesionService(identidad, perfiles);
@@ -119,7 +121,7 @@ public final class Composicion {
                 identidad, transaccion, reloj, config);
         var publicacionService = new PublicacionService(publicaciones, perfiles, promociones, transaccion, reloj);
         var contratacionService = new ContratacionService(contrataciones, publicaciones, perfiles, wallets,
-                promociones, notificador, transaccion, reloj);
+                promociones, observadores, transaccion, reloj);
         var busquedaService = new BusquedaService(publicaciones, perfiles, promociones, reloj);
         var recomendacionService = new RecomendacionService(publicaciones, perfiles, reloj, promociones, config);
         var calificacionService = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);
