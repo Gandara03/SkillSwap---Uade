@@ -42,8 +42,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Los usuarios disponibles son los de la identidad demo: u-ana, u-bruno, u-cecilia (profesionales) y u-techcorp.
  * El reloj es el del sistema, asi que las franjas se arman relativas a "ahora".
+ * Es publica porque tambien la usan los tests de integracion de los controllers (presentation.controller).
  */
-abstract class AceptacionJpaBase {
+public abstract class AceptacionJpaBase {
 
     protected JpaContexto ctx;
     protected IdentidadMockAdapter identidad;
