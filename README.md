@@ -5,14 +5,15 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 ## Estado
 
-`mvnw verify` pasa completo: **597 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+`mvnw verify` pasa completo: **669 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
-| Dominio | `domain/**` | 201 |
-| Aplicación | `application/**` | 208 |
+| Dominio | `domain/**` | 202 |
+| Aplicación | `application/**` | 211 |
 | Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 47 |
 | Persistencia JPA | `infrastructure/persistence/jpa/**` | 85 |
+| Controllers: integración sobre JPA/H2 y `ValidadorEntrada` | `presentation/controller/**` | 68 |
 | Aceptación en memoria | `acceptance/memoria/**` | 34 |
 | Aceptación sobre JPA/H2 | `acceptance/jpa/**` | 22 |
 
@@ -21,13 +22,14 @@ Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación
 | Capa | Líneas | Ramas |
 |---|---|---|
 | `domain` | 99,4 % | 96,2 % |
-| `application` | 99,4 % | 92,4 % |
+| `application` | 99,6 % | 92,4 % |
 | `infrastructure` | 93,2 % | 86,2 % |
-| `presentation` | 34,1 % | 18,5 % |
-| `bootstrap` y `Main` | 15,0 % | 0,0 % |
-| **Total** | **83,9 %** | **78,5 %** |
+| `presentation` | 72,7 % | 56,2 % |
+| ↳ `presentation.controller` | 100,0 % | 97,4 % |
+| `bootstrap` y `Main` | 15,6 % | 0,0 % |
+| **Total** | **85,4 %** | **80,9 %** |
 
-`presentation` y `bootstrap` se ejercitan con la demo (sección 2), no con tests. El camino contra MySQL real (`--mysql`) no forma parte de `verify`.
+Los controllers tienen tests de integración contra H2 (`presentation/controller/**`). El resto de `presentation` (menú de consola y formato) y `bootstrap` se ejercitan con la demo (sección 2). El camino contra MySQL real (`--mysql`) no forma parte de `verify`.
 
 ---
 
@@ -47,14 +49,16 @@ skillswap/
     │   ├── application/         casos de uso (port/in), puertos de salida y repositorios (port/out), Strategy de recomendacion,
     │   │                        Facade del perfil publico (facade), commands, DTOs, servicios
     │   ├── infrastructure/      JPA + Flyway, adapters (identidad, email, push, interna), factory de canales, reloj
-    │   ├── presentation/        controllers delgados + interfaces I*Controller + Resultado/ManejadorErrores + menú de consola
+    │   ├── presentation/        controllers delgados (validan la entrada con ValidadorEntrada) + interfaces I*Controller
+    │   │                        + Resultado/ManejadorErrores + menú de consola
     │   ├── bootstrap/           Composicion (compositor a mano), DatosDemo, DemoFlujoPrincipal
     │   └── Main.java
     ├── main/resources/          META-INF/persistence.xml · db/migration/V1__esquema.sql
-    └── test/java/               domain · application · infrastructure · acceptance (memoria y jpa) · support (fakes)
+    └── test/java/               domain · application · infrastructure · presentation (controllers sobre H2)
+                                 · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 219 clases de producción, 84 clases de test (597 tests), ~10.7 mil líneas de código y ~12.5 mil de tests.
+Números: 220 clases de producción, 94 clases de test (669 tests), ~11.1 mil líneas de código y ~14.1 mil de tests.
 
 ---
 
@@ -122,9 +126,9 @@ presentation ──▶ application (port/in) ──▶ domain ◀── applicat
 | **Dominio** | `Perfil`, `Publicacion`+`Franja`+`DatosPublicacion`, `Contratacion`+`RepartoCancelacion`, `Wallet`+`MovimientoCredito`, `Calificacion`, `Notificacion`, `Promocion`, VOs (`SkillCoins`, `Puntaje`, `Habilidad`, `RangoPrecio`, `BloqueDisponibilidad`), State, Observer (`ContratacionObserver`, `ContratacionEvent`), `HistorialEstado`, Strategy de cancelación (`domain.model.politica`), Decorator de precio (`domain.model.precio`) | UI, JPA, MySQL, SDKs |
 | **Aplicación** | 10 casos de uso (`port/in`), commands y DTOs, servicios, puertos de salida y repositorios (`port/out`: `IdentidadPort`, `TransaccionPort`, `RelojPort`, `CanalNotificacionPort`, `CanalNotificacionFactory`, `*Repository`), Strategy de recomendación (`application.recomendacion`), Facade del perfil público (`application.facade`), `NotificadorObserver` | Controllers concretos, SDKs externos, JPA |
 | **Infraestructura** | `JpaContexto`, `BaseDeDatos`, `JpaTransaccionAdapter`, entidades `*JpaEntity` + mappers + 7 repositorios JPA, `IdentidadMockAdapter`, `Email/Push/InternaCanalAdapter`, `CanalNotificacionFactoryImpl`, `RelojSistema`, Flyway | Decisiones de negocio |
-| **Presentación** | 8 interfaces `I*Controller` y sus implementaciones, `Resultado<T>`, `ManejadorErrores`, `MenuConsola` | Persistencia y reglas de negocio |
+| **Presentación** | 8 interfaces `I*Controller` y sus implementaciones, `ValidadorEntrada`, `Resultado<T>`, `ManejadorErrores`, `MenuConsola` | Persistencia y reglas de negocio |
 
-Reglas que se respetan (verificables con un `grep` de imports): `domain` no importa nada de las otras capas ni `jakarta.persistence`; `application` solo importa `domain`; `presentation` solo usa `port/in`, DTOs, commands, `domain.query` y enums; el compositor `bootstrap/Composicion` es el único lugar que conoce todas las capas.
+Reglas que se respetan (verificables con un `grep` de imports): `domain` no importa nada de las otras capas ni `jakarta.persistence`; `application` solo importa `domain`; `presentation` solo usa `port/in`, DTOs, commands, `application.exception`, `domain.query` y enums (además, `ManejadorErrores` conoce `domain.exception` para traducir esos errores); el compositor `bootstrap/Composicion` es el único lugar que conoce todas las capas.
 
 **Diseño clave:**
 
@@ -134,6 +138,7 @@ Reglas que se respetan (verificables con un `grep` de imports): `domain` no impo
 - **Reserva dentro de `Contratacion`** (franjaId + `Publicacion.reservarFranja/liberarFranja/reprogramarReserva`), sin entidad `Reserva` aparte.
 - **Reprogramación** = propuesta pendiente en la contratación que la contraparte acepta o rechaza; al aceptar se mueve la reserva sin alterar el cupo.
 - **Permisos.** Todo caso de uso recibe `actorId`; los controllers lo obtienen de `SesionUseCase` (que sale de `IdentidadPort`). Los servicios validan autor/cliente/proveedor/participante con `NoAutorizadoException`.
+- **Validación de entrada en dos niveles.** Cada controller valida con `ValidadorEntrada` lo que se puede decidir mirando solo los datos que llegaron: obligatorios, formatos (ids positivos, zona horaria, largo de los textos según `V1__esquema.sql`) y rangos (números no negativos, puntaje de 1 a 5, porcentaje hasta 100, reputación de 0 a 5, inicio antes del fin). Si algo falla, responde `VALIDACION` sin llegar al caso de uso. Lo que depende del estado, del actor o del reloj sigue en el dominio, y el caso de uso mantiene sus propias validaciones (`Entradas`) porque es un puerto que no confía en quien lo llama. La sesión se resuelve primero: sin sesión la respuesta es `NO_AUTORIZADO` aunque la entrada también esté mal.
 - **Errores uniformes.** Los controllers nunca lanzan: devuelven `Resultado<T>` con `ErrorCode` (`VALIDACION`, `NO_ENCONTRADO`, `NO_AUTORIZADO`, `REGLA_DE_NEGOCIO`, `TRANSICION_INVALIDA`, `SALDO_INSUFICIENTE`, `CUPO_AGOTADO`, `FRANJA_NO_DISPONIBLE`, `CONFLICTO_CONCURRENCIA`, `ERROR_INTERNO`).
 
 ### Diagrama de clases (Mermaid, para importar en StarUML o usar de guía)
@@ -224,7 +229,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 4.3 | Buscar por texto, categoría, modalidad, rango de precio, habilidad, reputación mínima | ✅ | `FiltroBusqueda`; JPQL en `JpaPublicacionRepository` (`JpaBusquedaPublicacionTest`) |
 | 4.3 | Ordenar por relevancia, reputación, menor precio, más reciente | ✅ | `CriterioOrden` (`RELEVANCIA`, `REPUTACION`, `PRECIO_ASC`, `PRECIO_DESC`, `RECIENTES`) |
 | 4.3 | ≥ 2 estrategias de recomendación intercambiables | ✅ | `RecomendacionPorAfinidad`, `RecomendacionPorPopularidad` |
-| 4.3 | Paginar todos los listados | ✅ | `Pagina`/`PaginaRequest` en cada listado |
+| 4.3 | Paginar todos los listados | ✅ | `Pagina`/`PaginaRequest` en cada listado; recomendaciones e historial se recortan en memoria con `Pagina.recortar` (sección 8) |
 | 4.4 | Solicitar, aceptar/rechazar (reserva + cupo transaccional), pagar sin saldo negativo ni doble cobro | ✅ | `ContratacionService`, `Wallet`, casos 3, 4, 5 (memoria y JPA) |
 | 4.4 | Reprogramar antes de comenzar si ambas partes aceptan | ✅ | `proponerReprogramacion`/`responderReprogramacion` |
 | 4.4 | Calificación por cada parte, nadie se califica a sí mismo | ✅ | `Calificacion.registrar`, caso 10 |
@@ -239,10 +244,10 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 8 | Evitar N+1 y justificar fetch plans | ✅ | sección 5 |
 | 8 | Datos de demostración reproducibles | ✅ | `DatosDemo`, `Main --h2` |
 | 8 | Optimistic locking contra sobreventa | ✅ | `@Version`, caso 4 sobre JPA con hilos concurrentes (`Caso04UltimoCupoJpaTest`) |
-| 9 | Controllers delgados, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `Resultado` (ver nota de nombres abajo) |
+| 9 | Controllers delgados que validan la entrada, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `ValidadorEntrada`, `Resultado`; tests en `presentation/controller/**` (ver nota de nombres abajo) |
 | 10 | Mock UI Kit conectado por interfaces | ⬜ | `I*Controller` son el contrato |
 | 11 | Entregas incrementales | ⬜ | — |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 597 tests (ver Estado al principio) |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 669 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases en StarUML | 🟡 | `Diagrama UML.mdj` (base: Mermaid de la sección 3) |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
@@ -287,7 +292,7 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 |---|---|---|---|
 | **A — Servicios** | `application/service`, `application/notificacion`, `application/mapper` | ✅ | Decidir los huecos de la sección 8 (publicación cancelada con contrataciones activas, retiro de solicitud pendiente) |
 | **B — Persistencia** | `infrastructure/persistence/**`, `persistence.xml`, `db/migration` | ✅ | Probar el camino contra MySQL real; opcional: test que cuente sentencias SQL |
-| **C — Presentación y demo** | `presentation/**`, `bootstrap/**`, `Main` | ✅ | Conectar el Mock UI Kit, ajustar firmas `I*Controller` |
+| **C — Presentación y demo** | `presentation/**`, `bootstrap/**`, `Main`, tests en `src/test/.../presentation/controller` | ✅ | Conectar el Mock UI Kit, ajustar firmas `I*Controller` (y sus tests de integración) |
 | **D — Adapters y soporte de tests** | `infrastructure/{identidad,notificacion,time}`, `src/test/.../support` | ✅ | Opcional: rollback simulado en `TransaccionSimulada` para que los fakes reflejen JPA |
 | **E — Tests de aplicación** | `src/test/.../application` | ✅ | Mantener la cobertura al agregar casos (hoy 99,5 % de líneas en `application`) |
 | **F — Aceptación** | `src/test/.../acceptance` | ✅ | Mantener alineados los juegos en memoria y sobre JPA |
@@ -313,6 +318,8 @@ Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a me
 10. **Disponibilidad en la búsqueda:** el fake y el JPA definen "franja libre con inicio ≥ desde y fin ≤ hasta"; la consigna no lo precisa.
 11. **Mock UI Kit no disponible todavía:** las interfaces de controllers son propias.
 12. **Comisiones** (Decorator de comisión de plataforma) y **Composite de categorías** quedaron fuera a propósito.
+13. **La entrada se valida dos veces.** Primero el controller (`ValidadorEntrada`) y después el caso de uso (`Entradas`) y el dominio. Por eso, a través del controller, faltar el mensaje o el objetivo de una solicitud, el motivo de un rechazo o una cancelación, un puntaje fuera de 1 a 5 o un porcentaje mayor a 100 da `VALIDACION`; llamando directo al caso de uso da `REGLA_DE_NEGOCIO`, como antes. Los largos máximos copian los `VARCHAR` de `V1__esquema.sql`: si cambia la migración, hay que cambiarlos también en `ValidadorEntrada`.
+14. **Recomendaciones e historial paginados en memoria.** El puntaje de recomendación se calcula en Java sobre todas las candidatas (`candidatasRecomendacion`), así que no se puede paginar en la consulta: se arma el top `limiteRecomendaciones` y se recorta la página con `Pagina.recortar`. El historial de una contratación ya viene completo con el agregado (que igual se carga para validar al participante) y se recorta igual. `ContratacionDto.historial`, el detalle completo, no cambió.
 
 ---
 
@@ -344,3 +351,4 @@ Cualquier ajuste debería quedar contenido en `infrastructure/persistence/**` y 
 - **"¿Cómo agrego otro interesado en los eventos de una contratación?"** → una clase que implementa `ContratacionObserver` y se suma a la lista que arma `Composicion`.
 - **"¿Por qué la recomendación no está en el dominio?"** → sección 3 (diseño clave): no es una regla de negocio sino un criterio de orden de un listado que combina datos de varios agregados.
 - **"¿Por qué no hay Composite/Singleton?"** → sección 4.
+- **"¿Dónde se valida la entrada?"** → en el controller (`ValidadorEntrada`: obligatorios, formatos y rangos, sin mirar el estado) y otra vez en el caso de uso y en el dominio; sección 3 (diseño clave) y sección 8, punto 13.
