@@ -3,6 +3,8 @@ package com.uade.skillswap.domain.model.precio;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Descuento porcentual sobre el precio acumulado hasta el momento. */
 public class PromocionPorcentaje extends PromocionDecorator {
@@ -17,12 +19,15 @@ public class PromocionPorcentaje extends PromocionDecorator {
     }
 
     @Override
-    protected SkillCoins descuentoSobre(SkillCoins precioActual) {
-        return precioActual.porcentaje(porcentaje);
+    public SkillCoins calcular() {
+        SkillCoins actual = interno.calcular();
+        return actual.restar(actual.porcentaje(porcentaje)).noNegativo();
     }
 
     @Override
-    protected String descripcionPromocion() {
-        return "Promocion " + nombre + ": -" + porcentaje.stripTrailingZeros().toPlainString() + "%";
+    public List<String> detalle() {
+        List<String> detalle = new ArrayList<>(interno.detalle());
+        detalle.add("Promocion " + nombre + ": -" + porcentaje.stripTrailingZeros().toPlainString() + "%");
+        return detalle;
     }
 }

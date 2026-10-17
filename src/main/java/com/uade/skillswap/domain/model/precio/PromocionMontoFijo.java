@@ -2,6 +2,9 @@ package com.uade.skillswap.domain.model.precio;
 
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /** Descuento de monto fijo. Si supera el precio acumulado, el total queda en cero. */
 public class PromocionMontoFijo extends PromocionDecorator {
 
@@ -15,12 +18,14 @@ public class PromocionMontoFijo extends PromocionDecorator {
     }
 
     @Override
-    protected SkillCoins descuentoSobre(SkillCoins precioActual) {
-        return monto;
+    public SkillCoins calcular() {
+        return interno.calcular().restar(monto).noNegativo();
     }
 
     @Override
-    protected String descripcionPromocion() {
-        return "Promocion " + nombre + ": -" + monto;
+    public List<String> detalle() {
+        List<String> detalle = new ArrayList<>(interno.detalle());
+        detalle.add("Promocion " + nombre + ": -" + monto);
+        return detalle;
     }
 }
