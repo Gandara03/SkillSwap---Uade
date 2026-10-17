@@ -16,12 +16,12 @@ public class RecomendacionPorPopularidad implements EstrategiaRecomendacion {
     }
 
     @Override
-    public List<Publicacion> recomendar(ContextoRecomendacion contexto, List<Publicacion> candidatas, int limite) {
-        Perfil perfil = contexto.perfil();
+    public List<Publicacion> recomendar(DatosRecomendacion datos, List<Publicacion> candidatas, int limite) {
+        Perfil perfil = datos.perfil();
         return candidatas.stream()
                 .filter(p -> p.esVisiblePara(perfil.getId()) && !p.esAutor(perfil.getId()))
                 .sorted(Comparator.<Publicacion>comparingInt(p -> -p.getCupoOcupado())
-                        .thenComparing(p -> -contexto.reputacionDe(p.getAutorId()))
+                        .thenComparing(p -> -datos.reputacionDe(p.getAutorId()))
                         .thenComparing(Publicacion::getId, Comparator.nullsLast(Comparator.naturalOrder())))
                 .limit(Math.max(limite, 0))
                 .collect(Collectors.toList());

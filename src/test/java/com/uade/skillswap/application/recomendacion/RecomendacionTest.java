@@ -65,7 +65,7 @@ class RecomendacionTest {
         Publicacion mucha = publicada(2, 11, "java", List.of("testing"), List.of(Habilidad.de("Java")), 0); // 2+1+1 = 4
         Publicacion media = publicada(3, 12, "otra", List.of(), List.of(Habilidad.de("java")), 0);          // 2
         List<Publicacion> r = new RecomendacionPorAfinidad().recomendar(
-                new ContextoRecomendacion(usuario(), Map.of()), List.of(poca, mucha, media), 10);
+                new DatosRecomendacion(usuario(), Map.of()), List.of(poca, mucha, media), 10);
         assertEquals(List.of(2L, 3L, 1L), ids(r));
     }
 
@@ -75,7 +75,7 @@ class RecomendacionTest {
         Publicacion sin = publicada(1, 10, "cocina", List.of("pastas"), List.of(Habilidad.de("Cocina")), 0);
         Publicacion con = publicada(2, 10, "x", List.of("java"), List.of(), 0);
         List<Publicacion> r = new RecomendacionPorAfinidad().recomendar(
-                new ContextoRecomendacion(usuario(), Map.of()), List.of(sin, con), 10);
+                new DatosRecomendacion(usuario(), Map.of()), List.of(sin, con), 10);
         assertEquals(List.of(2L), ids(r));
     }
 
@@ -85,8 +85,8 @@ class RecomendacionTest {
         Publicacion a = publicada(1, 10, "x", List.of("java"), List.of(), 0);
         Publicacion b = publicada(2, 11, "x", List.of("java"), List.of(), 0);
         Publicacion c = publicada(3, 12, "x", List.of("java"), List.of(), 0);
-        ContextoRecomendacion ctx = new ContextoRecomendacion(usuario(), Map.of(10L, 3.0, 11L, 5.0, 12L, 5.0));
-        assertEquals(List.of(2L, 3L, 1L), ids(new RecomendacionPorAfinidad().recomendar(ctx, List.of(a, b, c), 10)));
+        DatosRecomendacion datos = new DatosRecomendacion(usuario(), Map.of(10L, 3.0, 11L, 5.0, 12L, 5.0));
+        assertEquals(List.of(2L, 3L, 1L), ids(new RecomendacionPorAfinidad().recomendar(datos, List.of(a, b, c), 10)));
     }
 
     @Test
@@ -94,9 +94,9 @@ class RecomendacionTest {
     void excluyePropias() {
         Publicacion propia = publicada(1, USUARIO, "java", List.of("java"), List.of(Habilidad.de("java")), 3);
         Publicacion ajena = publicada(2, 10, "java", List.of("java"), List.of(), 0);
-        ContextoRecomendacion ctx = new ContextoRecomendacion(usuario(), Map.of());
-        assertEquals(List.of(2L), ids(new RecomendacionPorAfinidad().recomendar(ctx, List.of(propia, ajena), 10)));
-        assertEquals(List.of(2L), ids(new RecomendacionPorPopularidad().recomendar(ctx, List.of(propia, ajena), 10)));
+        DatosRecomendacion datos = new DatosRecomendacion(usuario(), Map.of());
+        assertEquals(List.of(2L), ids(new RecomendacionPorAfinidad().recomendar(datos, List.of(propia, ajena), 10)));
+        assertEquals(List.of(2L), ids(new RecomendacionPorPopularidad().recomendar(datos, List.of(propia, ajena), 10)));
     }
 
     @Test
@@ -105,9 +105,9 @@ class RecomendacionTest {
         Publicacion pausada = publicada(1, 10, "java", List.of("java"), List.of(), 0);
         pausada.pausar(10L, AHORA);
         Publicacion visible = publicada(2, 10, "java", List.of("java"), List.of(), 0);
-        ContextoRecomendacion ctx = new ContextoRecomendacion(usuario(), Map.of());
-        assertEquals(List.of(2L), ids(new RecomendacionPorAfinidad().recomendar(ctx, List.of(pausada, visible), 10)));
-        assertEquals(List.of(2L), ids(new RecomendacionPorPopularidad().recomendar(ctx, List.of(pausada, visible), 10)));
+        DatosRecomendacion datos = new DatosRecomendacion(usuario(), Map.of());
+        assertEquals(List.of(2L), ids(new RecomendacionPorAfinidad().recomendar(datos, List.of(pausada, visible), 10)));
+        assertEquals(List.of(2L), ids(new RecomendacionPorPopularidad().recomendar(datos, List.of(pausada, visible), 10)));
     }
 
     // ---------- popularidad ----------
@@ -118,8 +118,8 @@ class RecomendacionTest {
         Publicacion poco = publicada(1, 10, "x", List.of(), List.of(), 1);
         Publicacion mucho = publicada(2, 11, "x", List.of(), List.of(), 3);
         Publicacion empateMejorRep = publicada(3, 12, "x", List.of(), List.of(), 1);
-        ContextoRecomendacion ctx = new ContextoRecomendacion(usuario(), Map.of(10L, 2.0, 12L, 4.5));
-        List<Publicacion> r = new RecomendacionPorPopularidad().recomendar(ctx, List.of(poco, mucho, empateMejorRep), 10);
+        DatosRecomendacion datos = new DatosRecomendacion(usuario(), Map.of(10L, 2.0, 12L, 4.5));
+        List<Publicacion> r = new RecomendacionPorPopularidad().recomendar(datos, List.of(poco, mucho, empateMejorRep), 10);
         assertEquals(List.of(2L, 3L, 1L), ids(r));
     }
 
@@ -128,7 +128,7 @@ class RecomendacionTest {
     void popularidadSinIntereses() {
         Publicacion p = publicada(1, 10, "cocina", List.of(), List.of(), 0);
         List<Publicacion> r = new RecomendacionPorPopularidad().recomendar(
-                new ContextoRecomendacion(usuario(), Map.of()), List.of(p), 10);
+                new DatosRecomendacion(usuario(), Map.of()), List.of(p), 10);
         assertEquals(List.of(1L), ids(r));
     }
 
@@ -141,9 +141,9 @@ class RecomendacionTest {
         Publicacion afin = publicada(1, 10, "java", List.of("testing"), List.of(Habilidad.de("Java")), 0);
         Publicacion popular = publicada(2, 11, "otra", List.of("java"), List.of(), 4);
         List<Publicacion> candidatas = List.of(afin, popular);
-        ContextoRecomendacion ctx = new ContextoRecomendacion(usuario(), Map.of());
-        List<Long> porAfinidad = ids(new RecomendacionPorAfinidad().recomendar(ctx, candidatas, 10));
-        List<Long> porPopularidad = ids(new RecomendacionPorPopularidad().recomendar(ctx, candidatas, 10));
+        DatosRecomendacion datos = new DatosRecomendacion(usuario(), Map.of());
+        List<Long> porAfinidad = ids(new RecomendacionPorAfinidad().recomendar(datos, candidatas, 10));
+        List<Long> porPopularidad = ids(new RecomendacionPorPopularidad().recomendar(datos, candidatas, 10));
         assertEquals(List.of(1L, 2L), porAfinidad);
         assertEquals(List.of(2L, 1L), porPopularidad);
         assertNotEquals(porAfinidad, porPopularidad);
@@ -156,19 +156,19 @@ class RecomendacionTest {
         for (long i = 1; i <= 5; i++) {
             candidatas.add(publicada(i, 10, "x", List.of("java"), List.of(), 0));
         }
-        ContextoRecomendacion ctx = new ContextoRecomendacion(usuario(), Map.of());
-        assertEquals(2, new RecomendacionPorAfinidad().recomendar(ctx, candidatas, 2).size());
-        assertEquals(3, new RecomendacionPorPopularidad().recomendar(ctx, candidatas, 3).size());
-        assertTrue(new RecomendacionPorAfinidad().recomendar(ctx, candidatas, 0).isEmpty());
-        assertTrue(new RecomendacionPorPopularidad().recomendar(ctx, candidatas, -4).isEmpty());
+        DatosRecomendacion datos = new DatosRecomendacion(usuario(), Map.of());
+        assertEquals(2, new RecomendacionPorAfinidad().recomendar(datos, candidatas, 2).size());
+        assertEquals(3, new RecomendacionPorPopularidad().recomendar(datos, candidatas, 3).size());
+        assertTrue(new RecomendacionPorAfinidad().recomendar(datos, candidatas, 0).isEmpty());
+        assertTrue(new RecomendacionPorPopularidad().recomendar(datos, candidatas, -4).isEmpty());
     }
 
     @Test
     @DisplayName("sin candidatas devuelven una lista vacia")
     void sinCandidatas() {
-        ContextoRecomendacion ctx = new ContextoRecomendacion(usuario(), Map.of());
-        assertTrue(new RecomendacionPorAfinidad().recomendar(ctx, List.of(), 5).isEmpty());
-        assertTrue(new RecomendacionPorPopularidad().recomendar(ctx, List.of(), 5).isEmpty());
+        DatosRecomendacion datos = new DatosRecomendacion(usuario(), Map.of());
+        assertTrue(new RecomendacionPorAfinidad().recomendar(datos, List.of(), 5).isEmpty());
+        assertTrue(new RecomendacionPorPopularidad().recomendar(datos, List.of(), 5).isEmpty());
     }
 
     @Test
@@ -179,18 +179,18 @@ class RecomendacionTest {
         p.actualizarDatos("Q", null, null, List.of(), List.of("  JAVA  "), List.of(), null);
         Publicacion pub = publicada(1, 10, "x", List.of("java"), List.of(), 0);
         assertEquals(List.of(1L), ids(new RecomendacionPorAfinidad().recomendar(
-                new ContextoRecomendacion(p, Map.of()), List.of(pub), 5)));
+                new DatosRecomendacion(p, Map.of()), List.of(pub), 5)));
     }
 
-    // ---------- contexto y fabrica ----------
+    // ---------- datos y fabrica ----------
 
     @Test
-    @DisplayName("ContextoRecomendacion devuelve 0 para autores sin reputacion y tolera mapa nulo")
-    void contexto() {
-        ContextoRecomendacion ctx = new ContextoRecomendacion(usuario(), Map.of(1L, 4.0));
-        assertEquals(4.0, ctx.reputacionDe(1L), 0.0001);
-        assertEquals(0.0, ctx.reputacionDe(2L), 0.0001);
-        assertEquals(0.0, new ContextoRecomendacion(usuario(), null).reputacionDe(1L), 0.0001);
+    @DisplayName("DatosRecomendacion devuelve 0 para autores sin reputacion y tolera mapa nulo")
+    void datos() {
+        DatosRecomendacion datos = new DatosRecomendacion(usuario(), Map.of(1L, 4.0));
+        assertEquals(4.0, datos.reputacionDe(1L), 0.0001);
+        assertEquals(0.0, datos.reputacionDe(2L), 0.0001);
+        assertEquals(0.0, new DatosRecomendacion(usuario(), null).reputacionDe(1L), 0.0001);
     }
 
     @Test

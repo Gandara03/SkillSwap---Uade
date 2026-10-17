@@ -6,7 +6,7 @@ import com.uade.skillswap.application.port.in.RecomendacionUseCase;
 import com.uade.skillswap.application.port.out.RelojPort;
 import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
-import com.uade.skillswap.application.recomendacion.ContextoRecomendacion;
+import com.uade.skillswap.application.recomendacion.DatosRecomendacion;
 import com.uade.skillswap.application.recomendacion.EstrategiaRecomendacion;
 import com.uade.skillswap.application.recomendacion.EstrategiaRecomendacionFactory;
 import com.uade.skillswap.application.recomendacion.TipoEstrategiaRecomendacion;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Recomendaciones (Strategy): el servicio solo arma el contexto y delega; la estrategia se elige por parametro
+ * Recomendaciones (Strategy): el servicio solo arma los datos y delega; la estrategia se elige por parametro
  * mediante la Simple Factory del dominio, asi que agregar una nueva no modifica este caso de uso.
  * El puntaje se calcula en memoria sobre todas las candidatas, asi que la pagina se recorta del ranking ya ordenado.
  */
@@ -52,7 +52,7 @@ public class RecomendacionService implements RecomendacionUseCase {
         autores.forEach((id, autor) -> reputaciones.put(id, autor.getReputacion()));
 
         EstrategiaRecomendacion estrategia = EstrategiaRecomendacionFactory.crear(tipoEstrategia);
-        List<Publicacion> ranking = estrategia.recomendar(new ContextoRecomendacion(perfil, reputaciones),
+        List<Publicacion> ranking = estrategia.recomendar(new DatosRecomendacion(perfil, reputaciones),
                 candidatas, config.limiteRecomendaciones());
         Pagina<Publicacion> elegidas = Pagina.recortar(ranking, pagina);
         return new Pagina<>(armador.resumir(elegidas.contenido(), autores), elegidas.pagina(), elegidas.tamano(),

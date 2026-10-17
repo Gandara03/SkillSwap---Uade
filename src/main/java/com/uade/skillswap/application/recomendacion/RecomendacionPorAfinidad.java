@@ -19,8 +19,8 @@ public class RecomendacionPorAfinidad implements EstrategiaRecomendacion {
     }
 
     @Override
-    public List<Publicacion> recomendar(ContextoRecomendacion contexto, List<Publicacion> candidatas, int limite) {
-        Perfil perfil = contexto.perfil();
+    public List<Publicacion> recomendar(DatosRecomendacion datos, List<Publicacion> candidatas, int limite) {
+        Perfil perfil = datos.perfil();
         Set<String> intereses = perfil.getIntereses().stream()
                 .map(i -> i.trim().toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
@@ -29,7 +29,7 @@ public class RecomendacionPorAfinidad implements EstrategiaRecomendacion {
                 .map(p -> new Puntuada(p, afinidad(p, intereses)))
                 .filter(pp -> pp.puntos > 0)
                 .sorted(Comparator.<Puntuada>comparingInt(pp -> -pp.puntos)
-                        .thenComparing(pp -> -contexto.reputacionDe(pp.publicacion.getAutorId()))
+                        .thenComparing(pp -> -datos.reputacionDe(pp.publicacion.getAutorId()))
                         .thenComparing(pp -> pp.publicacion.getId(), Comparator.nullsLast(Comparator.naturalOrder())))
                 .limit(Math.max(limite, 0))
                 .map(pp -> pp.publicacion)
