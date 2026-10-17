@@ -19,9 +19,9 @@ import com.uade.skillswap.domain.model.publicacion.Modalidad;
 import com.uade.skillswap.domain.model.publicacion.TipoPublicacion;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.infrastructure.identidad.IdentidadMockAdapter;
-import com.uade.skillswap.infrastructure.persistence.BaseDeDatos;
 import com.uade.skillswap.infrastructure.persistence.JpaContexto;
 import com.uade.skillswap.presentation.Resultado;
+import com.uade.skillswap.support.BasesDePrueba;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -35,8 +35,8 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Base de los casos de aceptacion JPA: levanta una base H2 en memoria NUEVA por test (Flyway + hbm2ddl=validate)
- * y arma el sistema completo con {@link Composicion} (repositorios JPA, transacciones, servicios, observer,
+ * Base de los casos de aceptacion JPA: levanta una base NUEVA por test (H2, o MySQL con el perfil mysql; ver
+ * BasesDePrueba), con Flyway + hbm2ddl=validate, y arma el sistema completo con {@link Composicion} (repositorios JPA, transacciones, servicios, observer,
  * canales mock y controllers). Los tests solo hablan con los controllers, como lo haria la UI, y por eso
  * obtienen {@code Resultado} en vez de excepciones.
  *
@@ -52,7 +52,7 @@ public abstract class AceptacionJpaBase {
 
     @BeforeEach
     void iniciarAplicacion() {
-        ctx = BaseDeDatos.iniciarH2();               // base nueva y aislada por test
+        ctx = BasesDePrueba.nueva();                 // base nueva y aislada por test (H2 o MySQL)
         identidad = IdentidadMockAdapter.conUsuariosDemo();
         app = Composicion.crear(ctx, identidad, SkillSwapConfig.porDefecto());
     }
@@ -60,7 +60,7 @@ public abstract class AceptacionJpaBase {
     @AfterEach
     void cerrarAplicacion() {
         identidad.cerrarSesion();
-        app.cerrar();                                // cierra el EntityManagerFactory y apaga la base H2
+        app.cerrar();                                // cierra el EntityManagerFactory y apaga/borra la base
     }
 
     // ---------- sesion y resultados ----------

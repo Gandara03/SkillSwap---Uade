@@ -38,7 +38,15 @@ public final class BaseDeDatos {
         String url = variable("SKILLSWAP_DB_URL", URL_MYSQL_POR_DEFECTO);
         String usuario = variable("SKILLSWAP_DB_USER", "root");
         String clave = variable("SKILLSWAP_DB_PASSWORD", "");
-        return iniciar(url, usuario, clave, "com.mysql.cj.jdbc.Driver", () -> { });
+        return iniciarMySql(url, usuario, clave, () -> { });
+    }
+
+    /**
+     * MySQL con url y credenciales explicitas. {@code alCerrar} libera lo que haya creado quien llama
+     * (los tests con el perfil mysql borran ahi su base de prueba).
+     */
+    public static JpaContexto iniciarMySql(String url, String usuario, String clave, Runnable alCerrar) {
+        return iniciar(url, usuario, clave, "com.mysql.cj.jdbc.Driver", alCerrar);
     }
 
     /**

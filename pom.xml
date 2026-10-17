@@ -107,4 +107,30 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Tests de persistencia contra MySQL real (opcional, verify no lo usa): .\mvnw.cmd test -Pmysql
+             Cada test crea y borra su base skillswap_test_<uuid>; ver BasesDePrueba. -->
+        <profile>
+            <id>mysql</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <skillswap.test.db>mysql</skillswap.test.db>
+                            </systemPropertyVariables>
+                            <includes>
+                                <include>**/infrastructure/persistence/jpa/**/*Test.java</include>
+                                <include>**/acceptance/jpa/**/*Test.java</include>
+                                <include>**/presentation/controller/**/*Test.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

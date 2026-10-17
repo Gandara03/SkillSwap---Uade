@@ -11,7 +11,6 @@ import com.uade.skillswap.domain.model.publicacion.Publicacion;
 import com.uade.skillswap.domain.model.publicacion.TipoPublicacion;
 import com.uade.skillswap.domain.model.vo.Habilidad;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
-import com.uade.skillswap.infrastructure.persistence.BaseDeDatos;
 import com.uade.skillswap.infrastructure.persistence.JpaContexto;
 import com.uade.skillswap.infrastructure.persistence.JpaTransaccionAdapter;
 import com.uade.skillswap.infrastructure.persistence.jpa.repository.JpaCalificacionRepository;
@@ -21,6 +20,7 @@ import com.uade.skillswap.infrastructure.persistence.jpa.repository.JpaPerfilRep
 import com.uade.skillswap.infrastructure.persistence.jpa.repository.JpaPromocionRepository;
 import com.uade.skillswap.infrastructure.persistence.jpa.repository.JpaPublicacionRepository;
 import com.uade.skillswap.infrastructure.persistence.jpa.repository.JpaWalletRepository;
+import com.uade.skillswap.support.BasesDePrueba;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -30,8 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base de los tests de persistencia: levanta una base H2 en memoria NUEVA por test (Flyway + hbm2ddl=validate,
- * igual que en la aplicacion) y arma los repositorios JPA. Tambien trae factories de datos de prueba que
+ * Base de los tests de persistencia: levanta una base NUEVA por test (H2 en memoria, o MySQL con el perfil mysql;
+ * ver BasesDePrueba), con Flyway + hbm2ddl=validate igual que en la aplicacion, y arma los repositorios JPA. Tambien trae factories de datos de prueba que
  * usan los repositorios reales, asi cada test parte de filas consistentes con las FKs del esquema.
  */
 public abstract class JpaTestBase {
@@ -51,7 +51,7 @@ public abstract class JpaTestBase {
 
     @BeforeEach
     protected void iniciarBase() {
-        ctx = BaseDeDatos.iniciarH2();
+        ctx = BasesDePrueba.nueva();
         transaccion = new JpaTransaccionAdapter(ctx);
         perfiles = new JpaPerfilRepository(ctx);
         publicaciones = new JpaPublicacionRepository(ctx);
