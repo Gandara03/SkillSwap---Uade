@@ -7,9 +7,8 @@ import com.uade.skillswap.domain.model.vo.SkillCoins;
 import java.util.Collection;
 
 /**
- * Objeto de parametros con los datos editables de una publicacion. Agrupa lo que crearBorrador y editar
- * recibian como diez parametros sueltos (bad smell "Long Parameter List"): si se agrega un dato, cambia este
- * record y no la firma de esos metodos. No tiene reglas propias; la completitud la valida Publicacion al publicar.
+ * Datos editables de una publicacion: objeto de parametros de crearBorrador y editar. No tiene reglas propias;
+ * la completitud la valida Publicacion al publicar.
  */
 public record DatosPublicacion(
         String titulo,

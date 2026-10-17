@@ -20,7 +20,7 @@ public interface IPublicacionController {
 
     Resultado<PublicacionDto> agregarFranja(Long publicacionId, LocalDateTime inicio, LocalDateTime fin);
 
-    /** Transiciones de estado en una sola operacion (nombre orientativo de la consigna). El motivo solo aplica a CANCELAR. */
+    /** Transiciones de estado en una sola operacion. El motivo solo aplica a CANCELAR. */
     Resultado<PublicacionDto> cambiarEstado(Long publicacionId, AccionPublicacion accion, String motivo);
 
     Resultado<PublicacionDto> publicar(Long publicacionId);

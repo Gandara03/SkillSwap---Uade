@@ -4,8 +4,8 @@ import com.uade.skillswap.domain.model.contratacion.Contratacion;
 import com.uade.skillswap.domain.model.historial.ContextoTransicion;
 
 /**
- * State Pattern - State: acciones validas sobre una Contratacion en cada estado
- * (ver tabla 4.5 de la consigna). Cada accion invalida lanza TransicionInvalidaException.
+ * State Pattern - State: acciones validas sobre una Contratacion en cada estado.
+ * Cada accion invalida lanza TransicionInvalidaException.
  */
 public interface EstadoContratacion {
 

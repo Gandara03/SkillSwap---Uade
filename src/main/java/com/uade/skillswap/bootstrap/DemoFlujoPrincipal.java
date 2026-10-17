@@ -264,7 +264,7 @@ public final class DemoFlujoPrincipal {
         return r.valor();
     }
 
-    /** La operacion DEBE fallar con el codigo indicado; se muestra el mensaje que vería el usuario. */
+    /** La operacion DEBE fallar con el codigo indicado; se muestra el mensaje que veria el usuario. */
     private <T> void pasoConErrorEsperado(Actor actor, String descripcion, Supplier<Resultado<T>> operacion,
                                           ErrorCode esperado) {
         encabezado(actor, descripcion);

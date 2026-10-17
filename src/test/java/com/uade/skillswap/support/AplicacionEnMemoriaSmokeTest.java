@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Humo del compositor en memoria: cablea los servicios reales con los fakes y recorre el flujo principal.
- * No reemplaza los tests de servicios (fase 2): solo prueba que el soporte funciona de punta a punta.
+ * No reemplaza los tests de servicios: solo prueba que el soporte funciona de punta a punta.
  */
 @DisplayName("AplicacionEnMemoria: flujo principal de punta a punta con fakes")
 class AplicacionEnMemoriaSmokeTest {

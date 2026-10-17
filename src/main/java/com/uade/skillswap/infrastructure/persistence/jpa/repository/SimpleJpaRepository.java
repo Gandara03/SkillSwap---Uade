@@ -14,8 +14,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Base de los repositorios JPA, al estilo del SimpleJpaRepository del curso (MagicCafe) pero sin JPAUtil estatico:
- * trabaja sobre un {@link JpaContexto}, asi que participa de la transaccion del caso de uso si hay una abierta.
+ * Base de los repositorios JPA: trabaja sobre un {@link JpaContexto}, asi que participa de la transaccion del caso
+ * de uso si hay una abierta.
  * Trae lo que comparten los repositorios: acceso al contexto, chequeo de version y los helpers de consulta
  * (parametros nombrados, conteo, paginacion por ids y precarga de colecciones).
  */

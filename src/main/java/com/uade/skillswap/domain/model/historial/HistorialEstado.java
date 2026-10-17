@@ -2,10 +2,7 @@ package com.uade.skillswap.domain.model.historial;
 
 import java.time.LocalDateTime;
 
-/**
- * Registro inmutable de una transicion de estado (fecha, actor y motivo).
- * No tiene setters ni se puede modificar una vez creado.
- */
+/** Registro inmutable de una transicion de estado (fecha, actor y motivo). */
 public final class HistorialEstado {
 
     private final Long id;

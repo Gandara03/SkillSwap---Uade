@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * Recomendaciones (Strategy): el servicio solo arma los datos y delega; la estrategia se elige por parametro
- * mediante la Simple Factory del dominio, asi que agregar una nueva no modifica este caso de uso.
+ * con EstrategiaRecomendacionFactory, asi que agregar una nueva no modifica este caso de uso.
  * El puntaje se calcula en memoria sobre todas las candidatas, asi que la pagina se recorta del ranking ya ordenado.
  */
 public class RecomendacionService implements RecomendacionUseCase {

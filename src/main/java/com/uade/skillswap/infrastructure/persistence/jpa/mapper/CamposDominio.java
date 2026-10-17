@@ -5,7 +5,7 @@ import java.lang.reflect.Field;
 /**
  * Los agregados del dominio no exponen setters de id/version (los asigna la persistencia). Para que la instancia
  * que recibe {@code guardar} quede coherente con la fila, como pasaria con {@code em.persist}, el repositorio
- * escribe esos campos por reflexion. Es la unica concesion de la infraestructura: el dominio no se toca.
+ * escribe esos campos por reflexion.
  */
 final class CamposDominio {
 

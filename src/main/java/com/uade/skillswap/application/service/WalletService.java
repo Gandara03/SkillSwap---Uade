@@ -25,7 +25,7 @@ public class WalletService implements WalletUseCase {
     @Override
     public Pagina<MovimientoDto> movimientos(Long actorId, PaginaRequest pagina) {
         Entradas.exigirPagina(pagina);
-        Cargas.wallet(walletRepository, actorId); // 404 si el perfil no tiene wallet
+        Cargas.wallet(walletRepository, actorId); // RecursoNoEncontradoException si el perfil no tiene wallet
         return walletRepository.movimientos(actorId, pagina).mapear(Mapeador::movimiento);
     }
 }

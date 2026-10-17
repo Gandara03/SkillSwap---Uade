@@ -107,8 +107,7 @@ public final class Composicion {
         var pushSdk = new PushSdkMock();
         CanalNotificacionFactory canales = new CanalNotificacionFactoryImpl(emailSdk, pushSdk, identidad);
 
-        // Observer de contrataciones: la lista de interesados se arma una sola vez, aca. Hoy hay uno solo, que
-        // persiste y envia las notificaciones despues del commit; un interesado nuevo se agrega a esta lista.
+        // Observers de las contrataciones: la lista se arma una sola vez.
         List<ContratacionObserver> observadores =
                 List.of(new NotificadorObserver(notificaciones, perfiles, canales, transaccion, reloj));
 
@@ -170,7 +169,7 @@ public final class Composicion {
         return walletController;
     }
 
-    /** Correos "enviados" por el SDK simulado (la demo los muestra para evidenciar el segundo canal). */
+    /** Correos enviados por el SDK simulado (los muestra la demo). */
     public EmailSdkMock getEmailSdk() {
         return emailSdk;
     }

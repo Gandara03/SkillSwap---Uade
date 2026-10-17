@@ -21,7 +21,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-/** Menu de consola mínimo: solo habla con los controllers (y con Autenticador para el login). */
+/** Menu de consola minimo: solo habla con los controllers (y con Autenticador para el login). */
 public class MenuConsola {
 
     private static final PaginaRequest PAGINA = PaginaRequest.de(0, 10);

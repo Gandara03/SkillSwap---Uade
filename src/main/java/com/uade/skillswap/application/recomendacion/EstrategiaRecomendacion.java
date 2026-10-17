@@ -4,11 +4,7 @@ import com.uade.skillswap.domain.model.publicacion.Publicacion;
 
 import java.util.List;
 
-/**
- * Strategy: ordena publicaciones candidatas para un perfil. Intercambiable sin tocar el caso de uso.
- * Vive en application y no en domain: no es una regla de negocio sino un criterio para ordenar un listado,
- * que combina datos de varios agregados que arma el caso de uso (ver {@link DatosRecomendacion}).
- */
+/** Strategy: ordena publicaciones candidatas para un perfil. Intercambiable sin tocar el caso de uso. */
 public interface EstrategiaRecomendacion {
 
     TipoEstrategiaRecomendacion getTipo();

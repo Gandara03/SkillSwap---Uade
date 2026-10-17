@@ -7,7 +7,7 @@ import jakarta.persistence.EntityTransaction;
 import java.util.function.Function;
 
 /**
- * Punto unico de acceso a JPA (reemplaza al JPAUtil estatico del curso, pero inyectable y testeable).
+ * Punto unico de acceso a JPA.
  * Guarda el EntityManagerFactory y el EntityManager de la unidad de trabajo del thread actual:
  * la abre {@link JpaTransaccionAdapter}; los repositorios la reutilizan si existe y, si no, abren un
  * EntityManager efimero por llamada (lectura sin transaccion, escritura con transaccion propia).

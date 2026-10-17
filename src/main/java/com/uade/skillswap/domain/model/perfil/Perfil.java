@@ -96,10 +96,7 @@ public class Perfil {
         }
     }
 
-    /**
-     * Recalcula la reputacion como promedio de las calificaciones verificadas recibidas.
-     * Es la unica forma de modificarla: no existe un setter publico.
-     */
+    /** Recalcula la reputacion como promedio de las calificaciones verificadas recibidas. */
     public void recalcularReputacion(List<Calificacion> calificacionesRecibidas) {
         this.cantidadCalificaciones = calificacionesRecibidas.size();
         this.reputacion = calificacionesRecibidas.isEmpty() ? 0.0
