@@ -46,11 +46,16 @@ public class Wallet {
         if (tipo.esCredito()) {
             throw new ReglaDeNegocioException("El tipo de movimiento " + tipo + " no es un debito");
         }
+        exigirSaldoSuficiente(monto);
+        saldo = saldo.restar(monto);
+        movimientosNuevos.add(new MovimientoCredito(null, perfilId, tipo, monto, saldo, contratacionId, ahora));
+    }
+
+    /** Falla si el saldo no alcanza para debitar ese monto. No modifica nada. */
+    public void exigirSaldoSuficiente(SkillCoins monto) {
         if (saldo.esMenorQue(monto)) {
             throw new SaldoInsuficienteException("Saldo insuficiente: disponible " + saldo + ", requerido " + monto);
         }
-        saldo = saldo.restar(monto);
-        movimientosNuevos.add(new MovimientoCredito(null, perfilId, tipo, monto, saldo, contratacionId, ahora));
     }
 
     public void acreditar(SkillCoins monto, TipoMovimiento tipo, Long contratacionId, LocalDateTime ahora) {

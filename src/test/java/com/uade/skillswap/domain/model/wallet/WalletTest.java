@@ -68,6 +68,17 @@ class WalletTest {
     }
 
     @Test
+    @DisplayName("exigirSaldoSuficiente acepta el saldo justo, rechaza un centavo mas y no modifica nada")
+    void exigirSaldoSuficiente() {
+        Wallet w = Wallet.abrir(1L, SkillCoins.de(10), AHORA);
+        assertDoesNotThrow(() -> w.exigirSaldoSuficiente(SkillCoins.de(10)));
+        assertDoesNotThrow(() -> w.exigirSaldoSuficiente(SkillCoins.CERO));
+        assertThrows(SaldoInsuficienteException.class, () -> w.exigirSaldoSuficiente(SkillCoins.de("10.01")));
+        assertEquals(SkillCoins.de(10), w.getSaldo());
+        assertEquals(1, w.getMovimientosNuevos().size(), "solo el bono inicial");
+    }
+
+    @Test
     @DisplayName("acreditar suma al saldo con COBRO o REINTEGRO")
     void acreditar() {
         Wallet w = Wallet.abrir(1L, SkillCoins.de(10), AHORA);

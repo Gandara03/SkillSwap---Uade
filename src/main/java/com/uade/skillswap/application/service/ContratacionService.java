@@ -13,7 +13,6 @@ import com.uade.skillswap.application.port.out.RelojPort;
 import com.uade.skillswap.application.port.out.TransaccionPort;
 import com.uade.skillswap.domain.exception.FranjaNoDisponibleException;
 import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
-import com.uade.skillswap.domain.exception.SaldoInsuficienteException;
 import com.uade.skillswap.domain.model.contratacion.Contratacion;
 import com.uade.skillswap.domain.model.contratacion.PropuestaReprogramacion;
 import com.uade.skillswap.domain.model.contratacion.RepartoCancelacion;
@@ -143,10 +142,7 @@ public class ContratacionService implements ContratacionUseCase {
             // Escrow: se debita al cliente y el monto queda retenido en la contratacion (no hay wallet de plataforma).
             Wallet billetera = Cargas.wallet(walletRepository, contratacion.getClienteId());
             // Se valida el saldo ANTES de mutar la contratacion: si no alcanza, no cambia nada.
-            if (billetera.getSaldo().esMenorQue(contratacion.getPrecioFinal())) {
-                throw new SaldoInsuficienteException("Saldo insuficiente: disponible " + billetera.getSaldo()
-                        + ", requerido " + contratacion.getPrecioFinal());
-            }
+            billetera.exigirSaldoSuficiente(contratacion.getPrecioFinal());
             contratacion.pagar(actorId, ahora);
             if (!contratacion.getPrecioFinal().esCero()) {
                 billetera.debitar(contratacion.getPrecioFinal(), TipoMovimiento.PAGO, contratacion.getId(), ahora);
