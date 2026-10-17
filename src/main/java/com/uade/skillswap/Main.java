@@ -33,10 +33,12 @@ public final class Main {
         boolean conMenu = opciones.contains("--menu") || !conDemo;
 
         out.println("SkillSwap - base de datos: " + (usarMySql ? "MySQL" : "H2 en memoria"));
-        JpaContexto contexto = usarMySql ? BaseDeDatos.iniciarMySql() : BaseDeDatos.iniciarH2();
+        JpaContexto contexto = null;
         Composicion app = null;
         int codigoSalida = 0;
         try {
+            // Dentro del try: si falla el arranque (credenciales, servidor caido, migracion) se informa el error real
+            contexto = usarMySql ? BaseDeDatos.iniciarMySql() : BaseDeDatos.iniciarH2();
             IdentidadMockAdapter identidad = IdentidadMockAdapter.conUsuariosDemo();
             app = Composicion.crear(contexto, identidad, SkillSwapConfig.porDefecto());
 
@@ -56,7 +58,7 @@ public final class Main {
         } finally {
             if (app != null) {
                 app.cerrar();
-            } else {
+            } else if (contexto != null) {
                 contexto.cerrar();
             }
         }
