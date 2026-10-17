@@ -5,11 +5,11 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 ## Estado
 
-`mvnw verify` pasa completo: **669 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+`mvnw verify` pasa completo: **670 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
-| Dominio | `domain/**` | 202 |
+| Dominio | `domain/**` | 203 |
 | Aplicación | `application/**` | 211 |
 | Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 47 |
 | Persistencia JPA | `infrastructure/persistence/jpa/**` | 85 |
@@ -17,17 +17,19 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 | Aceptación en memoria | `acceptance/memoria/**` | 34 |
 | Aceptación sobre JPA/H2 | `acceptance/jpa/**` | 22 |
 
-Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación):
+Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación), medida con `mvnw clean verify`:
 
 | Capa | Líneas | Ramas |
 |---|---|---|
 | `domain` | 99,4 % | 96,2 % |
-| `application` | 99,6 % | 92,4 % |
-| `infrastructure` | 93,2 % | 86,2 % |
-| `presentation` | 72,7 % | 56,2 % |
+| `application` | 99,4 % | 92,4 % |
+| `infrastructure` | 93,1 % | 86,2 % |
+| `presentation` | 72,4 % | 56,2 % |
 | ↳ `presentation.controller` | 100,0 % | 97,4 % |
-| `bootstrap` y `Main` | 15,6 % | 0,0 % |
-| **Total** | **85,4 %** | **80,9 %** |
+| `bootstrap` y `Main` | 14,9 % | 0,0 % |
+| **Total** | **85,9 %** | **80,7 %** |
+
+Sin `clean`, JaCoCo suma los datos de corridas anteriores que siguen en `target\jacoco.exec` (por ejemplo, las del perfil `mysql`) y los porcentajes pueden salir más altos.
 
 Los controllers tienen tests de integración contra H2 (`presentation/controller/**`). El resto de `presentation` (menú de consola y formato) y `bootstrap` se ejercitan con la demo (sección 2). El camino contra MySQL real no forma parte de `verify`: se prueba aparte con la demo `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
 
@@ -48,7 +50,7 @@ skillswap/
     │   │                        Strategy de cancelacion (model/politica), Decorator de precio (model/precio)
     │   ├── application/         casos de uso (port/in), puertos de salida y repositorios (port/out), Strategy de recomendacion,
     │   │                        Facade del perfil publico (facade), commands, DTOs, servicios
-    │   ├── infrastructure/      JPA + Flyway, adapters (identidad, email, push, interna), factory de canales, reloj
+    │   ├── infrastructure/      JPA + Flyway, adapters (identidad, email, push), canal interno, factory de canales, reloj
     │   ├── presentation/        controllers delgados (validan la entrada con ValidadorEntrada) + interfaces I*Controller
     │   │                        + Resultado/ManejadorErrores + menú de consola
     │   ├── bootstrap/           Composicion (compositor a mano), DatosDemo, DemoFlujoPrincipal
@@ -58,7 +60,7 @@ skillswap/
                                  · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 220 clases de producción, 94 clases de test (669 tests), ~11.1 mil líneas de código y ~14.1 mil de tests.
+Números: 220 clases de producción, 95 clases de test (670 tests), ~11.1 mil líneas de código y ~14.1 mil de tests.
 
 ---
 
@@ -133,7 +135,7 @@ presentation ──▶ application (port/in) ──▶ domain ◀── applicat
 |---|---|---|
 | **Dominio** | `Perfil`, `Publicacion`+`Franja`+`DatosPublicacion`, `Contratacion`+`RepartoCancelacion`, `Wallet`+`MovimientoCredito`, `Calificacion`, `Notificacion`, `Promocion`, VOs (`SkillCoins`, `Puntaje`, `Habilidad`, `RangoPrecio`, `BloqueDisponibilidad`), State, Observer (`ContratacionObserver`, `ContratacionEvent`), `HistorialEstado`, Strategy de cancelación (`domain.model.politica`), Decorator de precio (`domain.model.precio`) | UI, JPA, MySQL, SDKs |
 | **Aplicación** | 10 casos de uso (`port/in`), commands y DTOs, servicios, puertos de salida y repositorios (`port/out`: `IdentidadPort`, `TransaccionPort`, `RelojPort`, `CanalNotificacionPort`, `CanalNotificacionFactory`, `*Repository`), Strategy de recomendación (`application.recomendacion`), Facade del perfil público (`application.facade`), `NotificadorObserver` | Controllers concretos, SDKs externos, JPA |
-| **Infraestructura** | `JpaContexto`, `BaseDeDatos`, `JpaTransaccionAdapter`, entidades `*JpaEntity` + mappers + 7 repositorios JPA, `IdentidadMockAdapter`, `Email/Push/InternaCanalAdapter`, `CanalNotificacionFactoryImpl`, `RelojSistema`, Flyway | Decisiones de negocio |
+| **Infraestructura** | `JpaContexto`, `BaseDeDatos`, `JpaTransaccionAdapter`, entidades `*JpaEntity` + mappers + 7 repositorios JPA, `IdentidadMockAdapter`, `Email/PushCanalAdapter`, `CanalInterno`, `CanalNotificacionFactoryImpl`, `RelojSistema`, Flyway | Decisiones de negocio |
 | **Presentación** | 8 interfaces `I*Controller` y sus implementaciones, `ValidadorEntrada`, `Resultado<T>`, `ManejadorErrores`, `MenuConsola` | Persistencia y reglas de negocio |
 
 Reglas que se respetan (verificables con un `grep` de imports): `domain` no importa nada de las otras capas ni `jakarta.persistence`; `application` solo importa `domain`; `presentation` solo usa `port/in`, DTOs, commands, `application.exception`, `domain.query` y enums (además, `ManejadorErrores` conoce `domain.exception` para traducir esos errores); el compositor `bootstrap/Composicion` es el único lugar que conoce todas las capas.
@@ -200,11 +202,11 @@ Notas de importación a StarUML: poner multiplicidades en ambos extremos, las in
 | Patrón | Dónde | Variación que resuelve | Evidencia (tests) |
 |---|---|---|---|
 | **State** | `publicacion/estado/*` (5 estados), `contratacion/estado/*` (7 estados) + `EstadoXFactory.desdeNombre` | Qué acciones son válidas en cada estado; las inválidas lanzan `TransicionInvalidaException` | `PublicacionTest`, `FranjaYEstadosTest`, `ContratacionTest`, casos 2, 3, 5 |
-| **Strategy** | `PoliticaCancelacion` en `domain.model.politica` (`Flexible` 100/50/0 con 24 h/2 h; `Estricta` con 72 h/48 h); el contexto es `Contratacion.repartirRetenido`. `EstrategiaRecomendacion` en `application.recomendacion` (`Afinidad`, `Popularidad`) | Cálculo de reintegro y de recomendación intercambiables | `PoliticaCancelacionTest`, `ContratacionTest` (reparto), `RecomendacionTest`, casos 6 y 7 |
-| **Decorator** | `domain.model.precio`: `PrecioPublicacion` → `PrecioBase` → `PromocionPorcentaje` / `PromocionMontoFijo` | Promociones acumulables; cada una descuenta sobre el resultado anterior y el total se acota en 0 | `PrecioPublicacionTest`, caso 9 |
+| **Strategy** | `PoliticaCancelacion` en `domain.model.politica` (`Flexible` 100/50/0 con 24 h/2 h; `Estricta` con 72 h/48 h); el contexto es `Contratacion.repartirRetenido`. `EstrategiaRecomendacion` en `application.recomendacion` (`Afinidad`, `Popularidad`); el contexto es `RecomendacionService` y las estrategias reciben `DatosRecomendacion` | Cálculo de reintegro y de recomendación intercambiables | `PoliticaCancelacionTest`, `ContratacionTest` (reparto), `RecomendacionTest`, casos 6 y 7 |
+| **Decorator** | `domain.model.precio`: `PrecioPublicacion` (componente) → `PrecioBase` (componente concreto); `PromocionDecorator` (decorador base: solo guarda el precio envuelto) → `PromocionPorcentaje` / `PromocionMontoFijo`, que implementan `calcular()` y `detalle()` | Promociones acumulables; cada una descuenta sobre el resultado anterior y el total se acota en 0 | `PrecioPublicacionTest`, caso 9 |
 | **Observer** | `Contratacion` (Subject) acumula eventos; la lista de observers se arma una sola vez en `Composicion` (hoy `NotificadorObserver`) y `ContratacionService` la suscribe y notifica **después del commit** | Notificar a las partes sin acoplar el dominio a email/push | `NotificadorObserverTest`, `ContratacionServiceTest`, caso 8 |
-| **Adapter** | `IdentidadMockAdapter` → `ServicioIdentidadExterno`; `Email/PushCanalAdapter` → `EmailSdkMock`/`PushSdkMock` | Proveedores externos con API propia detrás de puertos de la aplicación | `IdentidadMockAdapterTest`, `CanalesNotificacionTest`, caso 8 |
-| **Simple Factory** | `CanalNotificacionFactoryImpl` (crea el adapter en cada pedido), `PoliticaCancelacionFactory`, `EstrategiaRecomendacionFactory`, `PrecioPublicacionFactory`, `EstadoXFactory` | Elegir canal/estrategia/estado a partir de un valor (preferencia del usuario, texto persistido) | `CanalesNotificacionTest`, `PoliticaCancelacionTest`, `RecomendacionTest` |
+| **Adapter** | `IdentidadMockAdapter` → `ServicioIdentidadExterno`; `Email/PushCanalAdapter` → `EmailSdkMock`/`PushSdkMock`; `JpaTransaccionAdapter` → JPA. `CanalInterno` implementa `CanalNotificacionPort` sin Adaptado (la bandeja no es un sistema externo), así que no es un Adapter | Proveedores externos con API propia detrás de puertos de la aplicación | `IdentidadMockAdapterTest`, `CanalesNotificacionTest`, caso 8 |
+| **Simple Factory** | `CanalNotificacionFactoryImpl` (crea el canal en cada pedido), `PoliticaCancelacionFactory`, `EstrategiaRecomendacionFactory`, `PrecioPublicacionFactory`, `EstadoXFactory` | Elegir canal/estrategia/estado a partir de un valor (preferencia del usuario, texto persistido) | `CanalesNotificacionTest`, `PoliticaCancelacionTest`, `RecomendacionTest` |
 | **Facade** | `PerfilPublicoFacade` (`application.facade`, puerto `PerfilPublicoUseCase`): coordina `PerfilUseCase`, `CalificacionUseCase` y `PublicacionUseCase` | Vista resumida del perfil (datos + reputación + últimas calificaciones + publicaciones activas) sin que el controller conozca esos tres casos de uso | `PerfilPublicoFacadeTest` |
 
 Descartados a propósito (justificar en el informe): **Composite** (no hay jerarquía real de categorías en el alcance), **Singleton** (no hace falta una única instancia; el compositor arma todo explícitamente).
@@ -255,7 +257,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 9 | Controllers delgados que validan la entrada, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `ValidadorEntrada`, `Resultado`; tests en `presentation/controller/**` (ver nota de nombres abajo) |
 | 10 | Mock UI Kit conectado por interfaces | ⬜ | `I*Controller` son el contrato |
 | 11 | Entregas incrementales | ⬜ | — |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 669 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 670 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases en StarUML | 🟡 | `Diagrama UML.mdj` (base: Mermaid de la sección 3) |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
@@ -302,7 +304,7 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 | **B — Persistencia** | `infrastructure/persistence/**`, `persistence.xml`, `db/migration` | ✅ | Probar el camino contra MySQL real; opcional: test que cuente sentencias SQL |
 | **C — Presentación y demo** | `presentation/**`, `bootstrap/**`, `Main`, tests en `src/test/.../presentation/controller` | ✅ | Conectar el Mock UI Kit, ajustar firmas `I*Controller` (y sus tests de integración) |
 | **D — Adapters y soporte de tests** | `infrastructure/{identidad,notificacion,time}`, `src/test/.../support` | ✅ | Opcional: rollback simulado en `TransaccionSimulada` para que los fakes reflejen JPA |
-| **E — Tests de aplicación** | `src/test/.../application` | ✅ | Mantener la cobertura al agregar casos (hoy 99,5 % de líneas en `application`) |
+| **E — Tests de aplicación** | `src/test/.../application` | ✅ | Mantener la cobertura al agregar casos (hoy 99,4 % de líneas en `application`) |
 | **F — Aceptación** | `src/test/.../acceptance` | ✅ | Mantener alineados los juegos en memoria y sobre JPA |
 | **G — UML (StarUML)** | `Diagrama UML.mdj` | 🟡 | Revisar que el diagrama de dominio + aplicación tenga multiplicidades y patrones marcados |
 | **H — Informe PDF** | `Informe_SkillSwap.pdf` | 🟡 | Revisar que cada decisión tenga problema, alternativa, consecuencias y evidencia (código/tests) |
@@ -359,4 +361,6 @@ Cualquier ajuste debería quedar contenido en `infrastructure/persistence/**` y 
 - **"¿Cómo agrego otro interesado en los eventos de una contratación?"** → una clase que implementa `ContratacionObserver` y se suma a la lista que arma `Composicion`.
 - **"¿Por qué la recomendación no está en el dominio?"** → sección 3 (diseño clave): no es una regla de negocio sino un criterio de orden de un listado que combina datos de varios agregados.
 - **"¿Por qué no hay Composite/Singleton?"** → sección 4.
+- **"¿`CanalInterno` es un Adapter?"** → no: implementa el mismo puerto que los adapters, pero no tiene Adaptado porque la notificación interna ya quedó en la bandeja. Los adapters de canal son los de email y push.
+- **"¿Qué hace el decorador base?"** → `PromocionDecorator` solo guarda el precio envuelto; cada promoción calcula su descuento sobre ese precio y acota el total en cero (`SkillCoins.noNegativo()`).
 - **"¿Dónde se valida la entrada?"** → en el controller (`ValidadorEntrada`: obligatorios, formatos y rangos, sin mirar el estado) y otra vez en el caso de uso y en el dominio; sección 3 (diseño clave) y sección 8, punto 13.
