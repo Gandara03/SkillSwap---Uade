@@ -29,7 +29,7 @@ Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación
 | `bootstrap` y `Main` | 15,6 % | 0,0 % |
 | **Total** | **85,4 %** | **80,9 %** |
 
-Los controllers tienen tests de integración contra H2 (`presentation/controller/**`). El resto de `presentation` (menú de consola y formato) y `bootstrap` se ejercitan con la demo (sección 2). El camino contra MySQL real (`--mysql`) no forma parte de `verify`.
+Los controllers tienen tests de integración contra H2 (`presentation/controller/**`). El resto de `presentation` (menú de consola y formato) y `bootstrap` se ejercitan con la demo (sección 2). El camino contra MySQL real no forma parte de `verify`: se prueba aparte con la demo `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
 
 ---
 
@@ -109,6 +109,14 @@ $env:SKILLSWAP_DB_PASSWORD = "tu_clave"
 
 Flyway crea/actualiza el esquema al arrancar. Hibernate corre con `hbm2ddl=validate` (nunca `create`/`update`). Con `SKILLSWAP_SHOW_SQL=true` se imprimen las sentencias.
 La demo no es repetible sobre la misma base MySQL (los saldos y cupos ya fueron consumidos); para repetirla, usar `--h2` o una base nueva.
+
+**Tests de persistencia contra MySQL** (opcional, `verify` no lo usa):
+
+```powershell
+.\mvnw.cmd test -Pmysql
+```
+
+Corre los tests JPA, de aceptación JPA y de controllers contra MySQL. Cada test crea y borra su propia base `skillswap_test_<uuid>` (`support/BasesDePrueba`). Usa `SKILLSWAP_TEST_DB_URL` (servidor sin base, por defecto `jdbc:mysql://localhost:3306/`) y `SKILLSWAP_TEST_DB_USER`/`SKILLSWAP_TEST_DB_PASSWORD`, o las `SKILLSWAP_DB_*` si no están. El usuario necesita `CREATE` y `DROP` sobre `skillswap%`. Tarda unos minutos porque Flyway migra en cada test.
 
 **Qué imprime la demo** (`DemoFlujoPrincipal`): publicar → solicitar → aceptar → pagar → iniciar → completar → calificar, mostrando actor, estado y saldos de cada paso; una cancelación con reintegro parcial (reintegro + compensación al proveedor); un pago con saldo insuficiente como error controlado; y reputación final.
 
@@ -335,7 +343,7 @@ Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a me
 6. **"Guardar sin cambios no incrementa la versión"** depende de que el dirty-checking no vea cambios espurios (las fechas se truncan a microsegundos antes de escribir para evitarlo).
 7. **Concurrencia con hilos** (`Caso04UltimoCupoJpaTest`, test de wallet): asume `READ_COMMITTED` en H2; un `ERROR_INTERNO` por timeout de lock haría fallar el test.
 8. **Flyway 10**: con H2 alcanza `flyway-core`; para MySQL el `pom.xml` ya incluye `flyway-mysql`.
-9. **MySQL real**: `verify` no lo ejecuta. Los puntos anteriores pueden comportarse distinto contra MySQL 8/9, así que conviene probar `--mysql` antes de la demo si se va a usar esa base.
+9. **MySQL real**: `verify` no lo ejecuta. Los puntos anteriores pueden comportarse distinto contra MySQL 8/9, así que conviene correr `.\mvnw.cmd test -Pmysql` (sección 2) y probar `--mysql` antes de la demo si se va a usar esa base. Probado sobre MySQL 8.4: la demo completa y los tests del perfil `mysql` pasan sin ajustes.
 
 Cualquier ajuste debería quedar contenido en `infrastructure/persistence/**` y `db/migration/**`: el resto del sistema no se entera del motor.
 
