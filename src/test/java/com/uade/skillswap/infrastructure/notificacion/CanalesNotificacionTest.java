@@ -15,14 +15,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Adapters de canales de notificacion y Simple Factory")
+@DisplayName("Canales de notificacion (adapters y canal interno) y Simple Factory")
 class CanalesNotificacionTest {
 
     private EmailSdkMock emailSdk;
     private PushSdkMock pushSdk;
     private EmailCanalAdapter email;
     private PushCanalAdapter push;
-    private InternaCanalAdapter interna;
+    private CanalInterno interna;
     private CanalNotificacionFactoryImpl factory;
     private Perfil destinatario;
 
@@ -32,7 +32,7 @@ class CanalesNotificacionTest {
         pushSdk = new PushSdkMock();
         email = new EmailCanalAdapter(emailSdk, IdentidadMockAdapter.conUsuariosDemo());
         push = new PushCanalAdapter(pushSdk);
-        interna = new InternaCanalAdapter();
+        interna = new CanalInterno();
         factory = new CanalNotificacionFactoryImpl(emailSdk, pushSdk, IdentidadMockAdapter.conUsuariosDemo());
         destinatario = Datos.profesional(1L, "u-ana");
     }
@@ -74,7 +74,7 @@ class CanalesNotificacionTest {
     }
 
     @Test
-    @DisplayName("InternaCanalAdapter no usa ningun sistema externo")
+    @DisplayName("CanalInterno no usa ningun sistema externo")
     void internaNoLlamaAfuera() {
         interna.enviar(notificacion(CanalNotificacion.INTERNA), destinatario);
         assertEquals(CanalNotificacion.INTERNA, interna.getCanal());
@@ -83,15 +83,15 @@ class CanalesNotificacionTest {
     }
 
     @Test
-    @DisplayName("la fabrica crea el adapter del canal pedido")
+    @DisplayName("la fabrica crea el canal pedido")
     void fabricaPorCanal() {
         assertInstanceOf(EmailCanalAdapter.class, factory.crear(CanalNotificacion.EMAIL));
         assertInstanceOf(PushCanalAdapter.class, factory.crear(CanalNotificacion.PUSH));
-        assertInstanceOf(InternaCanalAdapter.class, factory.crear(CanalNotificacion.INTERNA));
+        assertInstanceOf(CanalInterno.class, factory.crear(CanalNotificacion.INTERNA));
     }
 
     @Test
-    @DisplayName("la fabrica crea un adapter nuevo en cada pedido")
+    @DisplayName("la fabrica crea un canal nuevo en cada pedido")
     void fabricaCreaEnCadaPedido() {
         for (CanalNotificacion canal : CanalNotificacion.values()) {
             assertNotSame(factory.crear(canal), factory.crear(canal));
@@ -108,7 +108,7 @@ class CanalesNotificacionTest {
     }
 
     @Test
-    @DisplayName("cada adapter devuelto reporta el canal para el que fue pedido")
+    @DisplayName("cada canal devuelto reporta el canal para el que fue pedido")
     void fabricaCoherente() {
         for (CanalNotificacion canal : CanalNotificacion.values()) {
             CanalNotificacionPort puerto = factory.crear(canal);
@@ -119,7 +119,7 @@ class CanalesNotificacionTest {
     @Test
     @DisplayName("canal nulo cae en el canal interno")
     void fabricaCanalNulo() {
-        assertInstanceOf(InternaCanalAdapter.class, factory.crear(null));
+        assertInstanceOf(CanalInterno.class, factory.crear(null));
     }
 
     @Test

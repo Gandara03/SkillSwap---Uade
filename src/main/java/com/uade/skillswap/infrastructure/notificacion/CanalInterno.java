@@ -6,10 +6,10 @@ import com.uade.skillswap.domain.model.notificacion.Notificacion;
 import com.uade.skillswap.domain.model.perfil.Perfil;
 
 /**
- * Canal interno: la entrega es la propia bandeja de la aplicacion, que ya queda persistida por el
- * observer, asi que no hay sistema externo al que llamar.
+ * Canal interno: implementa {@link CanalNotificacionPort} sin un sistema externo detras, asi que no es un Adapter.
+ * La entrega es la propia bandeja de la aplicacion, que ya guardo el observer.
  */
-public class InternaCanalAdapter implements CanalNotificacionPort {
+public class CanalInterno implements CanalNotificacionPort {
 
     @Override
     public CanalNotificacion getCanal() {

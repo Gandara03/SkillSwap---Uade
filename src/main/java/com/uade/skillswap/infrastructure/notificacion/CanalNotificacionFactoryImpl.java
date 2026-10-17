@@ -10,9 +10,9 @@ import com.uade.skillswap.infrastructure.notificacion.sdk.PushSdkMock;
 import java.util.Objects;
 
 /**
- * Simple Factory: crea en cada pedido el adapter del canal elegido. Si el canal es null usa el interno.
- * Solo guarda lo que los adapters necesitan para crearse: el SDK de cada proveedor externo (uno solo por
- * proveedor) y la identidad, que el adapter de email usa para conocer la direccion del usuario.
+ * Simple Factory: crea en cada pedido el canal elegido, el adapter de email o de push o el canal interno (tambien si
+ * el canal es null). Solo guarda lo que los adapters necesitan para crearse: el SDK de cada proveedor externo (uno
+ * solo por proveedor) y la identidad, que el adapter de email usa para conocer la direccion del usuario.
  */
 public class CanalNotificacionFactoryImpl implements CanalNotificacionFactory {
 
@@ -29,12 +29,12 @@ public class CanalNotificacionFactoryImpl implements CanalNotificacionFactory {
     @Override
     public CanalNotificacionPort crear(CanalNotificacion canal) {
         if (canal == null) {
-            return new InternaCanalAdapter();
+            return new CanalInterno();
         }
         return switch (canal) {
             case EMAIL -> new EmailCanalAdapter(emailSdk, identidad);
             case PUSH -> new PushCanalAdapter(pushSdk);
-            case INTERNA -> new InternaCanalAdapter();
+            case INTERNA -> new CanalInterno();
         };
     }
 }
