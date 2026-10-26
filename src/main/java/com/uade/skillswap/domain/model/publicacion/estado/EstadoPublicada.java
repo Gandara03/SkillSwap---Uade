@@ -1,7 +1,10 @@
 package com.uade.skillswap.domain.model.publicacion.estado;
 
 import com.uade.skillswap.domain.model.historial.ContextoTransicion;
+import com.uade.skillswap.domain.model.publicacion.AccionPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
+
+import java.util.Set;
 
 /** PUBLICADA: visible y disponible para recibir solicitudes. */
 public class EstadoPublicada extends EstadoPublicacionBase {
@@ -24,6 +27,11 @@ public class EstadoPublicada extends EstadoPublicacionBase {
     @Override
     public void cancelar(Publicacion p, ContextoTransicion t) {
         p.cambiarEstado(new EstadoCancelada(), t.exigirMotivo());
+    }
+
+    @Override
+    public Set<AccionPublicacion> accionesPermitidas() {
+        return Set.of(AccionPublicacion.PAUSAR, AccionPublicacion.CERRAR, AccionPublicacion.CANCELAR);
     }
 
     @Override

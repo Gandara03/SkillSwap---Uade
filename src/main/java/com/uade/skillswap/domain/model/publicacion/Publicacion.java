@@ -309,6 +309,20 @@ public class Publicacion {
         return autorId.equals(perfilId);
     }
 
+    /**
+     * Acciones que el autor puede pedir en el estado actual (State). Todas las transiciones de una publicacion son
+     * del autor, asi que no depende de quien consulta. Vienen en el orden en que se declaran en AccionPublicacion.
+     */
+    public List<AccionPublicacion> accionesDelAutor() {
+        List<AccionPublicacion> disponibles = new ArrayList<>();
+        for (AccionPublicacion accion : AccionPublicacion.values()) {
+            if (estadoActual.accionesPermitidas().contains(accion)) {
+                disponibles.add(accion);
+            }
+        }
+        return disponibles;
+    }
+
     public int getCupoDisponible() {
         return Math.max(0, cupo - cupoOcupado);
     }

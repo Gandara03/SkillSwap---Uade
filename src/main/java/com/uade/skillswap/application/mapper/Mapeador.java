@@ -30,6 +30,7 @@ import com.uade.skillswap.domain.model.wallet.MovimientoCredito;
 import com.uade.skillswap.domain.model.wallet.Wallet;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -83,19 +84,27 @@ public final class Mapeador {
 
     /** @param autor puede ser null si el perfil ya no esta disponible (se informan datos vacios). */
     public static PublicacionResumenDto resumen(Publicacion p, Perfil autor, PrecioPublicacion precio) {
-        return new PublicacionResumenDto(p.getId(), p.getTipo(), p.getTitulo(), p.getCategoria(), p.getModalidad(),
-                monto(p.getPrecioBase()), precio == null ? null : monto(precio.calcular()), p.getAutorId(),
+        return new PublicacionResumenDto(p.getId(), p.getTipo(), p.getTitulo(), p.getDescripcion(), p.getCategoria(),
+                p.getModalidad(), p.getDuracionMinutos(), monto(p.getPrecioBase()),
+                precio == null ? null : monto(precio.calcular()), p.getAutorId(),
                 autor == null ? null : autor.getNombreVisible(), autor == null ? 0d : autor.getReputacion(),
-                p.getCupoDisponible(), p.getEstado());
+                p.getCupoDisponible(), new LinkedHashSet<>(p.getEtiquetas()), p.getEstado(), p.accionesDelAutor());
     }
 
     // ---------- contratacion ----------
 
-    public static ContratacionDto contratacion(Contratacion c, String publicacionTitulo) {
-        return new ContratacionDto(c.getId(), c.getPublicacionId(), publicacionTitulo, c.getClienteId(),
-                c.getProveedorId(), c.getFranjaId(), c.getMensaje(), c.getObjetivo(), monto(c.getPrecioFinal()),
-                c.getEstado(), propuesta(c.getPropuestaReprogramacion()), historial(c.getHistorial()),
-                c.getCreadaEn(), c.getPagadaEn(), c.getCompletadaEn());
+    /**
+     * @param publicacion de donde salen el titulo y el inicio de la franja; puede ser null si ya no esta disponible.
+     * @param actorId quien consulta: define las acciones que se informan.
+     */
+    public static ContratacionDto contratacion(Contratacion c, Publicacion publicacion, Long actorId) {
+        String titulo = publicacion == null ? null : publicacion.getTitulo();
+        LocalDateTime franjaInicio = publicacion == null ? null
+                : publicacion.buscarFranja(c.getFranjaId()).map(Franja::getInicio).orElse(null);
+        return new ContratacionDto(c.getId(), c.getPublicacionId(), titulo, c.getClienteId(), c.getProveedorId(),
+                c.getFranjaId(), franjaInicio, c.getMensaje(), c.getObjetivo(), monto(c.getPrecioFinal()),
+                c.getEstado(), c.accionesDisponiblesPara(actorId), propuesta(c.getPropuestaReprogramacion()),
+                historial(c.getHistorial()), c.getCreadaEn(), c.getPagadaEn(), c.getCompletadaEn());
     }
 
     public static PropuestaReprogramacionDto propuesta(PropuestaReprogramacion p) {

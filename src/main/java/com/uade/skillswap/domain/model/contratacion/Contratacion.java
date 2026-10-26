@@ -113,38 +113,38 @@ public class Contratacion implements ContratacionSubject {
     // ---------- acciones (delegan en el State) ----------
 
     public void aceptar(Long actorId, LocalDateTime ahora) {
-        exigirProveedor(actorId);
+        exigirParte(AccionContratacion.ACEPTAR.getParte(), actorId);
         estadoActual.aceptar(this, new ContextoTransicion(actorId, "Solicitud aceptada por el proveedor", ahora));
         registrarEvento(TipoEventoContratacion.SOLICITUD_ACEPTADA, actorId, "Solicitud aceptada", ahora);
     }
 
     public void rechazar(Long actorId, String motivo, LocalDateTime ahora) {
-        exigirProveedor(actorId);
+        exigirParte(AccionContratacion.RECHAZAR.getParte(), actorId);
         estadoActual.rechazar(this, new ContextoTransicion(actorId, motivo, ahora));
         registrarEvento(TipoEventoContratacion.SOLICITUD_RECHAZADA, actorId, motivo, ahora);
     }
 
     public void pagar(Long actorId, LocalDateTime ahora) {
-        exigirCliente(actorId);
+        exigirParte(AccionContratacion.PAGAR.getParte(), actorId);
         estadoActual.pagar(this, new ContextoTransicion(actorId, "Pago confirmado con SkillCoins", ahora));
         this.pagadaEn = ahora;
         registrarEvento(TipoEventoContratacion.PAGO_CONFIRMADO, actorId, "Pago de " + precioFinal, ahora);
     }
 
     public void iniciar(Long actorId, LocalDateTime ahora) {
-        exigirProveedor(actorId);
+        exigirParte(AccionContratacion.INICIAR.getParte(), actorId);
         estadoActual.iniciar(this, new ContextoTransicion(actorId, "Sesion iniciada", ahora));
     }
 
     public void completar(Long actorId, LocalDateTime ahora) {
-        exigirProveedor(actorId);
+        exigirParte(AccionContratacion.COMPLETAR.getParte(), actorId);
         estadoActual.completar(this, new ContextoTransicion(actorId, "Sesion completada", ahora));
         this.completadaEn = ahora;
         registrarEvento(TipoEventoContratacion.SESION_COMPLETADA, actorId, "Sesion completada", ahora);
     }
 
     public void cancelar(Long actorId, String motivo, LocalDateTime ahora) {
-        exigirParticipante(actorId);
+        exigirParte(AccionContratacion.CANCELAR.getParte(), actorId);
         estadoActual.cancelar(this, new ContextoTransicion(actorId, motivo, ahora));
         this.canceladaPorId = actorId;
         this.propuestaReprogramacion = null;
@@ -172,7 +172,7 @@ public class Contratacion implements ContratacionSubject {
 
     /** Cualquiera de las partes propone mover la reserva a otra franja (antes de comenzar). */
     public void proponerReprogramacion(Long actorId, Long nuevaFranjaId, LocalDateTime ahora) {
-        exigirParticipante(actorId);
+        exigirParte(ParteContratacion.AMBAS, actorId);
         if (!estadoActual.permiteReprogramacion()) {
             throw new TransicionInvalidaException("contratacion", estado, "reprogramar");
         }
@@ -190,7 +190,7 @@ public class Contratacion implements ContratacionSubject {
 
     /** La contraparte de quien propuso acepta o rechaza. Si acepta, la reserva pasa a la nueva franja. */
     public void responderReprogramacion(Long actorId, boolean acepta, LocalDateTime ahora) {
-        exigirParticipante(actorId);
+        exigirParte(ParteContratacion.AMBAS, actorId);
         if (propuestaReprogramacion == null) {
             throw new ReglaDeNegocioException("No hay una propuesta de reprogramacion pendiente");
         }
@@ -235,22 +235,32 @@ public class Contratacion implements ContratacionSubject {
 
     // ---------- reglas de participacion ----------
 
-    private void exigirProveedor(Long actorId) {
-        if (!proveedorId.equals(actorId)) {
-            throw new ReglaDeNegocioException("Solo el proveedor puede realizar esta accion");
+    /**
+     * Acciones que ese actor puede pedir ahora: las que admite el estado actual (State) y le corresponden por su
+     * parte. Un tercero no tiene ninguna. Vienen en el orden en que se declaran en AccionContratacion.
+     */
+    public List<AccionContratacion> accionesDisponiblesPara(Long actorId) {
+        List<AccionContratacion> disponibles = new ArrayList<>();
+        for (AccionContratacion accion : AccionContratacion.values()) {
+            if (estadoActual.accionesPermitidas().contains(accion) && esParte(accion.getParte(), actorId)) {
+                disponibles.add(accion);
+            }
+        }
+        return disponibles;
+    }
+
+    private void exigirParte(ParteContratacion parte, Long actorId) {
+        if (!esParte(parte, actorId)) {
+            throw new ReglaDeNegocioException(parte.getMensajeSinPermiso());
         }
     }
 
-    private void exigirCliente(Long actorId) {
-        if (!clienteId.equals(actorId)) {
-            throw new ReglaDeNegocioException("Solo el cliente puede realizar esta accion");
-        }
-    }
-
-    private void exigirParticipante(Long actorId) {
-        if (!esParticipante(actorId)) {
-            throw new ReglaDeNegocioException("Solo los participantes de la contratacion pueden realizar esta accion");
-        }
+    private boolean esParte(ParteContratacion parte, Long actorId) {
+        return switch (parte) {
+            case PROVEEDOR -> proveedorId.equals(actorId);
+            case CLIENTE -> clienteId.equals(actorId);
+            case AMBAS -> esParticipante(actorId);
+        };
     }
 
     public boolean esParticipante(Long perfilId) {

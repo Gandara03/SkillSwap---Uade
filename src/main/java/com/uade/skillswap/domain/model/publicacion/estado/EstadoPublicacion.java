@@ -1,7 +1,10 @@
 package com.uade.skillswap.domain.model.publicacion.estado;
 
 import com.uade.skillswap.domain.model.historial.ContextoTransicion;
+import com.uade.skillswap.domain.model.publicacion.AccionPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
+
+import java.util.Set;
 
 /**
  * State Pattern - State: define que puede hacerse con una Publicacion en cada estado.
@@ -20,6 +23,9 @@ public interface EstadoPublicacion {
     void cerrar(Publicacion publicacion, ContextoTransicion t);
 
     void cancelar(Publicacion publicacion, ContextoTransicion t);
+
+    /** Acciones que este estado admite: van junto a los metodos que habilita cada estado. */
+    Set<AccionPublicacion> accionesPermitidas();
 
     boolean permiteEdicion();
 

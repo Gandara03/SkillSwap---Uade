@@ -107,7 +107,7 @@ public class ContratacionService implements ContratacionUseCase {
             Contratacion solicitud = Contratacion.solicitar(publicacion.getId(), actorId, publicacion.getAutorId(),
                     comando.franjaId(), comando.mensaje(), comando.objetivo(), precio.calcular(), ahora);
             Contratacion guardada = contratacionRepository.guardar(solicitud);
-            return cambio(solicitud, guardada, publicacion.getTitulo());
+            return cambio(solicitud, guardada, publicacion, actorId);
         });
     }
 
@@ -121,7 +121,7 @@ public class ContratacionService implements ContratacionUseCase {
             publicacion.reservarFranja(contratacion.getFranjaId(), ahora); // franja y cupo, misma transaccion
             Contratacion guardada = contratacionRepository.guardar(contratacion);
             publicacionRepository.guardar(publicacion);
-            return cambio(contratacion, guardada, publicacion.getTitulo());
+            return cambio(contratacion, guardada, publicacion, actorId);
         });
     }
 
@@ -130,7 +130,7 @@ public class ContratacionService implements ContratacionUseCase {
         return operar(() -> {
             Contratacion contratacion = cargarComoProveedor(actorId, contratacionId);
             contratacion.rechazar(actorId, motivo, reloj.ahora());
-            return cambio(contratacion, contratacionRepository.guardar(contratacion));
+            return cambio(contratacion, contratacionRepository.guardar(contratacion), actorId);
         });
     }
 
@@ -149,7 +149,7 @@ public class ContratacionService implements ContratacionUseCase {
             }
             Contratacion guardada = contratacionRepository.guardar(contratacion);
             walletRepository.guardar(billetera);
-            return cambio(contratacion, guardada);
+            return cambio(contratacion, guardada, actorId);
         });
     }
 
@@ -158,7 +158,7 @@ public class ContratacionService implements ContratacionUseCase {
         return operar(() -> {
             Contratacion contratacion = cargarComoProveedor(actorId, contratacionId);
             contratacion.iniciar(actorId, reloj.ahora());
-            return cambio(contratacion, contratacionRepository.guardar(contratacion));
+            return cambio(contratacion, contratacionRepository.guardar(contratacion), actorId);
         });
     }
 
@@ -171,7 +171,7 @@ public class ContratacionService implements ContratacionUseCase {
             Contratacion guardada = contratacionRepository.guardar(contratacion);
             acreditar(contratacion.getProveedorId(), contratacion.getPrecioFinal(), TipoMovimiento.COBRO,
                     contratacion.getId(), ahora); // se libera al proveedor lo retenido
-            return cambio(contratacion, guardada);
+            return cambio(contratacion, guardada, actorId);
         });
     }
 
@@ -200,7 +200,7 @@ public class ContratacionService implements ContratacionUseCase {
             acreditar(contratacion.getProveedorId(), reparto.getCompensacion(), TipoMovimiento.COBRO,
                     contratacion.getId(), ahora);
 
-            ContratacionDto dto = Mapeador.contratacion(guardada, publicacion.getTitulo());
+            ContratacionDto dto = Mapeador.contratacion(guardada, publicacion, actorId);
             return new Cambio<>(contratacion, new ResultadoCancelacionDto(dto, politica.getTipo().name(),
                     Mapeador.monto(reparto.getReintegro()), Mapeador.monto(reparto.getCompensacion())));
         });
@@ -214,7 +214,7 @@ public class ContratacionService implements ContratacionUseCase {
             LocalDateTime ahora = reloj.ahora();
             contratacion.proponerReprogramacion(actorId, nuevaFranjaId, ahora);
             exigirFranjaDisponible(publicacion, nuevaFranjaId, ahora);
-            return cambio(contratacion, contratacionRepository.guardar(contratacion), publicacion.getTitulo());
+            return cambio(contratacion, contratacionRepository.guardar(contratacion), publicacion, actorId);
         });
     }
 
@@ -235,7 +235,7 @@ public class ContratacionService implements ContratacionUseCase {
                 publicacion.reprogramarReserva(franjaAnterior, contratacion.getFranjaId(), ahora);
                 publicacionRepository.guardar(publicacion);
             }
-            return cambio(contratacion, contratacionRepository.guardar(contratacion), publicacion.getTitulo());
+            return cambio(contratacion, contratacionRepository.guardar(contratacion), publicacion, actorId);
         });
     }
 
@@ -244,7 +244,7 @@ public class ContratacionService implements ContratacionUseCase {
     @Override
     public ContratacionDto obtener(Long actorId, Long contratacionId) {
         Contratacion contratacion = cargarComoParticipante(actorId, contratacionId);
-        return Mapeador.contratacion(contratacion, titulo(contratacion.getPublicacionId()));
+        return Mapeador.contratacion(contratacion, publicacion(contratacion.getPublicacionId()), actorId);
     }
 
     @Override
@@ -264,9 +264,10 @@ public class ContratacionService implements ContratacionUseCase {
     public Pagina<ContratacionDto> listarMias(Long actorId, PaginaRequest pagina) {
         Entradas.exigir(actorId, "El actor");
         Entradas.exigirPagina(pagina);
-        Map<Long, String> titulos = new HashMap<>(); // una lectura por publicacion distinta de la pagina
+        Map<Long, Publicacion> publicaciones = new HashMap<>(); // una lectura por publicacion distinta de la pagina
         return contratacionRepository.buscarPorParticipante(actorId, pagina)
-                .mapear(c -> Mapeador.contratacion(c, titulos.computeIfAbsent(c.getPublicacionId(), this::titulo)));
+                .mapear(c -> Mapeador.contratacion(c,
+                        publicaciones.computeIfAbsent(c.getPublicacionId(), this::publicacion), actorId));
     }
 
     // ---------- soporte ----------
@@ -274,12 +275,14 @@ public class ContratacionService implements ContratacionUseCase {
     /** Resultado de una operacion: la contratacion operada (con sus eventos pendientes) y lo que se devuelve. */
     private record Cambio<T>(Contratacion contratacion, T resultado) { }
 
-    private Cambio<ContratacionDto> cambio(Contratacion original, Contratacion guardada) {
-        return cambio(original, guardada, titulo(guardada.getPublicacionId()));
+    private Cambio<ContratacionDto> cambio(Contratacion original, Contratacion guardada, Long actorId) {
+        return cambio(original, guardada, publicacion(guardada.getPublicacionId()), actorId);
     }
 
-    private Cambio<ContratacionDto> cambio(Contratacion original, Contratacion guardada, String titulo) {
-        return new Cambio<>(original, Mapeador.contratacion(guardada, titulo));
+    /** El DTO se arma para quien hizo la operacion: sus acciones dependen de su parte en la contratacion. */
+    private Cambio<ContratacionDto> cambio(Contratacion original, Contratacion guardada, Publicacion publicacion,
+                                           Long actorId) {
+        return new Cambio<>(original, Mapeador.contratacion(guardada, publicacion, actorId));
     }
 
     /** Ejecuta el trabajo en una transaccion y, una vez confirmada, notifica los eventos acumulados. */
@@ -326,8 +329,9 @@ public class ContratacionService implements ContratacionUseCase {
         }
     }
 
-    private String titulo(Long publicacionId) {
-        return publicacionRepository.buscarPorId(publicacionId).map(Publicacion::getTitulo).orElse(null);
+    /** Para armar el DTO; si la publicacion ya no esta, el DTO sale sin titulo ni inicio de franja. */
+    private Publicacion publicacion(Long publicacionId) {
+        return publicacionRepository.buscarPorId(publicacionId).orElse(null);
     }
 
     private Contratacion cargarComoParticipante(Long actorId, Long contratacionId) {

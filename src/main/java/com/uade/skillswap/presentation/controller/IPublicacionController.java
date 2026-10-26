@@ -5,6 +5,7 @@ import com.uade.skillswap.application.command.CrearPublicacionCommand;
 import com.uade.skillswap.application.command.EditarPublicacionCommand;
 import com.uade.skillswap.application.dto.PublicacionDto;
 import com.uade.skillswap.application.dto.PublicacionResumenDto;
+import com.uade.skillswap.domain.model.publicacion.AccionPublicacion;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;

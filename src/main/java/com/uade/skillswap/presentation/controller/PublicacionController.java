@@ -10,6 +10,7 @@ import com.uade.skillswap.application.exception.ValidacionException;
 import com.uade.skillswap.application.port.in.PublicacionUseCase;
 import com.uade.skillswap.application.port.in.SesionUseCase;
 import com.uade.skillswap.domain.model.promocion.TipoPromocion;
+import com.uade.skillswap.domain.model.publicacion.AccionPublicacion;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;

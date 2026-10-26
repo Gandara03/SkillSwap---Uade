@@ -2,7 +2,10 @@ package com.uade.skillswap.domain.model.publicacion.estado;
 
 import com.uade.skillswap.domain.exception.TransicionInvalidaException;
 import com.uade.skillswap.domain.model.historial.ContextoTransicion;
+import com.uade.skillswap.domain.model.publicacion.AccionPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Publicacion;
+
+import java.util.Set;
 
 /** Rechaza por defecto toda accion; cada estado concreto habilita solo las suyas. */
 public abstract class EstadoPublicacionBase implements EstadoPublicacion {
@@ -30,6 +33,11 @@ public abstract class EstadoPublicacionBase implements EstadoPublicacion {
     @Override
     public void cancelar(Publicacion p, ContextoTransicion t) {
         throw new TransicionInvalidaException("publicacion", getNombre(), "cancelar");
+    }
+
+    @Override
+    public Set<AccionPublicacion> accionesPermitidas() {
+        return Set.of();
     }
 
     @Override

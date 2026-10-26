@@ -11,6 +11,7 @@ import com.uade.skillswap.domain.model.notificacion.CanalNotificacion;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
 import com.uade.skillswap.domain.model.promocion.TipoPromocion;
+import com.uade.skillswap.domain.model.publicacion.AccionPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
 import com.uade.skillswap.domain.model.publicacion.TipoPublicacion;
 import com.uade.skillswap.domain.query.Pagina;

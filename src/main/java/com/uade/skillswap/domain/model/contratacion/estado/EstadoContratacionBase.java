@@ -1,8 +1,11 @@
 package com.uade.skillswap.domain.model.contratacion.estado;
 
 import com.uade.skillswap.domain.exception.TransicionInvalidaException;
+import com.uade.skillswap.domain.model.contratacion.AccionContratacion;
 import com.uade.skillswap.domain.model.contratacion.Contratacion;
 import com.uade.skillswap.domain.model.historial.ContextoTransicion;
+
+import java.util.Set;
 
 /** Rechaza por defecto toda accion; cada estado concreto habilita solo las suyas. */
 public abstract class EstadoContratacionBase implements EstadoContratacion {
@@ -35,6 +38,11 @@ public abstract class EstadoContratacionBase implements EstadoContratacion {
     @Override
     public void cancelar(Contratacion c, ContextoTransicion t) {
         throw new TransicionInvalidaException("contratacion", getNombre(), "cancelar");
+    }
+
+    @Override
+    public Set<AccionContratacion> accionesPermitidas() {
+        return Set.of();
     }
 
     @Override
