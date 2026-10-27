@@ -70,6 +70,17 @@ class PublicacionResumenServiceTest {
     }
 
     @Test
+    @DisplayName("el detalle y lo que devuelven las operaciones tambien traen las acciones del autor")
+    void detalleConAccionesDelAutor() {
+        PublicacionDto borrador = e.borrador(ana, e.oferta());
+        assertEquals(List.of(PUBLICAR, CANCELAR), borrador.accionesDelAutor());
+
+        PublicacionDto publicada = app.publicacionUseCase.publicar(ana.id(), borrador.id());
+        assertEquals(List.of(PAUSAR, CERRAR, CANCELAR), publicada.accionesDelAutor());
+        assertEquals(publicada.accionesDelAutor(), e.publicacion(ana, publicada).accionesDelAutor());
+    }
+
+    @Test
     @DisplayName("la busqueda informa las mismas acciones del autor: no dependen de quien busca")
     void busquedaInformaAccionesDelAutor() {
         e.publicada(ana);

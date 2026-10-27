@@ -74,7 +74,7 @@ public final class Mapeador {
                 monto(p.getPrecioBase()), precio == null ? null : monto(precio.calcular()),
                 precio == null ? List.of() : List.copyOf(precio.detalle()), p.getPoliticaCancelacion(),
                 new LinkedHashSet<>(p.getEtiquetas()), nombresDeHabilidades(p.getHabilidades()),
-                p.getFranjas().stream().map(Mapeador::franja).toList(), p.getEstado(),
+                p.getFranjas().stream().map(Mapeador::franja).toList(), p.getEstado(), p.accionesDelAutor(),
                 historial(p.getHistorial()), p.getCreadaEn(), p.getPublicadaEn());
     }
 

@@ -31,6 +31,7 @@ import com.uade.skillswap.infrastructure.persistence.jpa.repository.JpaPromocion
 import com.uade.skillswap.infrastructure.persistence.jpa.repository.JpaPublicacionRepository;
 import com.uade.skillswap.infrastructure.persistence.jpa.repository.JpaWalletRepository;
 import com.uade.skillswap.infrastructure.time.RelojSistema;
+import com.uade.skillswap.presentation.adaptador.UiControllersAdapter;
 import com.uade.skillswap.presentation.controller.BusquedaController;
 import com.uade.skillswap.presentation.controller.CalificacionController;
 import com.uade.skillswap.presentation.controller.ContratacionController;
@@ -49,6 +50,7 @@ import com.uade.skillswap.presentation.controller.RecomendacionController;
 import com.uade.skillswap.presentation.controller.WalletController;
 import com.uade.skillswap.presentation.ui.Autenticador;
 import com.uade.skillswap.presentation.ui.MenuConsola;
+import com.uade.skillswap.presentation.ui.swing.contrato.UiControllers;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -180,7 +182,19 @@ public final class Composicion {
 
     /** Menu de consola sobre los controllers; el login se resuelve con el adapter de identidad. */
     public MenuConsola crearMenu(IdentidadMockAdapter identidad, InputStream entrada, PrintStream salida) {
-        Autenticador autenticador = new Autenticador() {
+        return new MenuConsola(autenticador(identidad), perfilController, busquedaController, recomendacionController,
+                contratacionController, walletController, notificacionController, entrada, salida);
+    }
+
+    /** Contrato de la pantalla Swing sobre los mismos controllers (Adapter); el login tambien va a la identidad mock. */
+    public UiControllers crearControllersUi(IdentidadMockAdapter identidad) {
+        return new UiControllersAdapter(autenticador(identidad), perfilController, publicacionController,
+                busquedaController, recomendacionController, contratacionController, calificacionController,
+                notificacionController, walletController);
+    }
+
+    private static Autenticador autenticador(IdentidadMockAdapter identidad) {
+        return new Autenticador() {
             @Override
             public void iniciarSesion(String userId) {
                 identidad.iniciarSesion(userId);
@@ -191,8 +205,6 @@ public final class Composicion {
                 identidad.cerrarSesion();
             }
         };
-        return new MenuConsola(autenticador, perfilController, busquedaController, recomendacionController,
-                contratacionController, walletController, notificacionController, entrada, salida);
     }
 
     /** Libera los recursos de persistencia. */

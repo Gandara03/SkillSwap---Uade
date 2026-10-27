@@ -126,6 +126,7 @@
                                 <include>**/infrastructure/persistence/jpa/**/*Test.java</include>
                                 <include>**/acceptance/jpa/**/*Test.java</include>
                                 <include>**/presentation/controller/**/*Test.java</include>
+                                <include>**/presentation/adaptador/**/*Test.java</include>
                             </includes>
                         </configuration>
                     </plugin>
