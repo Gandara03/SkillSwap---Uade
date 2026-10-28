@@ -34,7 +34,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -75,6 +77,8 @@ import static com.uade.skillswap.presentation.ui.swing.Theme.label;
  * lleva el userId elegido en el selector de la barra lateral (login simulado).
  */
 public final class SkillSwapView extends JPanel {
+
+    private static final String AYUDA_BUSQUEDA = "Buscar mentorías, servicios o habilidades...";
 
     private final UiControllers controllers;
     private final List<String> usuarios;
@@ -257,8 +261,8 @@ public final class SkillSwapView extends JPanel {
         words.add(label("¿Qué habilidad querés desbloquear hoy?", BODY, new Color(213, 228, 238)));
         words.add(Box.createVerticalStrut(16));
         JTextField search = new JTextField();
-        search.putClientProperty("JTextField.placeholderText", "Buscar mentorías, servicios o habilidades...");
-        search.setBorder(new EmptyBorder(11, 13, 11, 13));
+        search.setToolTipText(AYUDA_BUSQUEDA);
+        search.setBorder(new CompoundBorder(new LineBorder(BORDER), new EmptyBorder(11, 13, 11, 13)));
         search.addActionListener(e -> intentar(() -> showExplore(search.getText())));
         words.add(search);
         hero.add(words);
@@ -315,7 +319,8 @@ public final class SkillSwapView extends JPanel {
         JPanel filters = card(new FlowLayout(FlowLayout.LEFT, 10, 0));
         filters.setAlignmentX(LEFT_ALIGNMENT);
         JTextField q = new JTextField(initial, 24);
-        q.setBorder(new EmptyBorder(10, 12, 10, 12));
+        q.setToolTipText(AYUDA_BUSQUEDA);
+        q.setBorder(new CompoundBorder(new LineBorder(BORDER), new EmptyBorder(10, 12, 10, 12)));
         JComboBox<String> cat = new JComboBox<>(controllers.busqueda().categorias().toArray(String[]::new));
         cat.setSelectedItem(category);
         JComboBox<OrdenBusqueda> order = new JComboBox<>(OrdenBusqueda.values());
@@ -324,6 +329,8 @@ public final class SkillSwapView extends JPanel {
         filters.add(cat);
         filters.add(order);
         filters.add(go);
+        // Sin tope de alto, con pocos resultados la tarjeta se queda con el alto que sobra en la pagina
+        filters.setMaximumSize(new Dimension(Integer.MAX_VALUE, filters.getPreferredSize().height));
         p.add(filters);
         p.add(Box.createVerticalStrut(22));
         JPanel results = new JPanel();
