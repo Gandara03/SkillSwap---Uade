@@ -16,6 +16,7 @@ import com.uade.skillswap.presentation.ui.swing.contrato.Models.Perfil;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.PoliticaCancelacion;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Publicacion;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.TipoPublicacion;
+import com.uade.skillswap.presentation.ui.swing.contrato.OperacionFallidaException;
 import com.uade.skillswap.presentation.ui.swing.contrato.UiControllers;
 
 import javax.swing.BorderFactory;
@@ -63,22 +64,45 @@ import static com.uade.skillswap.presentation.ui.swing.Theme.button;
 import static com.uade.skillswap.presentation.ui.swing.Theme.card;
 import static com.uade.skillswap.presentation.ui.swing.Theme.label;
 
+/**
+ * Pantalla principal. Es el Client del Adapter: solo conoce {@link UiControllers} y sus modelos, y cada operacion
+ * lleva el userId elegido en el selector de la barra lateral (login simulado).
+ */
 public final class SkillSwapView extends JPanel {
 
-    private static final String USER_ID = "user-mateo";
-
     private final UiControllers controllers;
+    private final List<String> usuarios;
+    private final List<String> etiquetasUsuarios;
+    private String usuarioActivo;
     private final JPanel content = new JPanel(new BorderLayout());
     private final JLabel pageTitle = label("Inicio", H1, TEXT);
     private final JLabel badge = label("", new Font("SansSerif", Font.BOLD, 10), Color.WHITE);
 
-    public SkillSwapView(UiControllers controllers) {
+    /** {@code usuarios}: los userIds que ofrece el selector; la pantalla arranca con el primero. */
+    public SkillSwapView(UiControllers controllers, List<String> usuarios) {
+        if (usuarios.isEmpty()) {
+            throw new IllegalArgumentException("La pantalla necesita al menos un usuario");
+        }
         this.controllers = controllers;
+        this.usuarios = List.copyOf(usuarios);
+        // Los nombres no cambian durante la sesion: se piden una sola vez para armar el selector
+        this.etiquetasUsuarios = usuarios.stream()
+                .map(userId -> controllers.perfiles().verPerfil(userId).nombre() + " (" + userId + ")")
+                .toList();
+        this.usuarioActivo = usuarios.get(0);
         setLayout(new BorderLayout());
         setBackground(BG);
+        armar();
+    }
+
+    /** Arma la barra lateral y la superior con los datos del usuario activo y abre Inicio. */
+    private void armar() {
+        removeAll();
         add(sidebar(), BorderLayout.WEST);
         add(shell(), BorderLayout.CENTER);
         showHome();
+        revalidate();
+        repaint();
     }
 
     private JComponent sidebar() {
@@ -107,16 +131,34 @@ public final class SkillSwapView extends JPanel {
         user.setBorder(new EmptyBorder(8, 6, 4, 4));
         user.setMaximumSize(new Dimension(Integer.MAX_VALUE, 56));
         user.setAlignmentX(LEFT_ALIGNMENT);
-        JLabel avatar = avatar("MS", 36);
+        Perfil yo = controllers.perfiles().verPerfil(usuarioActivo);
+        JLabel avatar = avatar(iniciales(yo.nombre()), 36);
         user.add(avatar, BorderLayout.WEST);
         JPanel txt = new JPanel();
         txt.setOpaque(false);
         txt.setLayout(new BoxLayout(txt, BoxLayout.Y_AXIS));
-        txt.add(label("Mateo Silva", H3, Color.WHITE));
-        txt.add(label("Software Engineer", SMALL, new Color(177, 200, 216)));
+        txt.add(label(yo.nombre(), H3, Color.WHITE));
+        txt.add(label(yo.rol(), SMALL, new Color(177, 200, 216)));
         user.add(txt);
         side.add(user);
+        side.add(Box.createVerticalStrut(8));
+        side.add(selectorUsuario());
         return side;
+    }
+
+    /** Login simulado: elegir otro usuario rearma la pantalla con su sesion. */
+    private JComboBox<String> selectorUsuario() {
+        JComboBox<String> selector = new JComboBox<>(etiquetasUsuarios.toArray(String[]::new));
+        selector.setSelectedIndex(usuarios.indexOf(usuarioActivo));
+        selector.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        selector.setAlignmentX(LEFT_ALIGNMENT);
+        selector.addActionListener(e -> intentar(() -> cambiarUsuario(usuarios.get(selector.getSelectedIndex()))));
+        return selector;
+    }
+
+    private void cambiarUsuario(String userId) {
+        usuarioActivo = userId;
+        armar();
     }
 
     private JButton nav(String text, Runnable action) {
@@ -128,7 +170,7 @@ public final class SkillSwapView extends JPanel {
         b.setBorder(new EmptyBorder(10, 12, 10, 12));
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.addActionListener(e -> action.run());
+        b.addActionListener(e -> intentar(action));
         return b;
     }
 
@@ -145,8 +187,8 @@ public final class SkillSwapView extends JPanel {
         badge.setBackground(DANGER);
         badge.setBorder(new EmptyBorder(5, 8, 5, 8));
         actions.add(badge);
-        JButton coins = button("◈  " + controllers.wallet().consultarSaldo(USER_ID) + " SkillCoins", false);
-        coins.addActionListener(e -> showWallet());
+        JButton coins = button("◈  " + controllers.wallet().consultarSaldo(usuarioActivo) + " SkillCoins", false);
+        coins.addActionListener(e -> intentar(this::showWallet));
         actions.add(coins);
         top.add(actions, BorderLayout.EAST);
         shell.add(top, BorderLayout.NORTH);
@@ -157,7 +199,7 @@ public final class SkillSwapView extends JPanel {
 
     private void page(String title, JComponent view) {
         pageTitle.setText(title);
-        long unread = controllers.notificaciones().listarNotificaciones(USER_ID).stream()
+        long unread = controllers.notificaciones().listarNotificaciones(usuarioActivo).stream()
                 .filter(n -> !n.leida()).count();
         badge.setText(unread + " NUEVAS");
         content.removeAll();
@@ -192,6 +234,7 @@ public final class SkillSwapView extends JPanel {
     }
 
     private void showHome() {
+        Perfil yo = controllers.perfiles().verPerfil(usuarioActivo);
         JPanel p = base();
         JPanel hero = new Theme.RoundedPanel(22, NAVY_2);
         hero.setLayout(new BorderLayout(22, 0));
@@ -200,28 +243,29 @@ public final class SkillSwapView extends JPanel {
         JPanel words = new JPanel();
         words.setOpaque(false);
         words.setLayout(new BoxLayout(words, BoxLayout.Y_AXIS));
-        words.add(label("Hola, Mateo 👋", new Font("SansSerif", Font.BOLD, 25), Color.WHITE));
+        words.add(label("Hola, " + primerNombre(yo.nombre()) + " 👋", new Font("SansSerif", Font.BOLD, 25),
+                Color.WHITE));
         words.add(Box.createVerticalStrut(7));
         words.add(label("¿Qué habilidad querés desbloquear hoy?", BODY, new Color(213, 228, 238)));
         words.add(Box.createVerticalStrut(16));
         JTextField search = new JTextField();
         search.putClientProperty("JTextField.placeholderText", "Buscar mentorías, servicios o habilidades...");
         search.setBorder(new EmptyBorder(11, 13, 11, 13));
-        search.addActionListener(e -> showExplore(search.getText()));
+        search.addActionListener(e -> intentar(() -> showExplore(search.getText())));
         words.add(search);
         hero.add(words);
         JPanel stat = new JPanel();
         stat.setOpaque(false);
         stat.setLayout(new BoxLayout(stat, BoxLayout.Y_AXIS));
         stat.add(label("TU PROGRESO", SMALL, new Color(169, 202, 219)));
-        stat.add(label("52", new Font("SansSerif", Font.BOLD, 34), Color.WHITE));
+        stat.add(label(String.valueOf(yo.proyectosCompletados()), new Font("SansSerif", Font.BOLD, 34), Color.WHITE));
         stat.add(label("proyectos completados", SMALL, new Color(213, 228, 238)));
         hero.add(stat, BorderLayout.EAST);
         hero.setAlignmentX(LEFT_ALIGNMENT);
         p.add(hero);
         p.add(Box.createVerticalStrut(26));
         addSection(p, "Recomendado para vos", "Selecciones basadas en tus habilidades e intereses");
-        p.add(cardGrid(controllers.busqueda().recomendar(USER_ID)));
+        p.add(cardGrid(controllers.busqueda().recomendar(usuarioActivo)));
         p.add(Box.createVerticalStrut(26));
         addSection(p, "Explorá por categoría", null);
         JPanel cats = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
@@ -229,7 +273,7 @@ public final class SkillSwapView extends JPanel {
         for (String c : controllers.busqueda().categorias()) {
             if (!c.equals("Todas")) {
                 JButton b = button(c, false);
-                b.addActionListener(e -> showExploreCategory(c));
+                b.addActionListener(e -> intentar(() -> showExploreCategory(c)));
                 cats.add(b);
             }
         }
@@ -279,8 +323,8 @@ public final class SkillSwapView extends JPanel {
             results.revalidate();
             results.repaint();
         };
-        go.addActionListener(e -> refresh.run());
-        q.addActionListener(e -> refresh.run());
+        go.addActionListener(e -> intentar(refresh));
+        q.addActionListener(e -> intentar(refresh));
         p.add(results);
         refresh.run();
         page("Explorar", p);
@@ -320,7 +364,7 @@ public final class SkillSwapView extends JPanel {
         bottom.setOpaque(false);
         bottom.add(label(x.precio() + " ◈", new Font("SansSerif", Font.BOLD, 20), NAVY), BorderLayout.WEST);
         JButton detail = button("Ver detalle", true);
-        detail.addActionListener(e -> showDetail(x));
+        detail.addActionListener(e -> intentar(() -> showDetail(x)));
         bottom.add(detail, BorderLayout.EAST);
         c.add(bottom, BorderLayout.SOUTH);
         return c;
@@ -330,7 +374,7 @@ public final class SkillSwapView extends JPanel {
         JPanel p = base();
         JButton back = button("← Volver a explorar", false);
         back.setAlignmentX(LEFT_ALIGNMENT);
-        back.addActionListener(e -> showExplore());
+        back.addActionListener(e -> intentar(this::showExplore));
         p.add(back);
         p.add(Box.createVerticalStrut(18));
         JPanel c = card(new BorderLayout(28, 0));
@@ -356,16 +400,17 @@ public final class SkillSwapView extends JPanel {
         buy.add(label("INVERSIÓN", SMALL, MUTED));
         buy.add(label(x.precio() + " SkillCoins", new Font("SansSerif", Font.BOLD, 25), NAVY));
         buy.add(Box.createVerticalStrut(12));
-        buy.add(label("Saldo disponible: " + controllers.wallet().consultarSaldo(USER_ID), SMALL, MUTED));
+        buy.add(label("Saldo disponible: " + controllers.wallet().consultarSaldo(usuarioActivo), SMALL, MUTED));
         buy.add(Box.createVerticalStrut(20));
         JButton req = button("Solicitar mentoría", true);
-        req.addActionListener(e -> {
-            List<Franja> franjas = controllers.publicaciones().franjasDisponibles(USER_ID, x.id());
-            controllers.contrataciones().solicitar(USER_ID, x.id(), franjas.isEmpty() ? null : franjas.get(0).id(),
+        req.addActionListener(e -> intentar(() -> {
+            List<Franja> franjas = controllers.publicaciones().franjasDisponibles(usuarioActivo, x.id());
+            controllers.contrataciones().solicitar(usuarioActivo, x.id(),
+                    franjas.isEmpty() ? null : franjas.get(0).id(),
                     "Hola, me interesa tu propuesta.", "Quiero profundizar y practicar");
             message("¡Solicitud enviada!", "Podés seguir su estado desde Contrataciones.");
             showContracts();
-        });
+        }));
         buy.add(req);
         c.add(buy, BorderLayout.EAST);
         c.setAlignmentX(LEFT_ALIGNMENT);
@@ -379,13 +424,13 @@ public final class SkillSwapView extends JPanel {
         title.setOpaque(false);
         title.add(label("Gestioná tus publicaciones", H2, TEXT));
         JButton create = button("+ Nueva publicación", true);
-        create.addActionListener(e -> createListing());
+        create.addActionListener(e -> intentar(this::createListing));
         title.add(create, BorderLayout.EAST);
         title.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         title.setAlignmentX(LEFT_ALIGNMENT);
         p.add(title);
         p.add(Box.createVerticalStrut(15));
-        List<Publicacion> own = controllers.publicaciones().listarPropias(USER_ID);
+        List<Publicacion> own = controllers.publicaciones().listarPropias(usuarioActivo);
         if (own.isEmpty()) {
             p.add(empty("Todavía no publicaste servicios",
                     "Creá tu primera propuesta para comenzar a compartir tu talento."));
@@ -397,13 +442,13 @@ public final class SkillSwapView extends JPanel {
                 row.add(pill(x.estado().name(), x.estado() == EstadoPublicacion.PUBLICADA ? TEAL : MUTED),
                         BorderLayout.CENTER);
                 JButton toggle = button(x.estado() == EstadoPublicacion.PUBLICADA ? "Pausar" : "Publicar", false);
-                toggle.addActionListener(e -> {
-                    controllers.publicaciones().cambiarEstado(USER_ID, x.id(),
+                toggle.addActionListener(e -> intentar(() -> {
+                    controllers.publicaciones().cambiarEstado(usuarioActivo, x.id(),
                             x.estado() == EstadoPublicacion.PUBLICADA ? AccionPublicacion.PAUSAR
                                     : AccionPublicacion.PUBLICAR,
                             null);
                     showListings();
-                });
+                }));
                 row.add(toggle, BorderLayout.EAST);
                 p.add(row);
                 p.add(Box.createVerticalStrut(10));
@@ -426,7 +471,7 @@ public final class SkillSwapView extends JPanel {
         form.add(cat);
         if (JOptionPane.showConfirmDialog(this, form, "Nueva publicación", JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION && !title.getText().isBlank()) {
-            controllers.publicaciones().crearBorrador(USER_ID, new NuevaPublicacion(TipoPublicacion.MENTORIA,
+            controllers.publicaciones().crearBorrador(usuarioActivo, new NuevaPublicacion(TipoPublicacion.MENTORIA,
                     title.getText(), desc.getText(), (String) cat.getSelectedItem(), Modalidad.REMOTA, 60, 1,
                     BigDecimal.valueOf(150), PoliticaCancelacion.FLEXIBLE, List.of(), List.of(), null, 0));
             message("Borrador creado", "La publicación quedó en borrador. Publicala desde Mis publicaciones.");
@@ -437,7 +482,7 @@ public final class SkillSwapView extends JPanel {
     private void showContracts() {
         JPanel p = base();
         addSection(p, "Tus contrataciones", "Solicitudes que hiciste y que recibiste");
-        for (Contratacion x : controllers.contrataciones().listarContrataciones(USER_ID)) {
+        for (Contratacion x : controllers.contrataciones().listarContrataciones(usuarioActivo)) {
             JPanel row = card(new BorderLayout(16, 0));
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 105));
             JPanel txt = new JPanel();
@@ -454,10 +499,10 @@ public final class SkillSwapView extends JPanel {
             actions.setOpaque(false);
             for (AccionContratacion a : x.acciones()) {
                 JButton b = button(a.etiqueta(), a != AccionContratacion.CANCELAR && a != AccionContratacion.RECHAZAR);
-                b.addActionListener(e -> {
+                b.addActionListener(e -> intentar(() -> {
                     ejecutar(x, a);
                     showContracts();
-                });
+                }));
                 actions.add(b);
             }
             row.add(actions, BorderLayout.EAST);
@@ -469,13 +514,13 @@ public final class SkillSwapView extends JPanel {
 
     private void ejecutar(Contratacion x, AccionContratacion accion) {
         switch (accion) {
-            case ACEPTAR -> controllers.contrataciones().aceptar(USER_ID, x.id());
-            case RECHAZAR -> controllers.contrataciones().rechazar(USER_ID, x.id(), "Motivo no indicado");
-            case PAGAR -> controllers.contrataciones().pagar(USER_ID, x.id());
-            case INICIAR -> controllers.contrataciones().iniciar(USER_ID, x.id());
-            case COMPLETAR -> controllers.contrataciones().completar(USER_ID, x.id());
-            case CANCELAR -> controllers.contrataciones().cancelar(USER_ID, x.id(), "Motivo no indicado");
-            case CALIFICAR -> controllers.calificaciones().calificar(USER_ID, x.id(), 5, "");
+            case ACEPTAR -> controllers.contrataciones().aceptar(usuarioActivo, x.id());
+            case RECHAZAR -> controllers.contrataciones().rechazar(usuarioActivo, x.id(), "Motivo no indicado");
+            case PAGAR -> controllers.contrataciones().pagar(usuarioActivo, x.id());
+            case INICIAR -> controllers.contrataciones().iniciar(usuarioActivo, x.id());
+            case COMPLETAR -> controllers.contrataciones().completar(usuarioActivo, x.id());
+            case CANCELAR -> controllers.contrataciones().cancelar(usuarioActivo, x.id(), "Motivo no indicado");
+            case CALIFICAR -> controllers.calificaciones().calificar(usuarioActivo, x.id(), 5, "");
         }
     }
 
@@ -489,14 +534,14 @@ public final class SkillSwapView extends JPanel {
         btxt.setOpaque(false);
         btxt.setLayout(new BoxLayout(btxt, BoxLayout.Y_AXIS));
         btxt.add(label("SALDO DISPONIBLE", SMALL, new Color(184, 209, 222)));
-        btxt.add(label(controllers.wallet().consultarSaldo(USER_ID) + " SkillCoins",
+        btxt.add(label(controllers.wallet().consultarSaldo(usuarioActivo) + " SkillCoins",
                 new Font("SansSerif", Font.BOLD, 30), Color.WHITE));
         balance.add(btxt);
         balance.setAlignmentX(LEFT_ALIGNMENT);
         p.add(balance);
         p.add(Box.createVerticalStrut(24));
         addSection(p, "Movimientos recientes", null);
-        for (Movimiento m : controllers.wallet().listarMovimientos(USER_ID)) {
+        for (Movimiento m : controllers.wallet().listarMovimientos(usuarioActivo)) {
             JPanel row = card(new BorderLayout());
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
             JPanel t = new JPanel();
@@ -519,16 +564,16 @@ public final class SkillSwapView extends JPanel {
         head.setOpaque(false);
         head.add(label("Centro de notificaciones", H2, TEXT));
         JButton all = button("Marcar todas como leídas", false);
-        all.addActionListener(e -> {
-            controllers.notificaciones().marcarTodasLeidas(USER_ID);
+        all.addActionListener(e -> intentar(() -> {
+            controllers.notificaciones().marcarTodasLeidas(usuarioActivo);
             showNotifications();
-        });
+        }));
         head.add(all, BorderLayout.EAST);
         head.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         head.setAlignmentX(LEFT_ALIGNMENT);
         p.add(head);
         p.add(Box.createVerticalStrut(15));
-        for (Notificacion n : controllers.notificaciones().listarNotificaciones(USER_ID)) {
+        for (Notificacion n : controllers.notificaciones().listarNotificaciones(usuarioActivo)) {
             JPanel row = card(new BorderLayout(14, 0));
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
             JLabel dot = label(n.leida() ? "○" : "●", H2, n.leida() ? BORDER : TEAL);
@@ -542,10 +587,10 @@ public final class SkillSwapView extends JPanel {
             row.add(t);
             if (!n.leida()) {
                 JButton read = button("Marcar leída", false);
-                read.addActionListener(e -> {
-                    controllers.notificaciones().marcarLeida(USER_ID, n.id());
+                read.addActionListener(e -> intentar(() -> {
+                    controllers.notificaciones().marcarLeida(usuarioActivo, n.id());
                     showNotifications();
-                });
+                }));
                 row.add(read, BorderLayout.EAST);
             }
             p.add(row);
@@ -555,11 +600,11 @@ public final class SkillSwapView extends JPanel {
     }
 
     private void showProfile() {
-        Perfil x = controllers.perfiles().verPerfil(USER_ID);
+        Perfil x = controllers.perfiles().verPerfil(usuarioActivo);
         JPanel p = base();
         JPanel hero = card(new BorderLayout(20, 0));
         hero.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
-        hero.add(avatar("MS", 86), BorderLayout.WEST);
+        hero.add(avatar(iniciales(x.nombre()), 86), BorderLayout.WEST);
         JPanel data = new JPanel();
         data.setOpaque(false);
         data.setLayout(new BoxLayout(data, BoxLayout.Y_AXIS));
@@ -628,5 +673,35 @@ public final class SkillSwapView extends JPanel {
 
     private void message(String title, String body) {
         JOptionPane.showMessageDialog(this, body, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    /**
+     * Unico lugar donde la pantalla muestra errores: corre la accion y, si falla, avisa en un dialogo y deja la
+     * pantalla como estaba. Los errores del sistema llegan con su mensaje para el usuario.
+     */
+    private void intentar(Runnable accion) {
+        try {
+            accion.run();
+        } catch (OperacionFallidaException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "No se pudo completar la operación",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(this, "Error inesperado: " + e.getMessage(),
+                    "No se pudo completar la operación", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static String primerNombre(String nombre) {
+        return nombre.trim().split("\\s+")[0];
+    }
+
+    /** Iniciales del avatar: la primera letra de las dos primeras palabras del nombre. */
+    private static String iniciales(String nombre) {
+        String[] palabras = nombre.trim().split("\\s+");
+        String iniciales = palabras[0].substring(0, 1);
+        if (palabras.length > 1) {
+            iniciales += palabras[1].substring(0, 1);
+        }
+        return iniciales.toUpperCase();
     }
 }
