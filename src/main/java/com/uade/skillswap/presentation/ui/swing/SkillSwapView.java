@@ -15,6 +15,8 @@ import com.uade.skillswap.presentation.ui.swing.contrato.Models.OrdenBusqueda;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Perfil;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.PoliticaCancelacion;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Publicacion;
+import com.uade.skillswap.presentation.ui.swing.contrato.Models.Resena;
+import com.uade.skillswap.presentation.ui.swing.contrato.Models.ResultadoCancelacion;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.TipoPublicacion;
 import com.uade.skillswap.presentation.ui.swing.contrato.OperacionFallidaException;
 import com.uade.skillswap.presentation.ui.swing.contrato.UiControllers;
@@ -42,7 +44,11 @@ import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.uade.skillswap.presentation.ui.swing.Theme.BG;
@@ -77,6 +83,7 @@ public final class SkillSwapView extends JPanel {
     private final JPanel content = new JPanel(new BorderLayout());
     private final JLabel pageTitle = label("Inicio", H1, TEXT);
     private final JLabel badge = label("", new Font("SansSerif", Font.BOLD, 10), Color.WHITE);
+    private final JButton coins = button("", false);
 
     /** {@code usuarios}: los userIds que ofrece el selector; la pantalla arranca con el primero. */
     public SkillSwapView(UiControllers controllers, List<String> usuarios) {
@@ -92,6 +99,8 @@ public final class SkillSwapView extends JPanel {
         this.usuarioActivo = usuarios.get(0);
         setLayout(new BorderLayout());
         setBackground(BG);
+        // Una sola vez: shell() se vuelve a armar en cada cambio de usuario y sumaria otro listener al mismo boton
+        coins.addActionListener(e -> intentar(this::showWallet));
         armar();
     }
 
@@ -187,8 +196,6 @@ public final class SkillSwapView extends JPanel {
         badge.setBackground(DANGER);
         badge.setBorder(new EmptyBorder(5, 8, 5, 8));
         actions.add(badge);
-        JButton coins = button("◈  " + controllers.wallet().consultarSaldo(usuarioActivo) + " SkillCoins", false);
-        coins.addActionListener(e -> intentar(this::showWallet));
         actions.add(coins);
         top.add(actions, BorderLayout.EAST);
         shell.add(top, BorderLayout.NORTH);
@@ -202,6 +209,7 @@ public final class SkillSwapView extends JPanel {
         long unread = controllers.notificaciones().listarNotificaciones(usuarioActivo).stream()
                 .filter(n -> !n.leida()).count();
         badge.setText(unread + " NUEVAS");
+        coins.setText("◈  " + controllers.wallet().consultarSaldo(usuarioActivo) + " SkillCoins");
         content.removeAll();
         JScrollPane sp = new JScrollPane(view);
         sp.setBorder(null);
@@ -265,7 +273,15 @@ public final class SkillSwapView extends JPanel {
         p.add(hero);
         p.add(Box.createVerticalStrut(26));
         addSection(p, "Recomendado para vos", "Selecciones basadas en tus habilidades e intereses");
-        p.add(cardGrid(controllers.busqueda().recomendar(usuarioActivo)));
+        List<Publicacion> recomendadas = controllers.busqueda().recomendar(usuarioActivo);
+        if (recomendadas.isEmpty()) {
+            JLabel vacio = label("Todavía no hay publicaciones que coincidan con tus intereses. Probá en Explorar.",
+                    BODY, MUTED);
+            vacio.setAlignmentX(LEFT_ALIGNMENT);
+            p.add(vacio);
+        } else {
+            p.add(cardGrid(recomendadas));
+        }
         p.add(Box.createVerticalStrut(26));
         addSection(p, "Explorá por categoría", null);
         JPanel cats = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
@@ -302,8 +318,7 @@ public final class SkillSwapView extends JPanel {
         q.setBorder(new EmptyBorder(10, 12, 10, 12));
         JComboBox<String> cat = new JComboBox<>(controllers.busqueda().categorias().toArray(String[]::new));
         cat.setSelectedItem(category);
-        JComboBox<OrdenBusqueda> order = new JComboBox<>(new OrdenBusqueda[]{
-                OrdenBusqueda.RELEVANCIA, OrdenBusqueda.MEJOR_REPUTACION, OrdenBusqueda.MENOR_PRECIO});
+        JComboBox<OrdenBusqueda> order = new JComboBox<>(OrdenBusqueda.values());
         JButton go = button("Buscar", true);
         filters.add(q);
         filters.add(cat);
@@ -464,7 +479,13 @@ public final class SkillSwapView extends JPanel {
                 JPanel row = card(new BorderLayout(12, 0));
                 row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
                 row.setAlignmentX(LEFT_ALIGNMENT);
-                row.add(label(x.titulo(), H3, TEXT), BorderLayout.WEST);
+                JPanel txt = new JPanel();
+                txt.setOpaque(false);
+                txt.setLayout(new BoxLayout(txt, BoxLayout.Y_AXIS));
+                txt.add(label(x.titulo(), H3, TEXT));
+                txt.add(Box.createVerticalStrut(5));
+                txt.add(label("Cupo disponible: " + x.cupoDisponible(), BODY, MUTED));
+                row.add(txt, BorderLayout.WEST);
                 row.add(estado(x.estado().name(), x.estado() == EstadoPublicacion.PUBLICADA ? TEAL : MUTED),
                         BorderLayout.CENTER);
                 JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -495,26 +516,89 @@ public final class SkillSwapView extends JPanel {
         showListings();
     }
 
+    /**
+     * Formulario de nueva publicacion con su primera franja. La franja se puede dejar vacia: el borrador se crea igual,
+     * pero el sistema no lo deja publicar. Si un numero o la fecha no tienen formato, se avisa sin llamar al sistema.
+     */
     private void createListing() {
-        JTextField title = new JTextField();
-        JTextArea desc = new JTextArea(4, 26);
+        JComboBox<TipoPublicacion> tipo = new JComboBox<>(TipoPublicacion.values());
+        JTextField title = new JTextField(28);
         JComboBox<String> cat = new JComboBox<>(controllers.busqueda().categorias().stream()
                 .filter(c -> !c.equals("Todas")).toArray(String[]::new));
-        JPanel form = new JPanel(new GridLayout(0, 1, 4, 5));
-        form.add(new JLabel("Título"));
-        form.add(title);
-        form.add(new JLabel("Descripción"));
-        form.add(new JScrollPane(desc));
-        form.add(new JLabel("Categoría"));
-        form.add(cat);
-        if (JOptionPane.showConfirmDialog(this, form, "Nueva publicación", JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION && !title.getText().isBlank()) {
-            controllers.publicaciones().crearBorrador(usuarioActivo, new NuevaPublicacion(TipoPublicacion.MENTORIA,
-                    title.getText(), desc.getText(), (String) cat.getSelectedItem(), Modalidad.REMOTA, 60, 1,
-                    BigDecimal.valueOf(150), PoliticaCancelacion.FLEXIBLE, List.of(), List.of(), null, 0));
-            message("Borrador creado", "La publicación quedó en borrador. Publicala desde Mis publicaciones.");
-            showListings();
+        cat.setEditable(true);
+        JComboBox<Modalidad> modalidad = new JComboBox<>(Modalidad.values());
+        JTextField duracion = new JTextField("60");
+        JTextField cupo = new JTextField("1");
+        JTextField precio = new JTextField();
+        JComboBox<PoliticaCancelacion> politica = new JComboBox<>(PoliticaCancelacion.values());
+        JTextField etiquetas = new JTextField();
+        JTextField habilidades = new JTextField();
+        JTextField inicioFranja = new JTextField();
+        JTextField minutosFranja = new JTextField("60");
+        JPanel campos = new JPanel(new GridLayout(0, 2, 8, 6));
+        campo(campos, "Tipo", tipo);
+        campo(campos, "Título", title);
+        campo(campos, "Categoría (elegí o escribí una)", cat);
+        campo(campos, "Modalidad", modalidad);
+        campo(campos, "Duración (minutos)", duracion);
+        campo(campos, "Cupo", cupo);
+        campo(campos, "Precio (SkillCoins)", precio);
+        campo(campos, "Política de cancelación", politica);
+        campo(campos, "Etiquetas (separadas por coma)", etiquetas);
+        campo(campos, "Habilidades (separadas por coma)", habilidades);
+        campo(campos, "Inicio de la franja (dd/MM/aaaa HH:mm)", inicioFranja);
+        campo(campos, "Duración de la franja (minutos)", minutosFranja);
+        JTextArea desc = new JTextArea(4, 26);
+        JPanel descripcion = new JPanel(new BorderLayout(0, 4));
+        descripcion.add(new JLabel("Descripción"), BorderLayout.NORTH);
+        descripcion.add(new JScrollPane(desc));
+        JPanel form = new JPanel(new BorderLayout(0, 10));
+        form.add(campos, BorderLayout.NORTH);
+        form.add(descripcion);
+        if (!confirmar("Nueva publicación", form)) {
+            return;
         }
+        NuevaPublicacion datos;
+        try {
+            datos = new NuevaPublicacion((TipoPublicacion) tipo.getSelectedItem(), title.getText(), desc.getText(),
+                    String.valueOf(cat.getEditor().getItem()), (Modalidad) modalidad.getSelectedItem(),
+                    entero(duracion), entero(cupo), decimal(precio), (PoliticaCancelacion) politica.getSelectedItem(),
+                    lista(etiquetas), lista(habilidades), fechaHora(inicioFranja), entero(minutosFranja));
+        } catch (NumberFormatException e) {
+            error("Duración, cupo, precio y duración de la franja tienen que ser números.");
+            return;
+        } catch (DateTimeParseException e) {
+            error("El inicio de la franja tiene que tener el formato dd/MM/aaaa HH:mm, por ejemplo 15/11/2026 18:00.");
+            return;
+        }
+        controllers.publicaciones().crearBorrador(usuarioActivo, datos);
+        message("Borrador creado", "La publicación quedó en borrador. Publicala desde Mis publicaciones.");
+        showListings();
+    }
+
+    private static void campo(JPanel form, String etiqueta, JComponent componente) {
+        form.add(new JLabel(etiqueta));
+        form.add(componente);
+    }
+
+    private static int entero(JTextField campo) {
+        return Integer.parseInt(campo.getText().trim());
+    }
+
+    /** Acepta coma o punto como separador decimal. */
+    private static BigDecimal decimal(JTextField campo) {
+        return new BigDecimal(campo.getText().trim().replace(',', '.'));
+    }
+
+    /** null si el campo esta vacio. */
+    private static LocalDateTime fechaHora(JTextField campo) {
+        String texto = campo.getText().trim();
+        return texto.isEmpty() ? null : LocalDateTime.parse(texto, DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    /** Valores separados por coma, sin espacios de mas ni vacios. */
+    private static List<String> lista(JTextField campo) {
+        return Arrays.stream(campo.getText().split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
     }
 
     private void showContracts() {
@@ -570,7 +654,7 @@ public final class SkillSwapView extends JPanel {
                 if (motivo == null) {
                     return;
                 }
-                controllers.contrataciones().cancelar(usuarioActivo, x.id(), motivo);
+                mostrarCancelacion(controllers.contrataciones().cancelar(usuarioActivo, x.id(), motivo));
             }
             case CALIFICAR -> {
                 DatosCalificacion datos = pedirCalificacion(x.titulo());
@@ -581,6 +665,20 @@ public final class SkillSwapView extends JPanel {
             }
         }
         showContracts();
+    }
+
+    /**
+     * Como se repartio lo retenido al cancelar. Se muestra la politica de la publicacion: si cancela el proveedor, el
+     * cliente recupera el 100 % igual. Si todavia no se habia pagado, los dos montos son 0.
+     */
+    private void mostrarCancelacion(ResultadoCancelacion r) {
+        message("Contratación cancelada", "Política de la publicación: " + r.politica()
+                + "\nReintegro al cliente: " + dosDecimales(r.reintegroCliente()) + " SkillCoins"
+                + "\nCompensación al proveedor: " + dosDecimales(r.compensacionProveedor()) + " SkillCoins");
+    }
+
+    private static String dosDecimales(BigDecimal monto) {
+        return monto.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     /** Lo que se carga en el dialogo de calificar. */
@@ -626,6 +724,7 @@ public final class SkillSwapView extends JPanel {
         for (Movimiento m : controllers.wallet().listarMovimientos(usuarioActivo)) {
             JPanel row = card(new BorderLayout());
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
+            row.setAlignmentX(LEFT_ALIGNMENT);
             JPanel t = new JPanel();
             t.setOpaque(false);
             t.setLayout(new BoxLayout(t, BoxLayout.Y_AXIS));
@@ -658,6 +757,7 @@ public final class SkillSwapView extends JPanel {
         for (Notificacion n : controllers.notificaciones().listarNotificaciones(usuarioActivo)) {
             JPanel row = card(new BorderLayout(14, 0));
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
+            row.setAlignmentX(LEFT_ALIGNMENT);
             JLabel dot = label(n.leida() ? "○" : "●", H2, n.leida() ? BORDER : TEAL);
             row.add(dot, BorderLayout.WEST);
             JPanel t = new JPanel();
@@ -711,7 +811,32 @@ public final class SkillSwapView extends JPanel {
             tags.add(pill(s, NAVY_2));
         }
         tags.setAlignmentX(LEFT_ALIGNMENT);
+        // El alto que sobra en la pagina va al relleno del final; sin este tope se lo quedaria este panel
+        tags.setMaximumSize(new Dimension(Integer.MAX_VALUE, tags.getPreferredSize().height));
         p.add(tags);
+        p.add(Box.createVerticalStrut(24));
+        addSection(p, "Últimas reseñas", null);
+        if (x.ultimasResenas().isEmpty()) {
+            JLabel vacio = label("Todavía no tenés reseñas.", BODY, MUTED);
+            vacio.setAlignmentX(LEFT_ALIGNMENT);
+            p.add(vacio);
+        }
+        for (Resena r : x.ultimasResenas()) {
+            JPanel row = card(new BorderLayout(14, 0));
+            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
+            row.setAlignmentX(LEFT_ALIGNMENT);
+            row.add(label("★ " + r.puntaje(), H3, GOLD), BorderLayout.WEST);
+            JPanel t = new JPanel();
+            t.setOpaque(false);
+            t.setLayout(new BoxLayout(t, BoxLayout.Y_AXIS));
+            t.add(label(r.comentario() == null || r.comentario().isBlank() ? "Sin comentario" : r.comentario(),
+                    BODY, TEXT));
+            t.add(label(r.fecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), SMALL, MUTED));
+            row.add(t);
+            p.add(row);
+            p.add(Box.createVerticalStrut(8));
+        }
+        p.add(Box.createVerticalGlue());
         page("Mi perfil", p);
     }
 
@@ -780,12 +905,14 @@ public final class SkillSwapView extends JPanel {
         try {
             accion.run();
         } catch (OperacionFallidaException e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "No se pudo completar la operación",
-                    JOptionPane.ERROR_MESSAGE);
+            error(e.getMessage());
         } catch (RuntimeException e) {
-            JOptionPane.showMessageDialog(this, "Error inesperado: " + e.getMessage(),
-                    "No se pudo completar la operación", JOptionPane.ERROR_MESSAGE);
+            error("Error inesperado: " + e.getMessage());
         }
+    }
+
+    private void error(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "No se pudo completar la operación", JOptionPane.ERROR_MESSAGE);
     }
 
     private static String primerNombre(String nombre) {
