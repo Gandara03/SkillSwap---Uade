@@ -5,15 +5,16 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 ## Estado
 
-`mvnw verify` pasa completo: **670 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+`mvnw verify` pasa completo: **708 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
-| Dominio | `domain/**` | 203 |
-| Aplicación | `application/**` | 211 |
+| Dominio | `domain/**` | 214 |
+| Aplicación | `application/**` | 220 |
 | Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 47 |
 | Persistencia JPA | `infrastructure/persistence/jpa/**` | 85 |
 | Controllers: integración sobre JPA/H2 y `ValidadorEntrada` | `presentation/controller/**` | 68 |
+| Pantalla: adaptador sobre JPA/H2 y dependencias de la vista | `presentation/{adaptador,ui}/**` | 18 |
 | Aceptación en memoria | `acceptance/memoria/**` | 34 |
 | Aceptación sobre JPA/H2 | `acceptance/jpa/**` | 22 |
 
@@ -22,16 +23,18 @@ Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación
 | Capa | Líneas | Ramas |
 |---|---|---|
 | `domain` | 99,4 % | 96,2 % |
-| `application` | 99,4 % | 92,4 % |
-| `infrastructure` | 93,1 % | 86,2 % |
-| `presentation` | 72,4 % | 56,2 % |
+| `application` | 99,4 % | 91,4 % |
+| `infrastructure` | 93,2 % | 87,2 % |
+| `presentation` | 38,2 % | 43,4 % |
 | ↳ `presentation.controller` | 100,0 % | 97,4 % |
-| `bootstrap` y `Main` | 14,9 % | 0,0 % |
-| **Total** | **85,9 %** | **80,7 %** |
+| ↳ `presentation.adaptador` | 91,8 % | 70,1 % |
+| ↳ `presentation.ui.swing` | 3,9 % | 0,0 % |
+| `bootstrap` y `Main` | 15,3 % | 0,0 % |
+| **Total** | **72,7 %** | **73,4 %** |
 
 Sin `clean`, JaCoCo suma los datos de corridas anteriores que siguen en `target\jacoco.exec` (por ejemplo, las del perfil `mysql`) y los porcentajes pueden salir más altos.
 
-Los controllers tienen tests de integración contra H2 (`presentation/controller/**`). El resto de `presentation` (menú de consola y formato) y `bootstrap` se ejercitan con la demo (sección 2). El camino contra MySQL real no forma parte de `verify`: se prueba aparte con la demo `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
+Los controllers y el adaptador de la pantalla tienen tests de integración contra H2 (`presentation/controller/**`, `presentation/adaptador/**`). El resto de `presentation` (menú de consola, formato y la pantalla Swing) y `bootstrap` se ejercitan con la demo y con `--ui` (sección 2); la pantalla no tiene tests automáticos y por eso baja el total. El camino contra MySQL real no forma parte de `verify`: se prueba aparte con `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
 
 ---
 
@@ -53,14 +56,15 @@ skillswap/
     │   ├── infrastructure/      JPA + Flyway, adapters (identidad, email, push), canal interno, factory de canales, reloj
     │   ├── presentation/        controllers delgados (validan la entrada con ValidadorEntrada) + interfaces I*Controller
     │   │                        + Resultado/ManejadorErrores + menú de consola
+    │   │                        + pantalla Swing del Mock UI Kit (ui/swing) y su Adapter (adaptador)
     │   ├── bootstrap/           Composicion (compositor a mano), DatosDemo, DemoFlujoPrincipal
     │   └── Main.java
     ├── main/resources/          META-INF/persistence.xml · db/migration/V1__esquema.sql
-    └── test/java/               domain · application · infrastructure · presentation (controllers sobre H2)
+    └── test/java/               domain · application · infrastructure · presentation (controllers y adaptador sobre H2)
                                  · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 220 clases de producción, 95 clases de test (670 tests), ~11.1 mil líneas de código y ~14.1 mil de tests.
+Números: 230 clases de producción, 101 clases de test (708 tests), ~13.1 mil líneas de código y ~15.0 mil de tests.
 
 ---
 
@@ -79,6 +83,7 @@ open target/site/jacoco/index.html                   # reporte de cobertura (en 
 ./mvnw compile exec:java -Dexec.args="--h2"          # demo completa sobre H2 en memoria (no necesita MySQL)
 ./mvnw compile exec:java -Dexec.args="--h2 --menu"   # demo y después menú de consola (login por userId: u-ana, u-bruno, u-cecilia, u-techcorp)
 ./mvnw compile exec:java -Dexec.args="--sin-demo --menu"
+./mvnw compile exec:java -Dexec.args="--h2 --ui"     # pantalla Swing del Mock UI Kit sobre H2 (sin demo ni menú)
 ```
 
 **Windows (PowerShell):** los argumentos `-D…` van completos entre comillas, porque PowerShell los corta en el punto. Antes de la demo conviene correr `chcp 65001` en la consola para que se vean bien los acentos.
@@ -91,26 +96,42 @@ chcp 65001
 .\mvnw.cmd compile exec:java "-Dexec.args=--h2"
 .\mvnw.cmd compile exec:java "-Dexec.args=--h2 --menu"
 .\mvnw.cmd compile exec:java "-Dexec.args=--sin-demo --menu"
+.\mvnw.cmd compile exec:java "-Dexec.args=--h2 --ui"
 ```
+
+**Pantalla Swing** (`--ui`): carga los datos de ejemplo y abre la ventana del Mock UI Kit; no corren la demo ni el menú de consola. El usuario activo se elige con el selector de abajo a la izquierda (login simulado entre Ana, Bruno, Cecilia y TechCorp). Al cerrar la ventana se cierra la base y termina el programa.
 
 **MySQL real:**
 
+Una sola vez, crear un usuario con todos los permisos sobre las bases `skillswap%` (la de la demo y las `skillswap_test_<uuid>` que crea `-Pmysql`). Desde una consola de MySQL con un usuario administrador (`mysql -u root -p`; en Windows, `mysql.exe` está en `C:\Program Files\MySQL\MySQL Server 8.x\bin`):
+
+```sql
+CREATE USER 'skillswap'@'localhost' IDENTIFIED BY 'tu_clave';
+GRANT ALL PRIVILEGES ON `skillswap%`.* TO 'skillswap'@'localhost';
+```
+
+El `%` del `GRANT` es un comodín: cubre `skillswap`, `skillswap_demo_…` y `skillswap_test_…`. MySQL lo marcó como deprecado (desde 8.0.35), pero sigue funcionando mientras `partial_revokes` esté apagado, que es el valor por defecto.
+
+Después, cada vez:
+
 ```bash
 export SKILLSWAP_DB_URL="jdbc:mysql://localhost:3306/skillswap?createDatabaseIfNotExist=true&serverTimezone=UTC"
-export SKILLSWAP_DB_USER=root
+export SKILLSWAP_DB_USER=skillswap
 export SKILLSWAP_DB_PASSWORD=tu_clave
-./mvnw compile exec:java -Dexec.args="--mysql"
+./mvnw compile exec:java -Dexec.args="--mysql"         # demo de consola
+./mvnw compile exec:java -Dexec.args="--mysql --ui"    # pantalla Swing
 ```
 
 ```powershell
 $env:SKILLSWAP_DB_URL = "jdbc:mysql://localhost:3306/skillswap?createDatabaseIfNotExist=true&serverTimezone=UTC"
-$env:SKILLSWAP_DB_USER = "root"
+$env:SKILLSWAP_DB_USER = "skillswap"
 $env:SKILLSWAP_DB_PASSWORD = "tu_clave"
 .\mvnw.cmd compile exec:java "-Dexec.args=--mysql"
+.\mvnw.cmd compile exec:java "-Dexec.args=--mysql --ui"
 ```
 
 Flyway crea/actualiza el esquema al arrancar. Hibernate corre con `hbm2ddl=validate` (nunca `create`/`update`). Con `SKILLSWAP_SHOW_SQL=true` se imprimen las sentencias.
-La demo no es repetible sobre la misma base MySQL (los saldos y cupos ya fueron consumidos); para repetirla, usar `--h2` o una base nueva.
+La demo no es repetible sobre la misma base MySQL (los saldos y cupos ya fueron consumidos); para repetirla, usar `--h2` o una base nueva. Lo mismo vale para la pantalla: los datos de ejemplo no modifican perfiles ni publicaciones que ya existen, así que en una base usada no se ven los cambios de `DatosDemo` ni los saldos iniciales. Para una base nueva alcanza con cambiar su nombre en `SKILLSWAP_DB_URL` (por ejemplo, `skillswap_demo_2`).
 
 **Tests de persistencia contra MySQL** (opcional, `verify` no lo usa):
 
@@ -118,7 +139,7 @@ La demo no es repetible sobre la misma base MySQL (los saldos y cupos ya fueron 
 .\mvnw.cmd test -Pmysql
 ```
 
-Corre los tests JPA, de aceptación JPA y de controllers contra MySQL. Cada test crea y borra su propia base `skillswap_test_<uuid>` (`support/BasesDePrueba`). Usa `SKILLSWAP_TEST_DB_URL` (servidor sin base, por defecto `jdbc:mysql://localhost:3306/`) y `SKILLSWAP_TEST_DB_USER`/`SKILLSWAP_TEST_DB_PASSWORD`, o las `SKILLSWAP_DB_*` si no están. El usuario necesita `CREATE` y `DROP` sobre `skillswap%`. Tarda unos minutos porque Flyway migra en cada test.
+Corre los tests JPA, de aceptación JPA, de controllers y del adaptador de la pantalla contra MySQL. Cada test crea y borra su propia base `skillswap_test_<uuid>` (`support/BasesDePrueba`). Usa `SKILLSWAP_TEST_DB_URL` (servidor sin base, por defecto `jdbc:mysql://localhost:3306/`) y `SKILLSWAP_TEST_DB_USER`/`SKILLSWAP_TEST_DB_PASSWORD`, o las `SKILLSWAP_DB_*` si no están. El usuario necesita `CREATE` y `DROP` sobre `skillswap%` (el de los pasos de arriba los tiene). Tarda unos minutos porque Flyway migra en cada test.
 
 **Qué imprime la demo** (`DemoFlujoPrincipal`): publicar → solicitar → aceptar → pagar → iniciar → completar → calificar, mostrando actor, estado y saldos de cada paso; una cancelación con reintegro parcial (reintegro + compensación al proveedor); un pago con saldo insuficiente como error controlado; y reputación final.
 
@@ -136,9 +157,9 @@ presentation ──▶ application (port/in) ──▶ domain ◀── applicat
 | **Dominio** | `Perfil`, `Publicacion`+`Franja`+`DatosPublicacion`, `Contratacion`+`RepartoCancelacion`, `Wallet`+`MovimientoCredito`, `Calificacion`, `Notificacion`, `Promocion`, VOs (`SkillCoins`, `Puntaje`, `Habilidad`, `RangoPrecio`, `BloqueDisponibilidad`), State, Observer (`ContratacionObserver`, `ContratacionEvent`), `HistorialEstado`, Strategy de cancelación (`domain.model.politica`), Decorator de precio (`domain.model.precio`) | UI, JPA, MySQL, SDKs |
 | **Aplicación** | 10 casos de uso (`port/in`), commands y DTOs, servicios, puertos de salida y repositorios (`port/out`: `IdentidadPort`, `TransaccionPort`, `RelojPort`, `CanalNotificacionPort`, `CanalNotificacionFactory`, `*Repository`), Strategy de recomendación (`application.recomendacion`), Facade del perfil público (`application.facade`), `NotificadorObserver` | Controllers concretos, SDKs externos, JPA |
 | **Infraestructura** | `JpaContexto`, `BaseDeDatos`, `JpaTransaccionAdapter`, entidades `*JpaEntity` + mappers + 7 repositorios JPA, `IdentidadMockAdapter`, `Email/PushCanalAdapter`, `CanalInterno`, `CanalNotificacionFactoryImpl`, `RelojSistema`, Flyway | Decisiones de negocio |
-| **Presentación** | 8 interfaces `I*Controller` y sus implementaciones, `ValidadorEntrada`, `Resultado<T>`, `ManejadorErrores`, `MenuConsola` | Persistencia y reglas de negocio |
+| **Presentación** | 8 interfaces `I*Controller` y sus implementaciones, `ValidadorEntrada`, `Resultado<T>`, `ManejadorErrores`, `MenuConsola`, la pantalla Swing del Mock UI Kit (`ui.swing`: `SkillSwapView`, `Theme`, `SkillSwapFrame`) con su contrato (`ui.swing.contrato`: `UiControllers`, `Models`, `OperacionFallidaException`) y el adaptador que lo implementa (`adaptador`: `UiControllersAdapter`, `MapeadorUi`) | Persistencia y reglas de negocio |
 
-Reglas que se respetan (verificables con un `grep` de imports): `domain` no importa nada de las otras capas ni `jakarta.persistence`; `application` solo importa `domain`; `presentation` solo usa `port/in`, DTOs, commands, `application.exception`, `domain.query` y enums (además, `ManejadorErrores` conoce `domain.exception` para traducir esos errores); el compositor `bootstrap/Composicion` es el único lugar que conoce todas las capas.
+Reglas que se respetan (verificables con un `grep` de imports): `domain` no importa nada de las otras capas ni `jakarta.persistence`; `application` solo importa `domain`; `presentation` solo usa `port/in`, DTOs, commands, `application.exception`, `domain.query` y enums (además, `ManejadorErrores` conoce `domain.exception` para traducir esos errores); la pantalla Swing solo conoce su contrato (`ui.swing.contrato`), y `DependenciasUiTest` lo controla; el compositor `bootstrap/Composicion` es el único lugar que conoce todas las capas.
 
 **Diseño clave:**
 
@@ -205,7 +226,7 @@ Notas de importación a StarUML: poner multiplicidades en ambos extremos, las in
 | **Strategy** | `PoliticaCancelacion` en `domain.model.politica` (`Flexible` 100/50/0 con 24 h/2 h; `Estricta` con 72 h/48 h); el contexto es `Contratacion.repartirRetenido`. `EstrategiaRecomendacion` en `application.recomendacion` (`Afinidad`, `Popularidad`); el contexto es `RecomendacionService` y las estrategias reciben `DatosRecomendacion` | Cálculo de reintegro y de recomendación intercambiables | `PoliticaCancelacionTest`, `ContratacionTest` (reparto), `RecomendacionTest`, casos 6 y 7 |
 | **Decorator** | `domain.model.precio`: `PrecioPublicacion` (componente) → `PrecioBase` (componente concreto); `PromocionDecorator` (decorador base: solo guarda el precio envuelto) → `PromocionPorcentaje` / `PromocionMontoFijo`, que implementan `calcular()` y `detalle()` | Promociones acumulables; cada una descuenta sobre el resultado anterior y el total se acota en 0 | `PrecioPublicacionTest`, caso 9 |
 | **Observer** | `Contratacion` (Subject) acumula eventos; la lista de observers se arma una sola vez en `Composicion` (hoy `NotificadorObserver`) y `ContratacionService` la suscribe y notifica **después del commit** | Notificar a las partes sin acoplar el dominio a email/push | `NotificadorObserverTest`, `ContratacionServiceTest`, caso 8 |
-| **Adapter** | `IdentidadMockAdapter` → `ServicioIdentidadExterno`; `Email/PushCanalAdapter` → `EmailSdkMock`/`PushSdkMock`; `JpaTransaccionAdapter` → JPA. `CanalInterno` implementa `CanalNotificacionPort` sin Adaptado (la bandeja no es un sistema externo), así que no es un Adapter | Proveedores externos con API propia detrás de puertos de la aplicación | `IdentidadMockAdapterTest`, `CanalesNotificacionTest`, caso 8 |
+| **Adapter** | `IdentidadMockAdapter` → `ServicioIdentidadExterno`; `Email/PushCanalAdapter` → `EmailSdkMock`/`PushSdkMock`; `JpaTransaccionAdapter` → JPA. `UiControllersAdapter` implementa `UiControllers` (el contrato de la pantalla del Mock UI Kit, que la usa como cliente) delegando en los 8 `I*Controller`: inicia la sesión del usuario elegido, convierte ids, enums y páginas (`MapeadorUi`) y convierte un `Resultado` con error en `OperacionFallidaException`. `CanalInterno` implementa `CanalNotificacionPort` sin Adaptado (la bandeja no es un sistema externo), así que no es un Adapter | Proveedores externos con API propia detrás de puertos de la aplicación; una pantalla con su propio contrato conectada sin cambiar los controllers | `IdentidadMockAdapterTest`, `CanalesNotificacionTest`, caso 8, `UiControllersAdapterTest`, `DependenciasUiTest` |
 | **Simple Factory** | `CanalNotificacionFactoryImpl` (crea el canal en cada pedido), `PoliticaCancelacionFactory`, `EstrategiaRecomendacionFactory`, `PrecioPublicacionFactory`, `EstadoXFactory` | Elegir canal/estrategia/estado a partir de un valor (preferencia del usuario, texto persistido) | `CanalesNotificacionTest`, `PoliticaCancelacionTest`, `RecomendacionTest` |
 | **Facade** | `PerfilPublicoFacade` (`application.facade`, puerto `PerfilPublicoUseCase`): coordina `PerfilUseCase`, `CalificacionUseCase` y `PublicacionUseCase` | Vista resumida del perfil (datos + reputación + últimas calificaciones + publicaciones activas) sin que el controller conozca esos tres casos de uso | `PerfilPublicoFacadeTest` |
 
@@ -255,13 +276,13 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 8 | Datos de demostración reproducibles | ✅ | `DatosDemo`, `Main --h2` |
 | 8 | Optimistic locking contra sobreventa | ✅ | `@Version`, caso 4 sobre JPA con hilos concurrentes (`Caso04UltimoCupoJpaTest`) |
 | 9 | Controllers delgados que validan la entrada, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `ValidadorEntrada`, `Resultado`; tests en `presentation/controller/**` (ver nota de nombres abajo) |
-| 10 | Mock UI Kit conectado por interfaces | ⬜ | `I*Controller` son el contrato |
+| 10 | Mock UI Kit conectado por interfaces | ✅ | `SkillSwapView` → `UiControllers` (contrato del kit) ← `UiControllersAdapter` → `I*Controller`; `Main --ui`; `UiControllersAdapterTest`, `DependenciasUiTest` (sección 8, punto 11) |
 | 11 | Entregas incrementales | ⬜ | — |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 670 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 708 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases en StarUML | 🟡 | `Diagrama UML.mdj` (base: Mermaid de la sección 3) |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
-| 13 | Demo en vivo del recorrido principal | ✅ | `mvnw compile exec:java` con `--h2` (sección 2) |
+| 13 | Demo en vivo del recorrido principal | ✅ | `mvnw compile exec:java` con `--h2` (consola) o `--h2 --ui` (pantalla) (sección 2) |
 | 15 | **10 casos de aceptación** | ✅ | `acceptance/memoria/Caso01…Caso10`, `acceptance/jpa/Caso01…Caso10…JpaTest` |
 
 **Pendientes y puntos abiertos de la matriz:**
@@ -271,11 +292,11 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 - **4.3 Popularidad reciente:** hoy usa cupo ocupado + reputación; evaluar agregar una ventana temporal.
 - **6 y 7 (informe):** dibujar el diagrama de capas y justificar cada patrón (problema, alternativa, consecuencias, evidencia).
 - **8 (informe):** justificar los fetch plans; opcional: un test que cuente sentencias SQL.
-- **10 Mock UI Kit:** pedirlo a la cátedra y ajustar las firmas de las interfaces `I*Controller` a las suyas (es lo único que probablemente cambie).
+- **10 Mock UI Kit:** consultar con la cátedra los cambios hechos al contrato del kit (sección 8, punto 11), en especial que la pantalla ya no ofrezca el filtro por precio máximo.
 - **11 Entregas incrementales:** planificarlas con el equipo.
 - **13:** revisar y completar el diagrama StarUML (multiplicidades y patrones marcados) y el informe; ensayar la demo.
 
-Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (≈ `crearPerfil`), `miPerfil`/`verPerfilPublico(id)` (≈ `verPerfil`) y `cambiarEstado(id, AccionPublicacion, motivo)` además de `publicar/pausar/...`. Son orientativos; se alinean cuando llegue el Mock UI Kit.
+Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (≈ `crearPerfil`), `miPerfil`/`verPerfilPublico(id)` (≈ `verPerfil`) y `cambiarEstado(id, AccionPublicacion, motivo)` además de `publicar/pausar/...`. Son orientativos: la pantalla del Mock UI Kit usa sus propios nombres y `UiControllersAdapter` los traduce (sección 8, punto 11).
 
 ### Los 10 casos de aceptación (sec. 15)
 
@@ -302,7 +323,7 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 |---|---|---|---|
 | **A — Servicios** | `application/service`, `application/notificacion`, `application/mapper` | ✅ | Decidir los huecos de la sección 8 (publicación cancelada con contrataciones activas, retiro de solicitud pendiente) |
 | **B — Persistencia** | `infrastructure/persistence/**`, `persistence.xml`, `db/migration` | ✅ | Probar el camino contra MySQL real; opcional: test que cuente sentencias SQL |
-| **C — Presentación y demo** | `presentation/**`, `bootstrap/**`, `Main`, tests en `src/test/.../presentation/controller` | ✅ | Conectar el Mock UI Kit, ajustar firmas `I*Controller` (y sus tests de integración) |
+| **C — Presentación y demo** | `presentation/**`, `bootstrap/**`, `Main`, tests en `src/test/.../presentation` | ✅ | Probar a mano la pantalla (`--ui`) con H2 y con MySQL |
 | **D — Adapters y soporte de tests** | `infrastructure/{identidad,notificacion,time}`, `src/test/.../support` | ✅ | Opcional: rollback simulado en `TransaccionSimulada` para que los fakes reflejen JPA |
 | **E — Tests de aplicación** | `src/test/.../application` | ✅ | Mantener la cobertura al agregar casos (hoy 99,4 % de líneas en `application`) |
 | **F — Aceptación** | `src/test/.../acceptance` | ✅ | Mantener alineados los juegos en memoria y sobre JPA |
@@ -326,7 +347,7 @@ Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a me
 8. **Solicitar la propia publicación** lanza `ReglaDeNegocioException` (regla del dominio), no `NoAutorizadoException`.
 9. **Fakes sin rollback.** `TransaccionSimulada` no revierte: en los tests en memoria, un fallo a mitad de `aceptar`/`reprogramar` puede dejar mutado el objeto en memoria. Con JPA la transacción hace rollback y se recarga el agregado, así que no pasa. Los tests en memoria no dependen de eso.
 10. **Disponibilidad en la búsqueda:** el fake y el JPA definen "franja libre con inicio ≥ desde y fin ≤ hasta"; la consigna no lo precisa.
-11. **Mock UI Kit no disponible todavía:** las interfaces de controllers son propias.
+11. **Mock UI Kit conectado con un Adapter.** El kit trae su propio contrato (`UiControllers` y `Models`), distinto de nuestros 8 `I*Controller`. En lugar de cambiar los controllers, `UiControllersAdapter` implementa ese contrato y les delega. La pantalla (`SkillSwapView`) solo conoce el contrato, y `DependenciasUiTest` lo controla. El contrato se ajustó al sistema: montos en `BigDecimal`, un método por acción (los botones salen de las acciones que permite cada estado, según el State), el formulario completo de publicación (`NuevaPublicacion`), y `cancelar` devuelve el reparto (`ResultadoCancelacion`). Además se quitaron `acreditarDemo`, `Modalidad.HIBRIDA` y el precio máximo de `FiltrosBusqueda`, porque la pantalla siempre mandaba 0. El filtro por rango de precio sigue en `IBusquedaController`, pero la pantalla no lo ofrece: queda para consultar con la cátedra. La vista no tiene tests automáticos: se prueba a mano con `--ui`.
 12. **Comisiones** (Decorator de comisión de plataforma) y **Composite de categorías** quedaron fuera a propósito.
 13. **La entrada se valida dos veces.** Primero el controller (`ValidadorEntrada`) y después el caso de uso (`Entradas`) y el dominio. Por eso, a través del controller, faltar el mensaje o el objetivo de una solicitud, el motivo de un rechazo o una cancelación, un puntaje fuera de 1 a 5 o un porcentaje mayor a 100 da `VALIDACION`; llamando directo al caso de uso da `REGLA_DE_NEGOCIO`, como antes. Los largos máximos copian los `VARCHAR` de `V1__esquema.sql`: si cambia la migración, hay que cambiarlos también en `ValidadorEntrada`.
 14. **Recomendaciones e historial paginados en memoria.** El puntaje de recomendación se calcula en Java sobre todas las candidatas (`candidatasRecomendacion`), así que no se puede paginar en la consulta: se arma el top `limiteRecomendaciones` y se recorta la página con `Pagina.recortar`. El historial de una contratación ya viene completo con el agregado (que igual se carga para validar al participante) y se recorta igual. `ContratacionDto.historial`, el detalle completo, no cambió.
@@ -348,19 +369,3 @@ Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a me
 9. **MySQL real**: `verify` no lo ejecuta. Los puntos anteriores pueden comportarse distinto contra MySQL 8/9, así que conviene correr `.\mvnw.cmd test -Pmysql` (sección 2) y probar `--mysql` antes de la demo si se va a usar esa base. Probado sobre MySQL 8.4: la demo completa y los tests del perfil `mysql` pasan sin ajustes.
 
 Cualquier ajuste debería quedar contenido en `infrastructure/persistence/**` y `db/migration/**`: el resto del sistema no se entera del motor.
-
----
-
-## 10. Guía rápida para la defensa
-
-- **Recorrido principal** (sec. 13): `./mvnw compile exec:java -Dexec.args="--h2"` (en PowerShell: `chcp 65001` y después `.\mvnw.cmd compile exec:java "-Dexec.args=--h2"`) y mostrar cada paso con su estado y saldos.
-- **"¿Dónde está la regla X?"** → casi siempre en el dominio (Information Expert): `Contratacion`/`Publicacion` deciden transiciones, `Contratacion.repartirRetenido` decide cuánto se reintegra al cancelar, `Wallet` decide saldos, `Calificacion.registrar` decide quién puede calificar. Los servicios solo orquestan.
-- **"¿Cómo evitás la sobreventa?"** → `Publicacion.reservarFranja` (franja ocupada / cupo) + `@Version` + transacción única en `aceptar`; caso 4.
-- **"¿Cómo agrego un canal de notificación nuevo?"** → una clase que implementa `CanalNotificacionPort` + un `case` en el `switch` de `CanalNotificacionFactoryImpl` + valor en el enum `CanalNotificacion`. No se toca el dominio ni los servicios.
-- **"¿Cómo agrego una política/estrategia/promoción?"** → implementar la interfaz y registrarla en su factory.
-- **"¿Cómo agrego otro interesado en los eventos de una contratación?"** → una clase que implementa `ContratacionObserver` y se suma a la lista que arma `Composicion`.
-- **"¿Por qué la recomendación no está en el dominio?"** → sección 3 (diseño clave): no es una regla de negocio sino un criterio de orden de un listado que combina datos de varios agregados.
-- **"¿Por qué no hay Composite/Singleton?"** → sección 4.
-- **"¿`CanalInterno` es un Adapter?"** → no: implementa el mismo puerto que los adapters, pero no tiene Adaptado porque la notificación interna ya quedó en la bandeja. Los adapters de canal son los de email y push.
-- **"¿Qué hace el decorador base?"** → `PromocionDecorator` solo guarda el precio envuelto; cada promoción calcula su descuento sobre ese precio y acota el total en cero (`SkillCoins.noNegativo()`).
-- **"¿Dónde se valida la entrada?"** → en el controller (`ValidadorEntrada`: obligatorios, formatos y rangos, sin mirar el estado) y otra vez en el caso de uso y en el dominio; sección 3 (diseño clave) y sección 8, punto 13.
