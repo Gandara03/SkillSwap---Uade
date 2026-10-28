@@ -57,7 +57,7 @@ public final class DatosDemo {
         try {
             Long ana = asegurarPerfil(new RegistrarPerfilCommand(ANA, "Ana Gomez", TipoPerfil.PROFESIONAL,
                     "America/Argentina/Buenos_Aires", "Ingeniera de software, mentora en arquitectura y patrones.",
-                    set("java", "clean architecture", "uml"), set("patrones", "testing"),
+                    set("java", "clean architecture", "uml"), set("patrones", "testing", "ux"),
                     List.of(new BloqueDisponibilidadDto(DayOfWeek.MONDAY, LocalTime.of(18, 0), LocalTime.of(21, 0)),
                             new BloqueDisponibilidadDto(DayOfWeek.THURSDAY, LocalTime.of(18, 0), LocalTime.of(21, 0))),
                     CanalNotificacion.EMAIL));
@@ -68,13 +68,13 @@ public final class DatosDemo {
                     CanalNotificacion.PUSH));
             Long cecilia = asegurarPerfil(new RegistrarPerfilCommand(CECILIA, "Cecilia Paz", TipoPerfil.PROFESIONAL,
                     "America/Argentina/Buenos_Aires", "Diseñadora UX con foco en producto.",
-                    set("ux", "figma", "investigación"), set("accesibilidad"),
+                    set("ux", "figma", "investigación"), set("accesibilidad", "java"),
                     List.of(new BloqueDisponibilidadDto(DayOfWeek.TUESDAY, LocalTime.of(9, 0), LocalTime.of(13, 0))),
                     CanalNotificacion.INTERNA));
             Long techcorp = asegurarPerfil(new RegistrarPerfilCommand(TECHCORP, "TechCorp S.A.",
                     TipoPerfil.ORGANIZACION, "America/Argentina/Buenos_Aires",
                     "Empresa de tecnología que propone desafíos reales a la comunidad.",
-                    set("datos", "java"), set("talento joven"), List.of(), CanalNotificacion.EMAIL));
+                    set("datos", "java"), set("talento joven", "ux"), List.of(), CanalNotificacion.EMAIL));
 
             Long mentoria = asegurarPublicacion(ANA, new CrearPublicacionCommand(TipoPublicacion.MENTORIA,
                             "Mentoría de Java y Clean Architecture",
@@ -141,9 +141,12 @@ public final class DatosDemo {
         return id;
     }
 
-    /** Franja de una hora que empieza dentro de {@code dias} dias y {@code horas} horas desde ahora. */
+    /**
+     * Franja de una hora dentro de {@code dias} dias, a las 18 + {@code horas}. Con {@code dias} de 2 o mas empieza
+     * siempre a mas de 24 h de ahora.
+     */
     private FranjaCommand franja(int dias, int horas) {
-        LocalDateTime inicio = ahora.plusDays(dias).plusHours(horas + 1L);
+        LocalDateTime inicio = ahora.toLocalDate().plusDays(dias).atTime(18 + horas, 0);
         return new FranjaCommand(inicio, inicio.plusHours(1));
     }
 
