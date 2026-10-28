@@ -403,19 +403,44 @@ public final class SkillSwapView extends JPanel {
         buy.add(label("Saldo disponible: " + controllers.wallet().consultarSaldo(usuarioActivo), SMALL, MUTED));
         buy.add(Box.createVerticalStrut(20));
         JButton req = button("Solicitar mentoría", true);
-        req.addActionListener(e -> intentar(() -> {
-            List<Franja> franjas = controllers.publicaciones().franjasDisponibles(usuarioActivo, x.id());
-            controllers.contrataciones().solicitar(usuarioActivo, x.id(),
-                    franjas.isEmpty() ? null : franjas.get(0).id(),
-                    "Hola, me interesa tu propuesta.", "Quiero profundizar y practicar");
-            message("¡Solicitud enviada!", "Podés seguir su estado desde Contrataciones.");
-            showContracts();
-        }));
+        req.addActionListener(e -> intentar(() -> solicitar(x)));
         buy.add(req);
         c.add(buy, BorderLayout.EAST);
         c.setAlignmentX(LEFT_ALIGNMENT);
         p.add(c);
         page("Detalle", p);
+    }
+
+    /** Dialogo de solicitud: franja libre, mensaje y objetivo. Si se cierra sin confirmar, no se envia nada. */
+    private void solicitar(Publicacion x) {
+        List<Franja> franjas = controllers.publicaciones().franjasDisponibles(usuarioActivo, x.id());
+        if (franjas.isEmpty()) {
+            message("Sin franjas libres", "Esta publicación no tiene franjas disponibles para solicitar.");
+            return;
+        }
+        JComboBox<String> franja = new JComboBox<>(franjas.stream().map(SkillSwapView::textoFranja)
+                .toArray(String[]::new));
+        JTextField mensaje = new JTextField(30);
+        JTextField objetivo = new JTextField(30);
+        JPanel form = new JPanel(new GridLayout(0, 1, 4, 5));
+        form.add(new JLabel("Franja"));
+        form.add(franja);
+        form.add(new JLabel("Mensaje para el proveedor"));
+        form.add(mensaje);
+        form.add(new JLabel("Objetivo: qué querés lograr"));
+        form.add(objetivo);
+        if (!confirmar("Solicitar: " + x.titulo(), form)) {
+            return;
+        }
+        controllers.contrataciones().solicitar(usuarioActivo, x.id(), franjas.get(franja.getSelectedIndex()).id(),
+                mensaje.getText(), objetivo.getText());
+        message("¡Solicitud enviada!", "Podés seguir su estado desde Contrataciones.");
+        showContracts();
+    }
+
+    private static String textoFranja(Franja franja) {
+        return franja.inicio().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + " a "
+                + franja.fin().format(DateTimeFormatter.ofPattern("HH:mm"));
     }
 
     private void showListings() {
@@ -438,23 +463,36 @@ public final class SkillSwapView extends JPanel {
             for (Publicacion x : own) {
                 JPanel row = card(new BorderLayout(12, 0));
                 row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
-                row.add(label(x.titulo(), H3, TEXT));
-                row.add(pill(x.estado().name(), x.estado() == EstadoPublicacion.PUBLICADA ? TEAL : MUTED),
+                row.setAlignmentX(LEFT_ALIGNMENT);
+                row.add(label(x.titulo(), H3, TEXT), BorderLayout.WEST);
+                row.add(estado(x.estado().name(), x.estado() == EstadoPublicacion.PUBLICADA ? TEAL : MUTED),
                         BorderLayout.CENTER);
-                JButton toggle = button(x.estado() == EstadoPublicacion.PUBLICADA ? "Pausar" : "Publicar", false);
-                toggle.addActionListener(e -> intentar(() -> {
-                    controllers.publicaciones().cambiarEstado(usuarioActivo, x.id(),
-                            x.estado() == EstadoPublicacion.PUBLICADA ? AccionPublicacion.PAUSAR
-                                    : AccionPublicacion.PUBLICAR,
-                            null);
-                    showListings();
-                }));
-                row.add(toggle, BorderLayout.EAST);
+                JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+                acciones.setOpaque(false);
+                for (AccionPublicacion a : x.accionesDelAutor()) {
+                    JButton b = button(a.etiqueta(), a != AccionPublicacion.CERRAR && a != AccionPublicacion.CANCELAR);
+                    b.addActionListener(e -> intentar(() -> cambiarEstado(x, a)));
+                    acciones.add(b);
+                }
+                row.add(acciones, BorderLayout.EAST);
                 p.add(row);
                 p.add(Box.createVerticalStrut(10));
             }
         }
         page("Mis publicaciones", p);
+    }
+
+    /** Cancelar pide el motivo antes; si el usuario cierra ese dialogo, no se llama al sistema. */
+    private void cambiarEstado(Publicacion x, AccionPublicacion accion) {
+        String motivo = null;
+        if (accion == AccionPublicacion.CANCELAR) {
+            motivo = pedirMotivo("Cancelar la publicación");
+            if (motivo == null) {
+                return;
+            }
+        }
+        controllers.publicaciones().cambiarEstado(usuarioActivo, x.id(), accion, motivo);
+        showListings();
     }
 
     private void createListing() {
@@ -485,6 +523,7 @@ public final class SkillSwapView extends JPanel {
         for (Contratacion x : controllers.contrataciones().listarContrataciones(usuarioActivo)) {
             JPanel row = card(new BorderLayout(16, 0));
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 105));
+            row.setAlignmentX(LEFT_ALIGNMENT);
             JPanel txt = new JPanel();
             txt.setOpaque(false);
             txt.setLayout(new BoxLayout(txt, BoxLayout.Y_AXIS));
@@ -492,17 +531,14 @@ public final class SkillSwapView extends JPanel {
             txt.add(Box.createVerticalStrut(5));
             txt.add(label(x.contraparte() + "  ·  " + x.fecha().format(DateTimeFormatter.ofPattern("dd/MM · HH:mm")),
                     BODY, MUTED));
-            row.add(txt);
-            row.add(pill(x.estado().name(), x.estado() == EstadoContratacion.COMPLETADA ? TEAL : NAVY_2),
+            row.add(txt, BorderLayout.WEST);
+            row.add(estado(x.estado().name(), x.estado() == EstadoContratacion.COMPLETADA ? TEAL : NAVY_2),
                     BorderLayout.CENTER);
             JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
             actions.setOpaque(false);
             for (AccionContratacion a : x.acciones()) {
                 JButton b = button(a.etiqueta(), a != AccionContratacion.CANCELAR && a != AccionContratacion.RECHAZAR);
-                b.addActionListener(e -> intentar(() -> {
-                    ejecutar(x, a);
-                    showContracts();
-                }));
+                b.addActionListener(e -> intentar(() -> ejecutar(x, a)));
                 actions.add(b);
             }
             row.add(actions, BorderLayout.EAST);
@@ -512,16 +548,62 @@ public final class SkillSwapView extends JPanel {
         page("Contrataciones", p);
     }
 
+    /**
+     * Ejecuta la accion del boton y refresca la lista. Rechazar, cancelar y calificar piden datos antes; si el usuario
+     * cierra ese dialogo sin confirmar, no se llama al sistema.
+     */
     private void ejecutar(Contratacion x, AccionContratacion accion) {
         switch (accion) {
             case ACEPTAR -> controllers.contrataciones().aceptar(usuarioActivo, x.id());
-            case RECHAZAR -> controllers.contrataciones().rechazar(usuarioActivo, x.id(), "Motivo no indicado");
+            case RECHAZAR -> {
+                String motivo = pedirMotivo("Rechazar la solicitud");
+                if (motivo == null) {
+                    return;
+                }
+                controllers.contrataciones().rechazar(usuarioActivo, x.id(), motivo);
+            }
             case PAGAR -> controllers.contrataciones().pagar(usuarioActivo, x.id());
             case INICIAR -> controllers.contrataciones().iniciar(usuarioActivo, x.id());
             case COMPLETAR -> controllers.contrataciones().completar(usuarioActivo, x.id());
-            case CANCELAR -> controllers.contrataciones().cancelar(usuarioActivo, x.id(), "Motivo no indicado");
-            case CALIFICAR -> controllers.calificaciones().calificar(usuarioActivo, x.id(), 5, "");
+            case CANCELAR -> {
+                String motivo = pedirMotivo("Cancelar la contratación");
+                if (motivo == null) {
+                    return;
+                }
+                controllers.contrataciones().cancelar(usuarioActivo, x.id(), motivo);
+            }
+            case CALIFICAR -> {
+                DatosCalificacion datos = pedirCalificacion(x.titulo());
+                if (datos == null) {
+                    return;
+                }
+                controllers.calificaciones().calificar(usuarioActivo, x.id(), datos.puntaje(), datos.comentario());
+            }
         }
+        showContracts();
+    }
+
+    /** Lo que se carga en el dialogo de calificar. */
+    private record DatosCalificacion(int puntaje, String comentario) {}
+
+    /** Dialogo de calificar: puntaje de 5 a 1 y comentario opcional; null si se cierra sin confirmar. */
+    private DatosCalificacion pedirCalificacion(String titulo) {
+        JComboBox<Integer> puntaje = new JComboBox<>(new Integer[]{5, 4, 3, 2, 1});
+        JTextField comentario = new JTextField(30);
+        JPanel form = new JPanel(new GridLayout(0, 1, 4, 5));
+        form.add(new JLabel("Puntaje (5 es el mejor)"));
+        form.add(puntaje);
+        form.add(new JLabel("Comentario (opcional)"));
+        form.add(comentario);
+        if (!confirmar("Calificar: " + titulo, form)) {
+            return null;
+        }
+        return new DatosCalificacion((Integer) puntaje.getSelectedItem(), comentario.getText());
+    }
+
+    /** Pide el motivo de un rechazo o una cancelacion; null si el usuario cancela o cierra el dialogo. */
+    private String pedirMotivo(String titulo) {
+        return JOptionPane.showInputDialog(this, "Motivo", titulo, JOptionPane.QUESTION_MESSAGE);
     }
 
     private void showWallet() {
@@ -641,6 +723,14 @@ public final class SkillSwapView extends JPanel {
         return l;
     }
 
+    /** El estado con su tamano: sola en el centro de un BorderLayout, la etiqueta se estiraria a toda la fila. */
+    private JPanel estado(String texto, Color color) {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setOpaque(false);
+        panel.add(pill(texto, color));
+        return panel;
+    }
+
     private JLabel avatar(String initials, int size) {
         JLabel a = new JLabel(initials, SwingConstants.CENTER);
         a.setPreferredSize(new Dimension(size, size));
@@ -657,6 +747,7 @@ public final class SkillSwapView extends JPanel {
     private JComponent empty(String title, String subtitle) {
         JPanel e = card(new GridBagLayout());
         e.setMaximumSize(new Dimension(Integer.MAX_VALUE, 190));
+        e.setAlignmentX(LEFT_ALIGNMENT);
         JPanel t = new JPanel();
         t.setOpaque(false);
         t.setLayout(new BoxLayout(t, BoxLayout.Y_AXIS));
@@ -673,6 +764,12 @@ public final class SkillSwapView extends JPanel {
 
     private void message(String title, String body) {
         JOptionPane.showMessageDialog(this, body, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    /** Muestra el formulario con Aceptar y Cancelar; true solo si el usuario confirma. */
+    private boolean confirmar(String titulo, JComponent formulario) {
+        return JOptionPane.showConfirmDialog(this, formulario, titulo, JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE) == JOptionPane.OK_OPTION;
     }
 
     /**
