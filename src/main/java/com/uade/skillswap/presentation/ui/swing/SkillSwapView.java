@@ -263,6 +263,7 @@ public final class SkillSwapView extends JPanel {
         JTextField search = new JTextField();
         search.setToolTipText(AYUDA_BUSQUEDA);
         search.setBorder(new CompoundBorder(new LineBorder(BORDER), new EmptyBorder(11, 13, 11, 13)));
+        search.setAlignmentX(LEFT_ALIGNMENT);
         search.addActionListener(e -> intentar(() -> showExplore(search.getText())));
         words.add(search);
         hero.add(words);
@@ -359,6 +360,8 @@ public final class SkillSwapView extends JPanel {
         for (Publicacion x : list) {
             grid.add(listingCard(x));
         }
+        // Sin tope de alto, con pocas tarjetas la grilla las estira hasta llenar la pagina
+        grid.setMaximumSize(new Dimension(Integer.MAX_VALUE, grid.getPreferredSize().height));
         return grid;
     }
 
