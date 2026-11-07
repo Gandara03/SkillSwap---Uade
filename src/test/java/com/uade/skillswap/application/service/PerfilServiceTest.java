@@ -15,7 +15,8 @@ import com.uade.skillswap.application.exception.ValidacionException;
 import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
 import com.uade.skillswap.domain.model.notificacion.CanalNotificacion;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
-import com.uade.skillswap.domain.model.politica.ConfiguracionCancelacion;
+import com.uade.skillswap.domain.model.politica.PoliticaEstricta;
+import com.uade.skillswap.domain.model.politica.PoliticaFlexible;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.domain.model.wallet.TipoMovimiento;
 import com.uade.skillswap.domain.query.PaginaRequest;
@@ -87,7 +88,8 @@ class PerfilServiceTest {
     @Test
     @DisplayName("el bono inicial sale de la configuracion y no esta hardcodeado")
     void bonoInicialConfigurable() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(250), 200, 10, 5, 5, ConfiguracionCancelacion.porDefecto());
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(250), 200, 10, 5, 5,
+                PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario otro = new Escenario(AplicacionEnMemoria.crear(config));
 
         PerfilDto ana = otro.profesional("u-ana", "Ana");

@@ -340,7 +340,7 @@ Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a me
 1. **Escrow vs transferencia directa.** Se eligió escrow (el monto queda retenido hasta completar). Alternativa: acreditar al proveedor al pagar. Al cancelar, `Contratacion.repartirRetenido` decide el reintegro y la compensación.
 2. **Reserva sin entidad propia.** Vive dentro de `Contratacion`. Si la cátedra espera una tabla `reserva`, se extrae.
 3. **Organización como `TipoPerfil.ORGANIZACION`.** No hay entidad aparte; solo ellas publican desafíos.
-4. **Política de cancelación por publicación** (enum persistido) con umbrales globales configurables en `SkillSwapConfig`/`ConfiguracionCancelacion`. El compositor arma la `PoliticaCancelacionFactory` con `config.cancelacion()` y se la pasa a `ContratacionService`.
+4. **Política de cancelación por publicación** (enum persistido) con umbrales globales configurables en `SkillSwapConfig` (`cancelacionFlexible` y `cancelacionEstricta`). El compositor arma la `PoliticaCancelacionFactory` con esos dos umbrales y se la pasa a `ContratacionService`.
 5. **Cancelar o cerrar una publicación no toca sus contrataciones activas** (con dinero retenido): no hay reintegro automático. Lo mismo al dar de baja un perfil (aunque sí pausa sus publicaciones publicadas). Propuesta: impedir cancelar/cerrar con contrataciones ACEPTADA/CONFIRMADA/EN_CURSO, o cancelarlas en cascada con reintegro total.
 6. **El cliente no puede retirar una solicitud PENDIENTE** (el dominio solo permite al proveedor rechazar).
 7. **El cupo no se libera al completar** (cupo = capacidad total de la publicación).

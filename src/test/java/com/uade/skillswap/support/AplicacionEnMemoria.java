@@ -66,7 +66,7 @@ public final class AplicacionEnMemoria {
 
     private AplicacionEnMemoria(SkillSwapConfig config) {
         this.config = config;
-        this.politicas = new PoliticaCancelacionFactory(config.cancelacion());
+        this.politicas = new PoliticaCancelacionFactory(config.cancelacionFlexible(), config.cancelacionEstricta());
         CanalNotificacionFactoryImpl canales = new CanalNotificacionFactoryImpl(emailSdk, pushSdk, identidad);
         NotificadorObserver notificador = new NotificadorObserver(notificaciones, perfiles, canales, transaccion, reloj);
 

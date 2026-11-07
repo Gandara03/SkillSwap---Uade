@@ -134,9 +134,8 @@ class PoliticaCancelacionTest {
         assertEquals(2, new PoliticaFlexible().getUmbrales().horasReintegroParcial());
         assertEquals(72, new PoliticaEstricta().getUmbrales().horasReintegroTotal());
         assertEquals(48, new PoliticaEstricta().getUmbrales().horasReintegroParcial());
-        ConfiguracionCancelacion c = ConfiguracionCancelacion.porDefecto();
-        assertEquals(50, c.flexible().porcentajeParcial());
-        assertEquals(50, c.estricta().porcentajeParcial());
+        assertEquals(50, new PoliticaFlexible().getUmbrales().porcentajeParcial());
+        assertEquals(50, new PoliticaEstricta().getUmbrales().porcentajeParcial());
     }
 
     // ----- fabrica -----
@@ -155,9 +154,8 @@ class PoliticaCancelacionTest {
     @Test
     @DisplayName("la fabrica respeta una configuracion propia de umbrales")
     void fabricaConConfiguracion() {
-        ConfiguracionCancelacion cfg = new ConfiguracionCancelacion(new UmbralesCancelacion(1, 0, 10),
+        PoliticaCancelacionFactory f = new PoliticaCancelacionFactory(new UmbralesCancelacion(1, 0, 10),
                 new UmbralesCancelacion(100, 90, 90));
-        PoliticaCancelacionFactory f = new PoliticaCancelacionFactory(cfg);
         assertEquals(MONTO, f.crear(TipoPoliticaCancelacion.FLEXIBLE).calcularReintegro(MONTO, Duration.ofHours(1)));
         assertEquals(SkillCoins.de(90), f.crear(TipoPoliticaCancelacion.ESTRICTA).calcularReintegro(MONTO, Duration.ofHours(95)));
     }

@@ -10,7 +10,8 @@ import com.uade.skillswap.application.exception.RecursoNoEncontradoException;
 import com.uade.skillswap.application.exception.ValidacionException;
 import com.uade.skillswap.domain.model.notificacion.CanalNotificacion;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
-import com.uade.skillswap.domain.model.politica.ConfiguracionCancelacion;
+import com.uade.skillswap.domain.model.politica.PoliticaEstricta;
+import com.uade.skillswap.domain.model.politica.PoliticaFlexible;
 import com.uade.skillswap.application.recomendacion.TipoEstrategiaRecomendacion;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.domain.query.Pagina;
@@ -134,7 +135,8 @@ class RecomendacionServiceTest {
     @Test
     @DisplayName("el limite de recomendaciones sale de la configuracion")
     void limiteConfigurable() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 1, 5, 5, ConfiguracionCancelacion.porDefecto());
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 1, 5, 5,
+                PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario chico = new Escenario(AplicacionEnMemoria.crear(config));
         PerfilDto cliente = chico.registrar("u-cliente", "Cliente", TipoPerfil.PROFESIONAL, CanalNotificacion.INTERNA, Set.of(), Set.of("java"));
         PerfilDto autora = chico.profesional("u-autora", "Autora");

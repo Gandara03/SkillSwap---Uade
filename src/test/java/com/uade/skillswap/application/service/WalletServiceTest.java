@@ -9,7 +9,8 @@ import com.uade.skillswap.application.dto.PublicacionDto;
 import com.uade.skillswap.application.dto.WalletDto;
 import com.uade.skillswap.application.exception.RecursoNoEncontradoException;
 import com.uade.skillswap.application.exception.ValidacionException;
-import com.uade.skillswap.domain.model.politica.ConfiguracionCancelacion;
+import com.uade.skillswap.domain.model.politica.PoliticaEstricta;
+import com.uade.skillswap.domain.model.politica.PoliticaFlexible;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.domain.model.wallet.TipoMovimiento;
 import com.uade.skillswap.domain.query.Pagina;
@@ -62,7 +63,8 @@ class WalletServiceTest {
     @Test
     @DisplayName("sin bono configurado (0 SC) la wallet arranca vacia y sin movimientos")
     void sinBono() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.CERO, 200, 10, 5, 5, ConfiguracionCancelacion.porDefecto());
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.CERO, 200, 10, 5, 5,
+                PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario otro = new Escenario(AplicacionEnMemoria.crear(config));
         PerfilDto carla = otro.profesional("u-carla", "Carla");
 

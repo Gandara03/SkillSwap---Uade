@@ -7,7 +7,8 @@ import com.uade.skillswap.application.dto.PerfilDto;
 import com.uade.skillswap.application.dto.PerfilPublicoDto;
 import com.uade.skillswap.application.dto.PublicacionDto;
 import com.uade.skillswap.application.exception.RecursoNoEncontradoException;
-import com.uade.skillswap.domain.model.politica.ConfiguracionCancelacion;
+import com.uade.skillswap.domain.model.politica.PoliticaEstricta;
+import com.uade.skillswap.domain.model.politica.PoliticaFlexible;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.support.AplicacionEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +63,8 @@ class PerfilPublicoFacadeTest {
     @Test
     @DisplayName("el perfil publico limita calificaciones y publicaciones segun la configuracion y lista primero las mas recientes")
     void perfilPublicoRespetaLimites() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 10, 2, 1, ConfiguracionCancelacion.porDefecto());
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 10, 2, 1,
+                PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario otro = new Escenario(AplicacionEnMemoria.crear(config));
         PerfilDto ana = otro.profesional("u-ana", "Ana");
         PerfilDto bruno = otro.profesional("u-bruno", "Bruno");

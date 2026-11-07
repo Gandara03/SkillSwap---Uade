@@ -118,7 +118,8 @@ public final class Composicion {
         var perfilService = new PerfilService(perfiles, wallets, publicaciones, identidad, transaccion, reloj, config);
         var publicacionService = new PublicacionService(publicaciones, perfiles, promociones, transaccion, reloj);
         var contratacionService = new ContratacionService(contrataciones, publicaciones, perfiles, wallets,
-                promociones, observadores, transaccion, reloj, new PoliticaCancelacionFactory(config.cancelacion()));
+                promociones, observadores, transaccion, reloj,
+                new PoliticaCancelacionFactory(config.cancelacionFlexible(), config.cancelacionEstricta()));
         var busquedaService = new BusquedaService(publicaciones, perfiles, promociones, reloj);
         var recomendacionService = new RecomendacionService(publicaciones, perfiles, reloj, promociones, config);
         var calificacionService = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);
