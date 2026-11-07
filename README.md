@@ -64,7 +64,7 @@ skillswap/
                                  · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 230 clases de producción, 101 clases de test (708 tests), ~13.1 mil líneas de código y ~15.0 mil de tests.
+Números: 218 clases de producción, 101 clases de test (708 tests), ~12.7 mil líneas de código y ~15.0 mil de tests.
 
 ---
 
