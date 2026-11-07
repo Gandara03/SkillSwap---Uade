@@ -49,11 +49,8 @@ import com.uade.skillswap.presentation.controller.PublicacionController;
 import com.uade.skillswap.presentation.controller.RecomendacionController;
 import com.uade.skillswap.presentation.controller.WalletController;
 import com.uade.skillswap.presentation.ui.Autenticador;
-import com.uade.skillswap.presentation.ui.MenuConsola;
 import com.uade.skillswap.presentation.ui.swing.contrato.UiControllers;
 
-import java.io.InputStream;
-import java.io.PrintStream;
 import java.util.List;
 
 /**
@@ -181,13 +178,7 @@ public final class Composicion {
         return pushSdk;
     }
 
-    /** Menu de consola sobre los controllers; el login se resuelve con el adapter de identidad. */
-    public MenuConsola crearMenu(IdentidadMockAdapter identidad, InputStream entrada, PrintStream salida) {
-        return new MenuConsola(autenticador(identidad), perfilController, busquedaController, recomendacionController,
-                contratacionController, walletController, notificacionController, entrada, salida);
-    }
-
-    /** Contrato de la pantalla Swing sobre los mismos controllers (Adapter); el login tambien va a la identidad mock. */
+    /** Contrato de la pantalla Swing sobre los controllers (Adapter); el login va a la identidad mock. */
     public UiControllers crearControllersUi(IdentidadMockAdapter identidad) {
         return new UiControllersAdapter(autenticador(identidad), perfilController, publicacionController,
                 busquedaController, recomendacionController, contratacionController, calificacionController,

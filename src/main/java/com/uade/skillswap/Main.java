@@ -17,9 +17,8 @@ import java.util.List;
 
 /**
  * Punto de entrada. Opciones:
- * {@code --h2} (base en memoria, por defecto si no hay SKILLSWAP_DB_URL), {@code --mysql} (o definir SKILLSWAP_DB_URL),
- * {@code --sin-demo} (solo carga los datos de ejemplo), {@code --menu} (abre el menu de consola al terminar) y
- * {@code --ui} (solo carga los datos de ejemplo y abre la pantalla Swing; tiene prioridad sobre {@code --menu}).
+ * {@code --h2} (base en memoria, por defecto si no hay SKILLSWAP_DB_URL), {@code --mysql} (o definir SKILLSWAP_DB_URL)
+ * y {@code --ui} (solo carga los datos de ejemplo y abre la pantalla Swing, sin correr la demo).
  */
 public final class Main {
 
@@ -34,8 +33,7 @@ public final class Main {
         boolean usarMySql = opciones.contains("--mysql")
                 || (!opciones.contains("--h2") && System.getenv("SKILLSWAP_DB_URL") != null);
         boolean conUi = opciones.contains("--ui");
-        boolean conDemo = !opciones.contains("--sin-demo") && !conUi;
-        boolean conMenu = (opciones.contains("--menu") || opciones.contains("--sin-demo")) && !conUi;
+        boolean conDemo = !conUi;
 
         out.println("SkillSwap - base de datos: " + (usarMySql ? "MySQL" : "H2 en memoria"));
         JpaContexto contexto = null;
@@ -54,9 +52,6 @@ public final class Main {
 
             if (conDemo && !new DemoFlujoPrincipal(app, identidad, semilla, out).ejecutar()) {
                 codigoSalida = 1;
-            }
-            if (conMenu) {
-                app.crearMenu(identidad, System.in, out).ejecutar();
             }
             if (conUi) {
                 abrirVentana(app, identidad, out);
@@ -92,7 +87,7 @@ public final class Main {
     private static void abrirVentana(Composicion app, IdentidadMockAdapter identidad, PrintStream out) {
         UiControllers controllers = app.crearControllersUi(identidad);
         List<String> usuarios = List.of(DatosDemo.ANA, DatosDemo.BRUNO, DatosDemo.CECILIA, DatosDemo.TECHCORP);
-        out.println("Abriendo la pantalla (con --ui no corren la demo ni el menú de consola).");
+        out.println("Abriendo la pantalla (con --ui no corre la demo).");
         out.println("Al cerrar la ventana se cierra la base y termina el programa.");
         SwingUtilities.invokeLater(() -> {
             try {

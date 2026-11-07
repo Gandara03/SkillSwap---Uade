@@ -34,7 +34,7 @@ Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación
 
 Sin `clean`, JaCoCo suma los datos de corridas anteriores que siguen en `target\jacoco.exec` (por ejemplo, las del perfil `mysql`) y los porcentajes pueden salir más altos.
 
-Los controllers y el adaptador de la pantalla tienen tests de integración contra H2 (`presentation/controller/**`, `presentation/adaptador/**`). El resto de `presentation` (menú de consola, formato y la pantalla Swing) y `bootstrap` se ejercitan con la demo y con `--ui` (sección 2); la pantalla no tiene tests automáticos y por eso baja el total. El camino contra MySQL real no forma parte de `verify`: se prueba aparte con `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
+Los controllers y el adaptador de la pantalla tienen tests de integración contra H2 (`presentation/controller/**`, `presentation/adaptador/**`). El resto de `presentation` (formato y la pantalla Swing) y `bootstrap` se ejercitan con la demo y con `--ui` (sección 2); la pantalla no tiene tests automáticos y por eso baja el total. El camino contra MySQL real no forma parte de `verify`: se prueba aparte con `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
 
 ---
 
@@ -55,7 +55,7 @@ skillswap/
     │   │                        Facade del perfil publico (facade), commands, DTOs, servicios
     │   ├── infrastructure/      JPA + Flyway, adapters (identidad, email, push), canal interno, factory de canales, reloj
     │   ├── presentation/        controllers delgados (validan la entrada con ValidadorEntrada) + interfaces I*Controller
-    │   │                        + Resultado/ManejadorErrores + menú de consola
+    │   │                        + Resultado/ManejadorErrores
     │   │                        + pantalla Swing del Mock UI Kit (ui/swing) y su Adapter (adaptador)
     │   ├── bootstrap/           Composicion (compositor a mano), DatosDemo, DemoFlujoPrincipal
     │   └── Main.java
@@ -81,9 +81,7 @@ Requisitos: JDK 17 o superior. No hace falta instalar Maven: el wrapper (`mvnw` 
 open target/site/jacoco/index.html                   # reporte de cobertura (en Linux: xdg-open)
 
 ./mvnw compile exec:java -Dexec.args="--h2"          # demo completa sobre H2 en memoria (no necesita MySQL)
-./mvnw compile exec:java -Dexec.args="--h2 --menu"   # demo y después menú de consola (login por userId: u-ana, u-bruno, u-cecilia, u-techcorp)
-./mvnw compile exec:java -Dexec.args="--sin-demo --menu"
-./mvnw compile exec:java -Dexec.args="--h2 --ui"     # pantalla Swing del Mock UI Kit sobre H2 (sin demo ni menú)
+./mvnw compile exec:java -Dexec.args="--h2 --ui"     # pantalla Swing del Mock UI Kit sobre H2 (sin demo)
 ```
 
 **Windows (PowerShell):** los argumentos `-D…` van completos entre comillas, porque PowerShell los corta en el punto. Antes de la demo conviene correr `chcp 65001` en la consola para que se vean bien los acentos.
@@ -94,12 +92,10 @@ start target\site\jacoco\index.html
 
 chcp 65001
 .\mvnw.cmd compile exec:java "-Dexec.args=--h2"
-.\mvnw.cmd compile exec:java "-Dexec.args=--h2 --menu"
-.\mvnw.cmd compile exec:java "-Dexec.args=--sin-demo --menu"
 .\mvnw.cmd compile exec:java "-Dexec.args=--h2 --ui"
 ```
 
-**Pantalla Swing** (`--ui`): carga los datos de ejemplo y abre la ventana del Mock UI Kit; no corren la demo ni el menú de consola. El usuario activo se elige con el selector de abajo a la izquierda (login simulado entre Ana, Bruno, Cecilia y TechCorp). Al cerrar la ventana se cierra la base y termina el programa.
+**Pantalla Swing** (`--ui`): carga los datos de ejemplo y abre la ventana del Mock UI Kit; no corre la demo. El usuario activo se elige con el selector de abajo a la izquierda (login simulado entre Ana, Bruno, Cecilia y TechCorp). Al cerrar la ventana se cierra la base y termina el programa.
 
 **MySQL real:**
 
@@ -157,7 +153,7 @@ presentation ──▶ application (port/in) ──▶ domain ◀── applicat
 | **Dominio** | `Perfil`, `Publicacion`+`Franja`+`DatosPublicacion`, `Contratacion`+`RepartoCancelacion`, `Wallet`+`MovimientoCredito`, `Calificacion`, `Notificacion`, `Promocion`, VOs (`SkillCoins`, `Puntaje`, `Habilidad`, `RangoPrecio`, `BloqueDisponibilidad`), State, Observer (`ContratacionObserver`, `ContratacionEvent`), `HistorialEstado`, Strategy de cancelación (`domain.model.politica`), Decorator de precio (`domain.model.precio`) | UI, JPA, MySQL, SDKs |
 | **Aplicación** | 10 casos de uso (`port/in`), commands y DTOs, servicios, puertos de salida y repositorios (`port/out`: `IdentidadPort`, `TransaccionPort`, `RelojPort`, `CanalNotificacionPort`, `CanalNotificacionFactory`, `*Repository`), Strategy de recomendación (`application.recomendacion`), Facade del perfil público (`application.facade`), `NotificadorObserver` | Controllers concretos, SDKs externos, JPA |
 | **Infraestructura** | `JpaContexto`, `BaseDeDatos`, `JpaTransaccionAdapter`, entidades `*JpaEntity` + mappers + 7 repositorios JPA, `IdentidadMockAdapter`, `Email/PushCanalAdapter`, `CanalInterno`, `CanalNotificacionFactoryImpl`, `RelojSistema`, Flyway | Decisiones de negocio |
-| **Presentación** | 8 interfaces `I*Controller` y sus implementaciones, `ValidadorEntrada`, `Resultado<T>`, `ManejadorErrores`, `MenuConsola`, la pantalla Swing del Mock UI Kit (`ui.swing`: `SkillSwapView`, `Theme`, `SkillSwapFrame`) con su contrato (`ui.swing.contrato`: `UiControllers`, `Models`, `OperacionFallidaException`) y el adaptador que lo implementa (`adaptador`: `UiControllersAdapter`, `MapeadorUi`) | Persistencia y reglas de negocio |
+| **Presentación** | 8 interfaces `I*Controller` y sus implementaciones, `ValidadorEntrada`, `Resultado<T>`, `ManejadorErrores`, la pantalla Swing del Mock UI Kit (`ui.swing`: `SkillSwapView`, `Theme`, `SkillSwapFrame`) con su contrato (`ui.swing.contrato`: `UiControllers`, `Models`, `OperacionFallidaException`) y el adaptador que lo implementa (`adaptador`: `UiControllersAdapter`, `MapeadorUi`) | Persistencia y reglas de negocio |
 
 Reglas que se respetan (verificables con un `grep` de imports): `domain` no importa nada de las otras capas ni `jakarta.persistence`; `application` solo importa `domain`; `presentation` solo usa `port/in`, DTOs, commands, `application.exception`, `domain.query` y enums (además, `ManejadorErrores` conoce `domain.exception` para traducir esos errores); la pantalla Swing solo conoce su contrato (`ui.swing.contrato`), y `DependenciasUiTest` lo controla; el compositor `bootstrap/Composicion` es el único lugar que conoce todas las capas.
 

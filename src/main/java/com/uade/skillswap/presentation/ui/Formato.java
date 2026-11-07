@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/** Formatos de texto de los DTO para la consola (compartidos por el menu y la demo). */
+/** Formatos de texto de los DTO para la consola (los usa la demo). */
 public final class Formato {
 
     private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
