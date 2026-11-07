@@ -34,12 +34,12 @@ public final class WalletMapper {
         e.setMonto(m.getMonto().getMonto());
         e.setSaldoPosterior(m.getSaldoPosterior().getMonto());
         e.setContratacionId(m.getContratacionId());
-        e.setFecha(Fechas.enMicros(m.getFecha()));
+        e.setFecha(SoporteMapeo.enMicros(m.getFecha()));
         return e;
     }
 
     public static void confirmar(Wallet d, WalletJpaEntity e) {
-        CamposDominio.asignar(d, "id", e.getId());
-        CamposDominio.asignar(d, "version", e.getVersion());
+        SoporteMapeo.asignarCampo(d, "id", e.getId());
+        SoporteMapeo.asignarCampo(d, "version", e.getVersion());
     }
 }

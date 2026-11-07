@@ -47,14 +47,14 @@ public final class PerfilMapper {
         e.setReputacion(d.getReputacion());
         e.setCantidadCalificaciones(d.getCantidadCalificaciones());
         e.setActivo(d.estaActivo());
-        e.setCreadoEn(Fechas.enMicros(d.getCreadoEn()));
+        e.setCreadoEn(SoporteMapeo.enMicros(d.getCreadoEn()));
 
         Set<String> habilidades = new LinkedHashSet<>();
         for (Habilidad h : d.getHabilidades()) {
             habilidades.add(h.getNombre());
         }
-        Sincronizador.conjunto(e.getHabilidades(), habilidades);
-        Sincronizador.conjunto(e.getIntereses(), d.getIntereses());
+        SoporteMapeo.sincronizarConjunto(e.getHabilidades(), habilidades);
+        SoporteMapeo.sincronizarConjunto(e.getIntereses(), d.getIntereses());
 
         List<BloqueDisponibilidadEmbebible> bloques = new ArrayList<>();
         for (BloqueDisponibilidad b : d.getDisponibilidad()) {
@@ -64,12 +64,12 @@ public final class PerfilMapper {
             fila.setHasta(b.getHasta());
             bloques.add(fila);
         }
-        Sincronizador.lista(e.getDisponibilidad(), bloques);
+        SoporteMapeo.sincronizarLista(e.getDisponibilidad(), bloques);
     }
 
     /** Despues del flush: la instancia de dominio recibe el id y la version asignados por la base. */
     public static void confirmar(Perfil d, PerfilJpaEntity e) {
-        CamposDominio.asignar(d, "id", e.getId());
-        CamposDominio.asignar(d, "version", e.getVersion());
+        SoporteMapeo.asignarCampo(d, "id", e.getId());
+        SoporteMapeo.asignarCampo(d, "version", e.getVersion());
     }
 }

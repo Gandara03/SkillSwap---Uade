@@ -20,12 +20,12 @@ public final class PromocionMapper {
         e.setDescripcion(d.getDescripcion());
         e.setTipo(d.getTipo().name());
         e.setValor(d.getValor());
-        e.setVigenteDesde(Fechas.enMicros(d.getVigenteDesde()));
-        e.setVigenteHasta(Fechas.enMicros(d.getVigenteHasta()));
+        e.setVigenteDesde(SoporteMapeo.enMicros(d.getVigenteDesde()));
+        e.setVigenteHasta(SoporteMapeo.enMicros(d.getVigenteHasta()));
         e.setActiva(d.isActiva());
     }
 
     public static void confirmar(Promocion d, PromocionJpaEntity e) {
-        CamposDominio.asignar(d, "id", e.getId());
+        SoporteMapeo.asignarCampo(d, "id", e.getId());
     }
 }

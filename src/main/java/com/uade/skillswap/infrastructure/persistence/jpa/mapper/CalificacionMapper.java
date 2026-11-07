@@ -22,11 +22,11 @@ public final class CalificacionMapper {
         e.setDestinatarioId(d.getDestinatarioId());
         e.setPuntaje(d.getPuntaje().getValor());
         e.setComentario(d.getComentario());
-        e.setFecha(Fechas.enMicros(d.getFecha()));
+        e.setFecha(SoporteMapeo.enMicros(d.getFecha()));
         return e;
     }
 
     public static void confirmar(Calificacion d, CalificacionJpaEntity e) {
-        CamposDominio.asignar(d, "id", e.getId());
+        SoporteMapeo.asignarCampo(d, "id", e.getId());
     }
 }

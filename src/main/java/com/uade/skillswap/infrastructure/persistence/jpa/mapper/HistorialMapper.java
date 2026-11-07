@@ -40,7 +40,7 @@ final class HistorialMapper {
             fila.setEstadoNuevo(origen.getEstadoNuevo());
             fila.setActorId(origen.getActorId());
             fila.setMotivo(origen.getMotivo());
-            fila.setFecha(Fechas.enMicros(origen.getFecha()));
+            fila.setFecha(SoporteMapeo.enMicros(origen.getFecha()));
             vincular.accept(fila);
             persistidas.add(fila);
         }

@@ -61,15 +61,15 @@ public final class PublicacionMapper {
         e.setPrecioBase(d.getPrecioBase() == null ? null : d.getPrecioBase().getMonto());
         e.setPoliticaCancelacion(d.getPoliticaCancelacion().name());
         e.setEstado(d.getEstado());
-        e.setCreadaEn(Fechas.enMicros(d.getCreadaEn()));
-        e.setPublicadaEn(Fechas.enMicros(d.getPublicadaEn()));
+        e.setCreadaEn(SoporteMapeo.enMicros(d.getCreadaEn()));
+        e.setPublicadaEn(SoporteMapeo.enMicros(d.getPublicadaEn()));
 
         Set<String> habilidades = new LinkedHashSet<>();
         for (Habilidad h : d.getHabilidades()) {
             habilidades.add(h.getNombre());
         }
-        Sincronizador.conjunto(e.getHabilidades(), habilidades);
-        Sincronizador.conjunto(e.getEtiquetas(), d.getEtiquetas());
+        SoporteMapeo.sincronizarConjunto(e.getHabilidades(), habilidades);
+        SoporteMapeo.sincronizarConjunto(e.getEtiquetas(), d.getEtiquetas());
 
         boolean franjasCambiaron = sincronizarFranjas(d, e);
         if (franjasCambiaron && e.getId() != null) {
@@ -91,8 +91,8 @@ public final class PublicacionMapper {
             if (franja.getId() == null) {
                 FranjaJpaEntity nueva = new FranjaJpaEntity();
                 nueva.setPublicacion(e);
-                nueva.setInicio(Fechas.enMicros(franja.getInicio()));
-                nueva.setFin(Fechas.enMicros(franja.getFin()));
+                nueva.setInicio(SoporteMapeo.enMicros(franja.getInicio()));
+                nueva.setFin(SoporteMapeo.enMicros(franja.getFin()));
                 nueva.setOcupada(franja.estaOcupada());
                 e.getFranjas().add(nueva);
                 cambio = true;
@@ -112,8 +112,8 @@ public final class PublicacionMapper {
 
     /** Despues del flush: id/version de la publicacion e ids de las franjas nuevas en la instancia de dominio. */
     public static void confirmar(Publicacion d, PublicacionJpaEntity e) {
-        CamposDominio.asignar(d, "id", e.getId());
-        CamposDominio.asignar(d, "version", e.getVersion());
+        SoporteMapeo.asignarCampo(d, "id", e.getId());
+        SoporteMapeo.asignarCampo(d, "version", e.getVersion());
         Set<Long> conocidas = new HashSet<>();
         for (Franja f : d.getFranjas()) {
             if (f.getId() != null) {
@@ -130,7 +130,7 @@ public final class PublicacionMapper {
         int i = 0;
         for (Franja f : d.getFranjas()) {
             if (f.getId() == null) {
-                CamposDominio.asignar(f, "id", nuevas.get(i++).getId());
+                SoporteMapeo.asignarCampo(f, "id", nuevas.get(i++).getId());
             }
         }
     }

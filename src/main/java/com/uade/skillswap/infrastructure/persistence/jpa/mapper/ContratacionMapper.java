@@ -33,17 +33,17 @@ public final class ContratacionMapper {
         PropuestaReprogramacion p = d.getPropuestaReprogramacion();
         e.setPropuestaFranjaId(p == null ? null : p.getNuevaFranjaId());
         e.setPropuestaPorId(p == null ? null : p.getPropuestaPorId());
-        e.setPropuestaFecha(p == null ? null : Fechas.enMicros(p.getFecha()));
-        e.setCreadaEn(Fechas.enMicros(d.getCreadaEn()));
-        e.setPagadaEn(Fechas.enMicros(d.getPagadaEn()));
-        e.setCompletadaEn(Fechas.enMicros(d.getCompletadaEn()));
+        e.setPropuestaFecha(p == null ? null : SoporteMapeo.enMicros(p.getFecha()));
+        e.setCreadaEn(SoporteMapeo.enMicros(d.getCreadaEn()));
+        e.setPagadaEn(SoporteMapeo.enMicros(d.getPagadaEn()));
+        e.setCompletadaEn(SoporteMapeo.enMicros(d.getCompletadaEn()));
         e.setCanceladaPorId(d.getCanceladaPorId());
         HistorialMapper.agregarNuevas(e.getHistorial(), d.getHistorial(), HistorialContratacionJpaEntity::new,
                 fila -> fila.setContratacion(e));
     }
 
     public static void confirmar(Contratacion d, ContratacionJpaEntity e) {
-        CamposDominio.asignar(d, "id", e.getId());
-        CamposDominio.asignar(d, "version", e.getVersion());
+        SoporteMapeo.asignarCampo(d, "id", e.getId());
+        SoporteMapeo.asignarCampo(d, "version", e.getVersion());
     }
 }

@@ -22,10 +22,10 @@ public final class NotificacionMapper {
         e.setMensaje(d.getMensaje());
         e.setCanal(d.getCanal().name());
         e.setLeida(d.estaLeida());
-        e.setFecha(Fechas.enMicros(d.getFecha()));
+        e.setFecha(SoporteMapeo.enMicros(d.getFecha()));
     }
 
     public static void confirmar(Notificacion d, NotificacionJpaEntity e) {
-        CamposDominio.asignar(d, "id", e.getId());
+        SoporteMapeo.asignarCampo(d, "id", e.getId());
     }
 }
