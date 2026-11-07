@@ -9,7 +9,7 @@ import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
 /** Adaptador delgado: valida la entrada y la traduce a CalificacionUseCase. */
-public class CalificacionController implements ICalificacionController {
+public class CalificacionController {
 
     private final CalificacionUseCase calificaciones;
     private final SesionUseCase sesion;
@@ -19,7 +19,6 @@ public class CalificacionController implements ICalificacionController {
         this.sesion = sesion;
     }
 
-    @Override
     public Resultado<CalificacionDto> calificar(CalificarCommand comando) {
         return Ejecucion.conActor(sesion, actor -> {
             validar(comando);
@@ -27,7 +26,7 @@ public class CalificacionController implements ICalificacionController {
         });
     }
 
-    @Override
+    /** Calificaciones recibidas por cualquier perfil (son publicas). */
     public Resultado<Pagina<CalificacionDto>> recibidasDe(Long perfilId, PaginaRequest pagina) {
         return Ejecucion.sinActor(() -> {
             ValidadorEntrada.exigirId(perfilId, "el perfil");
@@ -36,7 +35,6 @@ public class CalificacionController implements ICalificacionController {
         });
     }
 
-    @Override
     public Resultado<Pagina<CalificacionDto>> misRecibidas(PaginaRequest pagina) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirPagina(pagina);

@@ -12,7 +12,7 @@ import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
 /** Adaptador delgado: cada metodo valida la entrada y delega en ContratacionUseCase con el actor de la sesion. */
-public class ContratacionController implements IContratacionController {
+public class ContratacionController {
 
     private static final String CONTRATACION = "la contratacion";
 
@@ -24,7 +24,6 @@ public class ContratacionController implements IContratacionController {
         this.sesion = sesion;
     }
 
-    @Override
     public Resultado<ContratacionDto> solicitar(SolicitarContratacionCommand comando) {
         return Ejecucion.conActor(sesion, actor -> {
             validar(comando);
@@ -32,7 +31,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ContratacionDto> aceptar(Long contratacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -40,7 +38,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ContratacionDto> rechazar(Long contratacionId, String motivo) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -49,7 +46,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ContratacionDto> pagar(Long contratacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -57,7 +53,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ContratacionDto> iniciar(Long contratacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -65,7 +60,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ContratacionDto> completar(Long contratacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -73,7 +67,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ResultadoCancelacionDto> cancelar(Long contratacionId, String motivo) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -82,7 +75,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ContratacionDto> proponerReprogramacion(Long contratacionId, Long nuevaFranjaId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -91,7 +83,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ContratacionDto> responderReprogramacion(Long contratacionId, boolean acepta) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -99,7 +90,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ContratacionDto> obtener(Long contratacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -107,7 +97,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<ComprobanteDto> comprobante(Long contratacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -115,7 +104,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<Pagina<HistorialDto>> historial(Long contratacionId, PaginaRequest pagina) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(contratacionId, CONTRATACION);
@@ -124,7 +112,6 @@ public class ContratacionController implements IContratacionController {
         });
     }
 
-    @Override
     public Resultado<Pagina<ContratacionDto>> misContrataciones(PaginaRequest pagina) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirPagina(pagina);

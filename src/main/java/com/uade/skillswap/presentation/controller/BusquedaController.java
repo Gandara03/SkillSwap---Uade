@@ -7,8 +7,8 @@ import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
-/** Adaptador delgado: valida la entrada y busca. La busqueda es publica, no requiere actor. */
-public class BusquedaController implements IBusquedaController {
+/** Adaptador delgado: valida la entrada y busca solo publicaciones PUBLICADAS. Es publica: no requiere actor. */
+public class BusquedaController {
 
     private final BusquedaUseCase busqueda;
 
@@ -16,7 +16,6 @@ public class BusquedaController implements IBusquedaController {
         this.busqueda = busqueda;
     }
 
-    @Override
     public Resultado<Pagina<PublicacionResumenDto>> buscar(FiltroBusqueda filtro, PaginaRequest pagina) {
         return Ejecucion.sinActor(() -> {
             ValidadorEntrada.exigirPagina(pagina);

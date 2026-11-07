@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 /** Adaptador delgado: valida la entrada y la traduce a PublicacionUseCase. Sin reglas de negocio. */
-public class PublicacionController implements IPublicacionController {
+public class PublicacionController {
 
     private static final String PUBLICACION = "la publicacion";
 
@@ -32,7 +32,6 @@ public class PublicacionController implements IPublicacionController {
         this.sesion = sesion;
     }
 
-    @Override
     public Resultado<PublicacionDto> crearBorrador(CrearPublicacionCommand comando) {
         return Ejecucion.conActor(sesion, actor -> {
             validar(comando);
@@ -40,7 +39,6 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
     public Resultado<PublicacionDto> editar(Long publicacionId, EditarPublicacionCommand comando) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(publicacionId, PUBLICACION);
@@ -49,7 +47,6 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
     public Resultado<PublicacionDto> agregarFranja(Long publicacionId, LocalDateTime inicio, LocalDateTime fin) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(publicacionId, PUBLICACION);
@@ -58,7 +55,7 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
+    /** Transiciones de estado en una sola operacion. El motivo solo aplica a CANCELAR. */
     public Resultado<PublicacionDto> cambiarEstado(Long publicacionId, AccionPublicacion accion, String motivo) {
         if (accion == null) {
             return Ejecucion.conActor(sesion, actor -> {
@@ -74,7 +71,6 @@ public class PublicacionController implements IPublicacionController {
         };
     }
 
-    @Override
     public Resultado<PublicacionDto> publicar(Long publicacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(publicacionId, PUBLICACION);
@@ -82,7 +78,6 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
     public Resultado<PublicacionDto> pausar(Long publicacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(publicacionId, PUBLICACION);
@@ -90,7 +85,6 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
     public Resultado<PublicacionDto> reanudar(Long publicacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(publicacionId, PUBLICACION);
@@ -98,7 +92,6 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
     public Resultado<PublicacionDto> cerrar(Long publicacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(publicacionId, PUBLICACION);
@@ -106,7 +99,6 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
     public Resultado<PublicacionDto> cancelar(Long publicacionId, String motivo) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(publicacionId, PUBLICACION);
@@ -115,7 +107,6 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
     public Resultado<PublicacionDto> obtener(Long publicacionId) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirId(publicacionId, PUBLICACION);
@@ -123,7 +114,6 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
     public Resultado<Pagina<PublicacionResumenDto>> misPublicaciones(PaginaRequest pagina) {
         return Ejecucion.conActor(sesion, actor -> {
             ValidadorEntrada.exigirPagina(pagina);
@@ -131,7 +121,6 @@ public class PublicacionController implements IPublicacionController {
         });
     }
 
-    @Override
     public Resultado<PublicacionDto> agregarPromocion(CrearPromocionCommand comando) {
         return Ejecucion.conActor(sesion, actor -> {
             validar(comando);

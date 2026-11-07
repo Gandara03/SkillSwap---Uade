@@ -26,7 +26,7 @@ class RecomendacionControllerTest extends ControllerJpaTestBase {
 
     private final List<Long> deAna = new ArrayList<>();
 
-    private IRecomendacionController recomendaciones() {
+    private RecomendacionController recomendaciones() {
         return app.getRecomendacionController();
     }
 

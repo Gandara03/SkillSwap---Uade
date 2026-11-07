@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DisplayName("WalletController (JPA/H2): saldo, movimientos paginados y permisos")
 class WalletControllerTest extends ControllerJpaTestBase {
 
-    private IWalletController wallet() {
+    private WalletController wallet() {
         return app.getWalletController();
     }
 

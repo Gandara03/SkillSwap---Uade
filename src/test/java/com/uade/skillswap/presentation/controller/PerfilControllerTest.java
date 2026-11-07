@@ -32,7 +32,7 @@ class PerfilControllerTest extends ControllerJpaTestBase {
     private static final BloqueDisponibilidadDto LUNES_MANANA =
             new BloqueDisponibilidadDto(DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(13, 0));
 
-    private IPerfilController perfiles() {
+    private PerfilController perfiles() {
         return app.getPerfilController();
     }
 

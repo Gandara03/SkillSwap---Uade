@@ -26,7 +26,7 @@ class CalificacionControllerTest extends ControllerJpaTestBase {
     private PerfilDto ana;
     private PublicacionDto mentoria;
 
-    private ICalificacionController calificaciones() {
+    private CalificacionController calificaciones() {
         return app.getCalificacionController();
     }
 

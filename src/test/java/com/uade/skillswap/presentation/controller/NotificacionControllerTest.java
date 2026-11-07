@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("NotificacionController (JPA/H2): bandeja paginada, marcar leida y permisos")
 class NotificacionControllerTest extends ControllerJpaTestBase {
 
-    private INotificacionController notificaciones() {
+    private NotificacionController notificaciones() {
         return app.getNotificacionController();
     }
 

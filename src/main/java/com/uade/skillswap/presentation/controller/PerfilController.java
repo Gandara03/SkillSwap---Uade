@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 /** Adaptador delgado: valida la entrada y la traduce a PerfilUseCase y PerfilPublicoUseCase. Sin reglas de negocio. */
-public class PerfilController implements IPerfilController {
+public class PerfilController {
 
     private final PerfilUseCase perfiles;
     private final PerfilPublicoUseCase perfilPublico;
@@ -26,7 +26,7 @@ public class PerfilController implements IPerfilController {
         this.sesion = sesion;
     }
 
-    @Override
+    /** Crea el perfil (y su wallet con bono inicial) del usuario autenticado. */
     public Resultado<PerfilDto> registrar(RegistrarPerfilCommand comando) {
         return Ejecucion.sinActor(() -> {
             validar(comando);
@@ -34,7 +34,6 @@ public class PerfilController implements IPerfilController {
         });
     }
 
-    @Override
     public Resultado<PerfilDto> actualizar(ActualizarPerfilCommand comando) {
         return Ejecucion.conActor(sesion, actor -> {
             validar(comando);
@@ -42,12 +41,10 @@ public class PerfilController implements IPerfilController {
         });
     }
 
-    @Override
     public Resultado<PerfilDto> miPerfil() {
         return Ejecucion.conActor(sesion, perfiles::obtener);
     }
 
-    @Override
     public Resultado<PerfilPublicoDto> verPerfilPublico(Long perfilId) {
         return Ejecucion.sinActor(() -> {
             ValidadorEntrada.exigirId(perfilId, "el perfil");
@@ -55,7 +52,7 @@ public class PerfilController implements IPerfilController {
         });
     }
 
-    @Override
+    /** Baja logica del perfil propio. */
     public Resultado<Void> darDeBaja() {
         return Ejecucion.conActorSinValor(sesion, perfiles::darDeBaja);
     }

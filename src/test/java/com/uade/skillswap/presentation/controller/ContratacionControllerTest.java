@@ -31,7 +31,7 @@ class ContratacionControllerTest extends ControllerJpaTestBase {
 
     private PublicacionDto mentoria;
 
-    private IContratacionController contrataciones() {
+    private ContratacionController contrataciones() {
         return app.getContratacionController();
     }
 

@@ -35,14 +35,6 @@ import com.uade.skillswap.presentation.adaptador.UiControllersAdapter;
 import com.uade.skillswap.presentation.controller.BusquedaController;
 import com.uade.skillswap.presentation.controller.CalificacionController;
 import com.uade.skillswap.presentation.controller.ContratacionController;
-import com.uade.skillswap.presentation.controller.IBusquedaController;
-import com.uade.skillswap.presentation.controller.ICalificacionController;
-import com.uade.skillswap.presentation.controller.IContratacionController;
-import com.uade.skillswap.presentation.controller.INotificacionController;
-import com.uade.skillswap.presentation.controller.IPerfilController;
-import com.uade.skillswap.presentation.controller.IPublicacionController;
-import com.uade.skillswap.presentation.controller.IRecomendacionController;
-import com.uade.skillswap.presentation.controller.IWalletController;
 import com.uade.skillswap.presentation.controller.NotificacionController;
 import com.uade.skillswap.presentation.controller.PerfilController;
 import com.uade.skillswap.presentation.controller.PublicacionController;
@@ -62,20 +54,20 @@ public final class Composicion {
     private final JpaContexto contexto;
     private final EmailSdkMock emailSdk;
     private final PushSdkMock pushSdk;
-    private final IPerfilController perfilController;
-    private final IPublicacionController publicacionController;
-    private final IBusquedaController busquedaController;
-    private final IRecomendacionController recomendacionController;
-    private final IContratacionController contratacionController;
-    private final ICalificacionController calificacionController;
-    private final INotificacionController notificacionController;
-    private final IWalletController walletController;
+    private final PerfilController perfilController;
+    private final PublicacionController publicacionController;
+    private final BusquedaController busquedaController;
+    private final RecomendacionController recomendacionController;
+    private final ContratacionController contratacionController;
+    private final CalificacionController calificacionController;
+    private final NotificacionController notificacionController;
+    private final WalletController walletController;
 
     private Composicion(JpaContexto contexto, EmailSdkMock emailSdk, PushSdkMock pushSdk,
-                        IPerfilController perfil, IPublicacionController publicacion,
-                        IBusquedaController busqueda, IRecomendacionController recomendacion,
-                        IContratacionController contratacion, ICalificacionController calificacion,
-                        INotificacionController notificacion, IWalletController wallet) {
+                        PerfilController perfil, PublicacionController publicacion,
+                        BusquedaController busqueda, RecomendacionController recomendacion,
+                        ContratacionController contratacion, CalificacionController calificacion,
+                        NotificacionController notificacion, WalletController wallet) {
         this.contexto = contexto;
         this.emailSdk = emailSdk;
         this.pushSdk = pushSdk;
@@ -137,35 +129,35 @@ public final class Composicion {
                 new WalletController(walletService, sesion));
     }
 
-    public IPerfilController getPerfilController() {
+    public PerfilController getPerfilController() {
         return perfilController;
     }
 
-    public IPublicacionController getPublicacionController() {
+    public PublicacionController getPublicacionController() {
         return publicacionController;
     }
 
-    public IBusquedaController getBusquedaController() {
+    public BusquedaController getBusquedaController() {
         return busquedaController;
     }
 
-    public IRecomendacionController getRecomendacionController() {
+    public RecomendacionController getRecomendacionController() {
         return recomendacionController;
     }
 
-    public IContratacionController getContratacionController() {
+    public ContratacionController getContratacionController() {
         return contratacionController;
     }
 
-    public ICalificacionController getCalificacionController() {
+    public CalificacionController getCalificacionController() {
         return calificacionController;
     }
 
-    public INotificacionController getNotificacionController() {
+    public NotificacionController getNotificacionController() {
         return notificacionController;
     }
 
-    public IWalletController getWalletController() {
+    public WalletController getWalletController() {
         return walletController;
     }
 

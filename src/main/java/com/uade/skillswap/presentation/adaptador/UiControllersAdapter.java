@@ -16,14 +16,7 @@ import com.uade.skillswap.domain.query.FiltroBusqueda;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
-import com.uade.skillswap.presentation.controller.IBusquedaController;
-import com.uade.skillswap.presentation.controller.ICalificacionController;
-import com.uade.skillswap.presentation.controller.IContratacionController;
-import com.uade.skillswap.presentation.controller.INotificacionController;
-import com.uade.skillswap.presentation.controller.IPerfilController;
-import com.uade.skillswap.presentation.controller.IPublicacionController;
-import com.uade.skillswap.presentation.controller.IRecomendacionController;
-import com.uade.skillswap.presentation.controller.IWalletController;
+import com.uade.skillswap.presentation.controller.RecomendacionController;
 import com.uade.skillswap.presentation.ui.Autenticador;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models;
 import com.uade.skillswap.presentation.ui.swing.contrato.OperacionFallidaException;
@@ -53,20 +46,25 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
     private static final PaginaRequest MAXIMA = PaginaRequest.de(0, PaginaRequest.TAMANO_MAXIMO);
 
     private final Autenticador autenticador;
-    private final IPerfilController perfiles;
-    private final IPublicacionController publicaciones;
-    private final IBusquedaController busquedas;
-    private final IRecomendacionController recomendaciones;
-    private final IContratacionController contrataciones;
-    private final ICalificacionController calificaciones;
-    private final INotificacionController notificaciones;
-    private final IWalletController wallet;
+    // Nombre completo: UiControllers tiene interfaces anidadas que se llaman igual que estos controllers.
+    private final com.uade.skillswap.presentation.controller.PerfilController perfiles;
+    private final com.uade.skillswap.presentation.controller.PublicacionController publicaciones;
+    private final com.uade.skillswap.presentation.controller.BusquedaController busquedas;
+    private final RecomendacionController recomendaciones;
+    private final com.uade.skillswap.presentation.controller.ContratacionController contrataciones;
+    private final com.uade.skillswap.presentation.controller.CalificacionController calificaciones;
+    private final com.uade.skillswap.presentation.controller.NotificacionController notificaciones;
+    private final com.uade.skillswap.presentation.controller.WalletController wallet;
 
-    public UiControllersAdapter(Autenticador autenticador, IPerfilController perfiles,
-                                IPublicacionController publicaciones, IBusquedaController busquedas,
-                                IRecomendacionController recomendaciones, IContratacionController contrataciones,
-                                ICalificacionController calificaciones, INotificacionController notificaciones,
-                                IWalletController wallet) {
+    public UiControllersAdapter(Autenticador autenticador,
+                                com.uade.skillswap.presentation.controller.PerfilController perfiles,
+                                com.uade.skillswap.presentation.controller.PublicacionController publicaciones,
+                                com.uade.skillswap.presentation.controller.BusquedaController busquedas,
+                                RecomendacionController recomendaciones,
+                                com.uade.skillswap.presentation.controller.ContratacionController contrataciones,
+                                com.uade.skillswap.presentation.controller.CalificacionController calificaciones,
+                                com.uade.skillswap.presentation.controller.NotificacionController notificaciones,
+                                com.uade.skillswap.presentation.controller.WalletController wallet) {
         this.autenticador = autenticador;
         this.perfiles = perfiles;
         this.publicaciones = publicaciones;

@@ -8,8 +8,11 @@ import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 
-/** Adaptador delgado: valida la entrada y recomienda para el usuario con sesion iniciada. */
-public class RecomendacionController implements IRecomendacionController {
+/**
+ * Adaptador delgado: valida la entrada y recomienda para el usuario con sesion iniciada. La estrategia la elige
+ * quien llama.
+ */
+public class RecomendacionController {
 
     private final RecomendacionUseCase recomendaciones;
     private final SesionUseCase sesion;
@@ -19,7 +22,6 @@ public class RecomendacionController implements IRecomendacionController {
         this.sesion = sesion;
     }
 
-    @Override
     public Resultado<Pagina<PublicacionResumenDto>> recomendar(TipoEstrategiaRecomendacion estrategia,
                                                               PaginaRequest pagina) {
         // la estrategia es opcional: sin estrategia, la factory usa AFINIDAD

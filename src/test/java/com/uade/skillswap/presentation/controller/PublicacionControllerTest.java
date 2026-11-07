@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DisplayName("PublicacionController (JPA/H2): borrador, edicion, franjas, cambiarEstado y promociones")
 class PublicacionControllerTest extends ControllerJpaTestBase {
 
-    private IPublicacionController publicaciones() {
+    private PublicacionController publicaciones() {
         return app.getPublicacionController();
     }
 

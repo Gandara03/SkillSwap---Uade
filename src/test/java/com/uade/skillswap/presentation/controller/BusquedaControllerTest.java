@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("BusquedaController (JPA/H2): filtros, paginacion, validacion y visibilidad")
 class BusquedaControllerTest extends ControllerJpaTestBase {
 
-    private IBusquedaController busqueda() {
+    private BusquedaController busqueda() {
         return app.getBusquedaController();
     }
 
