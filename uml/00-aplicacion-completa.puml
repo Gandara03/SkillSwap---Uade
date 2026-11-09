@@ -1,0 +1,783 @@
+@startuml 00-aplicacion-completa
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam nodesep 24
+skinparam ranksep 55
+hide empty members
+skinparam linetype polyline
+title SkillSwap: diagrama de clases de la aplicacion
+
+package "Presentation" #FADBD8 {
+  class NotificacionController {
+    -notificaciones: NotificacionUseCase
+    -sesion: SesionUseCase
+    +listar(soloNoLeidas: boolean, pagina: PaginaRequest): Resultado<Pagina<NotificacionDto>>
+    +marcarLeida(notificacionId: Long): Resultado<NotificacionDto>
+  }
+  class WalletController {
+    -wallet: WalletUseCase
+    -sesion: SesionUseCase
+    +consultar(): Resultado<WalletDto>
+    +movimientos(pagina: PaginaRequest): Resultado<Pagina<MovimientoDto>>
+  }
+  class PerfilController {
+    -perfiles: PerfilUseCase
+    -perfilPublico: PerfilPublicoUseCase
+    -sesion: SesionUseCase
+    +registrar(comando: RegistrarPerfilCommand): Resultado<PerfilDto>
+    +actualizar(comando: ActualizarPerfilCommand): Resultado<PerfilDto>
+    +miPerfil(): Resultado<PerfilDto>
+    +verPerfilPublico(perfilId: Long): Resultado<PerfilPublicoDto>
+    +darDeBaja(): Resultado<Void>
+  }
+  class CalificacionController {
+    -calificaciones: CalificacionUseCase
+    -sesion: SesionUseCase
+    +calificar(comando: CalificarCommand): Resultado<CalificacionDto>
+    +recibidasDe(perfilId: Long, pagina: PaginaRequest): Resultado<Pagina<CalificacionDto>>
+    +misRecibidas(pagina: PaginaRequest): Resultado<Pagina<CalificacionDto>>
+  }
+  class ContratacionController {
+    -contrataciones: ContratacionUseCase
+    -sesion: SesionUseCase
+    +solicitar(comando: SolicitarContratacionCommand): Resultado<ContratacionDto>
+    +aceptar(contratacionId: Long): Resultado<ContratacionDto>
+    +rechazar(contratacionId: Long, motivo: String): Resultado<ContratacionDto>
+    +pagar(contratacionId: Long): Resultado<ContratacionDto>
+    +iniciar(contratacionId: Long): Resultado<ContratacionDto>
+    +completar(contratacionId: Long): Resultado<ContratacionDto>
+    +cancelar(contratacionId: Long, motivo: String): Resultado<ResultadoCancelacionDto>
+    +proponerReprogramacion(contratacionId: Long, nuevaFranjaId: Long): Resultado<ContratacionDto>
+    +responderReprogramacion(contratacionId: Long, acepta: boolean): Resultado<ContratacionDto>
+    +obtener(contratacionId: Long): Resultado<ContratacionDto>
+    +comprobante(contratacionId: Long): Resultado<ComprobanteDto>
+    +historial(contratacionId: Long, pagina: PaginaRequest): Resultado<Pagina<HistorialDto>>
+    +misContrataciones(pagina: PaginaRequest): Resultado<Pagina<ContratacionDto>>
+  }
+  class PublicacionController {
+    -publicaciones: PublicacionUseCase
+    -sesion: SesionUseCase
+    +crearBorrador(comando: CrearPublicacionCommand): Resultado<PublicacionDto>
+    +editar(publicacionId: Long, comando: EditarPublicacionCommand): Resultado<PublicacionDto>
+    +agregarFranja(publicacionId: Long, inicio: LocalDateTime, fin: LocalDateTime): Resultado<PublicacionDto>
+    +cambiarEstado(publicacionId: Long, accion: AccionPublicacion, motivo: String): Resultado<PublicacionDto>
+    +publicar(publicacionId: Long): Resultado<PublicacionDto>
+    +pausar(publicacionId: Long): Resultado<PublicacionDto>
+    +reanudar(publicacionId: Long): Resultado<PublicacionDto>
+    +cerrar(publicacionId: Long): Resultado<PublicacionDto>
+    +cancelar(publicacionId: Long, motivo: String): Resultado<PublicacionDto>
+    +obtener(publicacionId: Long): Resultado<PublicacionDto>
+    +misPublicaciones(pagina: PaginaRequest): Resultado<Pagina<PublicacionResumenDto>>
+    +agregarPromocion(comando: CrearPromocionCommand): Resultado<PublicacionDto>
+  }
+  class BusquedaController {
+    -busqueda: BusquedaUseCase
+    +buscar(filtro: FiltroBusqueda, pagina: PaginaRequest): Resultado<Pagina<PublicacionResumenDto>>
+  }
+  class RecomendacionController {
+    -recomendaciones: RecomendacionUseCase
+    -sesion: SesionUseCase
+    +recomendar(estrategia: TipoEstrategiaRecomendacion, pagina: PaginaRequest): Resultado<Pagina<PublicacionResumenDto>>
+  }
+}
+
+package "Application" #D6E4F7 {
+  interface NotificacionUseCase {
+    +listar(actorId: Long, soloNoLeidas: boolean, pagina: PaginaRequest): Pagina<NotificacionDto>
+    +marcarLeida(actorId: Long, notificacionId: Long): NotificacionDto
+  }
+  interface WalletUseCase {
+    +consultar(actorId: Long): WalletDto
+    +movimientos(actorId: Long, pagina: PaginaRequest): Pagina<MovimientoDto>
+  }
+  interface SesionUseCase {
+    +perfilIdActual(): Long
+  }
+  interface PerfilUseCase {
+    +registrar(comando: RegistrarPerfilCommand): PerfilDto
+    +actualizar(actorId: Long, comando: ActualizarPerfilCommand): PerfilDto
+    +obtener(perfilId: Long): PerfilDto
+    +darDeBaja(actorId: Long): void
+  }
+  interface PerfilPublicoUseCase {
+    +verPerfilPublico(perfilId: Long): PerfilPublicoDto
+  }
+  interface CalificacionUseCase {
+    +calificar(actorId: Long, comando: CalificarCommand): CalificacionDto
+    +listarRecibidas(perfilId: Long, pagina: PaginaRequest): Pagina<CalificacionDto>
+  }
+  interface ContratacionUseCase {
+    +solicitar(actorId: Long, comando: SolicitarContratacionCommand): ContratacionDto
+    +aceptar(actorId: Long, contratacionId: Long): ContratacionDto
+    +rechazar(actorId: Long, contratacionId: Long, motivo: String): ContratacionDto
+    +pagar(actorId: Long, contratacionId: Long): ContratacionDto
+    +iniciar(actorId: Long, contratacionId: Long): ContratacionDto
+    +completar(actorId: Long, contratacionId: Long): ContratacionDto
+    +cancelar(actorId: Long, contratacionId: Long, motivo: String): ResultadoCancelacionDto
+    +proponerReprogramacion(actorId: Long, contratacionId: Long, nuevaFranjaId: Long): ContratacionDto
+    +responderReprogramacion(actorId: Long, contratacionId: Long, acepta: boolean): ContratacionDto
+    +obtener(actorId: Long, contratacionId: Long): ContratacionDto
+    +comprobante(actorId: Long, contratacionId: Long): ComprobanteDto
+    +historial(actorId: Long, contratacionId: Long, pagina: PaginaRequest): Pagina<HistorialDto>
+    +listarMias(actorId: Long, pagina: PaginaRequest): Pagina<ContratacionDto>
+  }
+  interface PublicacionUseCase {
+    +crearBorrador(actorId: Long, comando: CrearPublicacionCommand): PublicacionDto
+    +editar(actorId: Long, publicacionId: Long, comando: EditarPublicacionCommand): PublicacionDto
+    +agregarFranja(actorId: Long, publicacionId: Long, inicio: LocalDateTime, fin: LocalDateTime): PublicacionDto
+    +publicar(actorId: Long, publicacionId: Long): PublicacionDto
+    +pausar(actorId: Long, publicacionId: Long): PublicacionDto
+    +reanudar(actorId: Long, publicacionId: Long): PublicacionDto
+    +cerrar(actorId: Long, publicacionId: Long): PublicacionDto
+    +cancelar(actorId: Long, publicacionId: Long, motivo: String): PublicacionDto
+    +obtener(actorId: Long, publicacionId: Long): PublicacionDto
+    +listarPropias(actorId: Long, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
+    +listarPublicadasDe(autorId: Long, limite: int): List<PublicacionResumenDto>
+    +agregarPromocion(actorId: Long, comando: CrearPromocionCommand): PublicacionDto
+  }
+  interface BusquedaUseCase {
+    +buscar(filtro: FiltroBusqueda, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
+  }
+  interface RecomendacionUseCase {
+    +recomendar(actorId: Long, estrategia: TipoEstrategiaRecomendacion, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
+  }
+  class NotificacionService {
+    -notificacionRepository: NotificacionRepository
+    +listar(actorId: Long, soloNoLeidas: boolean, pagina: PaginaRequest): Pagina<NotificacionDto>
+    +marcarLeida(actorId: Long, notificacionId: Long): NotificacionDto
+  }
+  class WalletService {
+    -walletRepository: WalletRepository
+    +consultar(actorId: Long): WalletDto
+    +movimientos(actorId: Long, pagina: PaginaRequest): Pagina<MovimientoDto>
+  }
+  class SesionService {
+    -identidad: IdentidadPort
+    -perfilRepository: PerfilRepository
+    +perfilIdActual(): Long
+  }
+  class PerfilService {
+    -perfilRepository: PerfilRepository
+    -walletRepository: WalletRepository
+    -publicacionRepository: PublicacionRepository
+    -identidad: IdentidadPort
+    -transaccion: TransaccionPort
+    -reloj: RelojPort
+    -config: SkillSwapConfig
+    +registrar(comando: RegistrarPerfilCommand): PerfilDto
+    +actualizar(actorId: Long, comando: ActualizarPerfilCommand): PerfilDto
+    +obtener(perfilId: Long): PerfilDto
+    +darDeBaja(actorId: Long): void
+    -pausarPublicacionesActivas(autorId: Long, ahora: LocalDateTime): void
+  }
+  class PerfilPublicoFacade {
+    -perfiles: PerfilUseCase
+    -calificaciones: CalificacionUseCase
+    -publicaciones: PublicacionUseCase
+    -config: SkillSwapConfig
+    +verPerfilPublico(perfilId: Long): PerfilPublicoDto
+    -{static} tamano(solicitado: int): int
+  }
+  class CalificacionService {
+    -calificacionRepository: CalificacionRepository
+    -contratacionRepository: ContratacionRepository
+    -perfilRepository: PerfilRepository
+    -transaccion: TransaccionPort
+    -reloj: RelojPort
+    +calificar(actorId: Long, comando: CalificarCommand): CalificacionDto
+    +listarRecibidas(perfilId: Long, pagina: PaginaRequest): Pagina<CalificacionDto>
+  }
+  class ContratacionService {
+    -contratacionRepository: ContratacionRepository
+    -publicacionRepository: PublicacionRepository
+    -perfilRepository: PerfilRepository
+    -walletRepository: WalletRepository
+    -observers: List<ContratacionObserver>
+    -transaccion: TransaccionPort
+    -reloj: RelojPort
+    -precios: CalculadorPrecios
+    -politicas: PoliticaCancelacionFactory
+    +solicitar(actorId: Long, comando: SolicitarContratacionCommand): ContratacionDto
+    +aceptar(actorId: Long, contratacionId: Long): ContratacionDto
+    +rechazar(actorId: Long, contratacionId: Long, motivo: String): ContratacionDto
+    +pagar(actorId: Long, contratacionId: Long): ContratacionDto
+    +iniciar(actorId: Long, contratacionId: Long): ContratacionDto
+    +completar(actorId: Long, contratacionId: Long): ContratacionDto
+    +cancelar(actorId: Long, contratacionId: Long, motivo: String): ResultadoCancelacionDto
+    +proponerReprogramacion(actorId: Long, contratacionId: Long, nuevaFranjaId: Long): ContratacionDto
+    +responderReprogramacion(actorId: Long, contratacionId: Long, acepta: boolean): ContratacionDto
+    +obtener(actorId: Long, contratacionId: Long): ContratacionDto
+    +comprobante(actorId: Long, contratacionId: Long): ComprobanteDto
+    +historial(actorId: Long, contratacionId: Long, pagina: PaginaRequest): Pagina<HistorialDto>
+    +listarMias(actorId: Long, pagina: PaginaRequest): Pagina<ContratacionDto>
+    -cambio(original: Contratacion, guardada: Contratacion, actorId: Long): Cambio<ContratacionDto>
+    -cambio(original: Contratacion, guardada: Contratacion, publicacion: Publicacion, actorId: Long): Cambio<ContratacionDto>
+    -operar(trabajo: Supplier<Cambio<T>>): T
+    -despachar(contratacion: Contratacion): void
+    -acreditar(perfilId: Long, monto: SkillCoins, tipo: TipoMovimiento, contratacionId: Long, ahora: LocalDateTime): void
+    -exigirFranjaDisponible(publicacion: Publicacion, franjaId: Long, ahora: LocalDateTime): void
+    -publicacion(publicacionId: Long): Publicacion
+    -cargarComoParticipante(actorId: Long, contratacionId: Long): Contratacion
+    -cargarComoProveedor(actorId: Long, contratacionId: Long): Contratacion
+    -cargarComoCliente(actorId: Long, contratacionId: Long): Contratacion
+  }
+  class PublicacionService {
+    -publicacionRepository: PublicacionRepository
+    -perfilRepository: PerfilRepository
+    -promocionRepository: PromocionRepository
+    -transaccion: TransaccionPort
+    -reloj: RelojPort
+    -precios: CalculadorPrecios
+    -armador: ArmadorResumenes
+    +crearBorrador(actorId: Long, comando: CrearPublicacionCommand): PublicacionDto
+    +editar(actorId: Long, publicacionId: Long, comando: EditarPublicacionCommand): PublicacionDto
+    +agregarFranja(actorId: Long, publicacionId: Long, inicio: LocalDateTime, fin: LocalDateTime): PublicacionDto
+    +publicar(actorId: Long, publicacionId: Long): PublicacionDto
+    +pausar(actorId: Long, publicacionId: Long): PublicacionDto
+    +reanudar(actorId: Long, publicacionId: Long): PublicacionDto
+    +cerrar(actorId: Long, publicacionId: Long): PublicacionDto
+    +cancelar(actorId: Long, publicacionId: Long, motivo: String): PublicacionDto
+    +obtener(actorId: Long, publicacionId: Long): PublicacionDto
+    +listarPropias(actorId: Long, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
+    +listarPublicadasDe(autorId: Long, limite: int): List<PublicacionResumenDto>
+    +agregarPromocion(actorId: Long, comando: CrearPromocionCommand): PublicacionDto
+    -modificar(actorId: Long, publicacionId: Long, cambio: BiConsumer<Publicacion, LocalDateTime>): PublicacionDto
+    -cargarComoAutor(actorId: Long, publicacionId: Long): Publicacion
+    -dto(publicacion: Publicacion): PublicacionDto
+  }
+  class BusquedaService {
+    -publicacionRepository: PublicacionRepository
+    -armador: ArmadorResumenes
+    +buscar(filtro: FiltroBusqueda, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
+  }
+  class RecomendacionService {
+    -publicacionRepository: PublicacionRepository
+    -perfilRepository: PerfilRepository
+    -config: SkillSwapConfig
+    -armador: ArmadorResumenes
+    +recomendar(actorId: Long, tipoEstrategia: TipoEstrategiaRecomendacion, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
+  }
+  class NotificadorObserver {
+    -notificacionRepository: NotificacionRepository
+    -perfilRepository: PerfilRepository
+    -canales: CanalNotificacionFactory
+    -transaccion: TransaccionPort
+    -reloj: RelojPort
+    +actualizar(evento: ContratacionEvent): void
+    -{static} canalesPara(destinatario: Perfil): Set<CanalNotificacion>
+    -{static} destinatarioDe(e: ContratacionEvent): Long
+    -{static} contraparteDelActor(e: ContratacionEvent): Long
+    -{static} mensajeDe(e: ContratacionEvent): String
+  }
+  interface IdentidadPort {
+    +usuarioActual(): Optional<UsuarioIdentidad>
+    +buscarPorUserId(userId: String): Optional<UsuarioIdentidad>
+  }
+  interface CanalNotificacionFactory {
+    +crear(canal: CanalNotificacion): CanalNotificacionPort
+  }
+  interface CanalNotificacionPort {
+    +getCanal(): CanalNotificacion
+    +enviar(notificacion: Notificacion, destinatario: Perfil): void
+  }
+  interface EstrategiaRecomendacion {
+    +getTipo(): TipoEstrategiaRecomendacion
+    +recomendar(datos: DatosRecomendacion, candidatas: List<Publicacion>, limite: int): List<Publicacion>
+  }
+  interface RelojPort {
+    +ahora(): LocalDateTime
+  }
+  interface TransaccionPort {
+    +ejecutar(trabajo: Supplier<T>): T
+    +ejecutar(trabajo: Runnable): void
+  }
+  interface NotificacionRepository {
+    +guardar(notificacion: Notificacion): Notificacion
+    +buscarPorId(id: Long): Optional<Notificacion>
+    +buscarPorDestinatario(destinatarioId: Long, soloNoLeidas: boolean, pagina: PaginaRequest): Pagina<Notificacion>
+  }
+  interface WalletRepository {
+    +guardar(wallet: Wallet): Wallet
+    +buscarPorPerfilId(perfilId: Long): Optional<Wallet>
+    +movimientos(perfilId: Long, pagina: PaginaRequest): Pagina<MovimientoCredito>
+  }
+  interface PerfilRepository {
+    +guardar(perfil: Perfil): Perfil
+    +buscarPorId(id: Long): Optional<Perfil>
+    +buscarPorUserId(userId: String): Optional<Perfil>
+    +buscarPorIds(ids: Set<Long>): List<Perfil>
+  }
+  interface CalificacionRepository {
+    +guardar(calificacion: Calificacion): Calificacion
+    +existe(contratacionId: Long, autorId: Long): boolean
+    +buscarPorDestinatario(destinatarioId: Long): List<Calificacion>
+    +paginarPorDestinatario(destinatarioId: Long, pagina: PaginaRequest): Pagina<Calificacion>
+  }
+  interface ContratacionRepository {
+    +guardar(contratacion: Contratacion): Contratacion
+    +buscarPorId(id: Long): Optional<Contratacion>
+    +buscarPorParticipante(perfilId: Long, pagina: PaginaRequest): Pagina<Contratacion>
+  }
+  interface PublicacionRepository {
+    +guardar(publicacion: Publicacion): Publicacion
+    +buscarPorId(id: Long): Optional<Publicacion>
+    +buscar(filtro: FiltroBusqueda, pagina: PaginaRequest): Pagina<Publicacion>
+    +buscarPorAutor(autorId: Long, pagina: PaginaRequest): Pagina<Publicacion>
+    +buscarPublicadas(limite: int): List<Publicacion>
+  }
+  interface PromocionRepository {
+    +guardar(promocion: Promocion): Promocion
+    +buscarActivasPorPublicacion(publicacionId: Long): List<Promocion>
+    +buscarActivasPorPublicaciones(publicacionIds: Collection<Long>): Map<Long, List<Promocion>>
+  }
+}
+
+package "Domain" #D5F0D5 {
+  interface ContratacionSubject {
+    +agregarObserver(observer: ContratacionObserver): void
+    +quitarObserver(observer: ContratacionObserver): void
+    +notificarObservers(evento: ContratacionEvent): void
+  }
+  interface ContratacionObserver {
+    +actualizar(evento: ContratacionEvent): void
+  }
+  interface PoliticaCancelacion {
+    +getTipo(): TipoPoliticaCancelacion
+    +calcularReintegro(montoPagado: SkillCoins, anticipacion: Duration): SkillCoins
+  }
+  class Calificacion {
+    -id: Long
+    -contratacionId: Long
+    -autorId: Long
+    -destinatarioId: Long
+    -puntaje: Puntaje
+    -comentario: String
+    -fecha: LocalDateTime
+    +{static} registrar(contratacion: Contratacion, autorId: Long, puntaje: Puntaje, comentario: String, ahora: LocalDateTime): Calificacion
+  }
+  class Contratacion {
+    -id: Long
+    -publicacionId: Long
+    -clienteId: Long
+    -proveedorId: Long
+    -franjaId: Long
+    -mensaje: String
+    -objetivo: String
+    -precioFinal: SkillCoins
+    -estado: String
+    -estadoActual: EstadoContratacion
+    -propuestaReprogramacion: PropuestaReprogramacion
+    -historial: List<HistorialEstado>
+    -creadaEn: LocalDateTime
+    -pagadaEn: LocalDateTime
+    -completadaEn: LocalDateTime
+    -canceladaPorId: Long
+    -version: Long
+    -observers: List<ContratacionObserver>
+    -eventosPendientes: List<ContratacionEvent>
+    +{static} solicitar(publicacionId: Long, clienteId: Long, proveedorId: Long, franjaId: Long, mensaje: String, objetivo: String, precioFinal: SkillCoins, ahora: LocalDateTime): Contratacion
+    +aceptar(actorId: Long, ahora: LocalDateTime): void
+    +rechazar(actorId: Long, motivo: String, ahora: LocalDateTime): void
+    +pagar(actorId: Long, ahora: LocalDateTime): void
+    +iniciar(actorId: Long, ahora: LocalDateTime): void
+    +completar(actorId: Long, ahora: LocalDateTime): void
+    +cancelar(actorId: Long, motivo: String, ahora: LocalDateTime): void
+    +repartirRetenido(politica: PoliticaCancelacion, anticipacion: Duration): RepartoCancelacion
+    +proponerReprogramacion(actorId: Long, nuevaFranjaId: Long, ahora: LocalDateTime): void
+    +responderReprogramacion(actorId: Long, acepta: boolean, ahora: LocalDateTime): void
+    +consultarComprobante(): Comprobante
+    +cambiarEstado(nuevo: EstadoContratacion, t: ContextoTransicion): void
+    -registrarNota(nota: String, actorId: Long, ahora: LocalDateTime): void
+    +accionesDisponiblesPara(actorId: Long): List<AccionContratacion>
+    -exigirParte(parte: ParteContratacion, actorId: Long): void
+    -esParte(parte: ParteContratacion, actorId: Long): boolean
+    +esParticipante(perfilId: Long): boolean
+    +contraparteDe(perfilId: Long): Long
+    -registrarEvento(tipo: TipoEventoContratacion, actorId: Long, detalle: String, fecha: LocalDateTime): void
+    +agregarObserver(observer: ContratacionObserver): void
+    +quitarObserver(observer: ContratacionObserver): void
+    +notificarObservers(evento: ContratacionEvent): void
+    +notificarEventosPendientes(): void
+    +estaCompletada(): boolean
+    +estaPagada(): boolean
+  }
+  class Notificacion {
+    -id: Long
+    -destinatarioId: Long
+    -tipoEvento: TipoEventoContratacion
+    -mensaje: String
+    -canal: CanalNotificacion
+    -leida: boolean
+    -fecha: LocalDateTime
+    +{static} crear(destinatarioId: Long, tipoEvento: TipoEventoContratacion, mensaje: String, canal: CanalNotificacion, ahora: LocalDateTime): Notificacion
+    +marcarLeida(): void
+  }
+  class Promocion {
+    -id: Long
+    -publicacionId: Long
+    -descripcion: String
+    -tipo: TipoPromocion
+    -valor: BigDecimal
+    -vigenteDesde: LocalDateTime
+    -vigenteHasta: LocalDateTime
+    -activa: boolean
+    +{static} crear(publicacionId: Long, descripcion: String, tipo: TipoPromocion, valor: BigDecimal, vigenteDesde: LocalDateTime, vigenteHasta: LocalDateTime): Promocion
+    +estaVigente(ahora: LocalDateTime): boolean
+    +desactivar(): void
+  }
+  class Wallet {
+    -id: Long
+    -perfilId: Long
+    -saldo: SkillCoins
+    -version: Long
+    -movimientosNuevos: List<MovimientoCredito>
+    +{static} abrir(perfilId: Long, saldoInicial: SkillCoins, ahora: LocalDateTime): Wallet
+    +debitar(monto: SkillCoins, tipo: TipoMovimiento, contratacionId: Long, ahora: LocalDateTime): void
+    +exigirSaldoSuficiente(monto: SkillCoins): void
+    +acreditar(monto: SkillCoins, tipo: TipoMovimiento, contratacionId: Long, ahora: LocalDateTime): void
+    -{static} exigirMontoPositivo(monto: SkillCoins): void
+    +limpiarMovimientosNuevos(): void
+  }
+  interface EstadoContratacion {
+    +getNombre(): String
+    +aceptar(c: Contratacion, t: ContextoTransicion): void
+    +rechazar(c: Contratacion, t: ContextoTransicion): void
+    +pagar(c: Contratacion, t: ContextoTransicion): void
+    +iniciar(c: Contratacion, t: ContextoTransicion): void
+    +completar(c: Contratacion, t: ContextoTransicion): void
+    +cancelar(c: Contratacion, t: ContextoTransicion): void
+    +accionesPermitidas(): Set<AccionContratacion>
+    +permiteReprogramacion(): boolean
+    +esTerminal(): boolean
+  }
+  class Publicacion {
+    -id: Long
+    -tipo: TipoPublicacion
+    -autorId: Long
+    -titulo: String
+    -descripcion: String
+    -categoria: String
+    -modalidad: Modalidad
+    -duracionMinutos: int
+    -cupo: int
+    -cupoOcupado: int
+    -precioBase: SkillCoins
+    -politicaCancelacion: TipoPoliticaCancelacion
+    -etiquetas: Set<String>
+    -habilidades: Set<Habilidad>
+    -franjas: List<Franja>
+    -estado: String
+    -estadoActual: EstadoPublicacion
+    -historial: List<HistorialEstado>
+    -creadaEn: LocalDateTime
+    -publicadaEn: LocalDateTime
+    -version: Long
+    +{static} crearBorrador(tipo: TipoPublicacion, autorId: Long, tipoAutor: TipoPerfil, datos: DatosPublicacion, ahora: LocalDateTime): Publicacion
+    +editar(datos: DatosPublicacion): void
+    -cargarDatos(datos: DatosPublicacion): void
+    +agregarFranja(inicio: LocalDateTime, fin: LocalDateTime, ahora: LocalDateTime): Franja
+    +publicar(actorId: Long, ahora: LocalDateTime): void
+    +pausar(actorId: Long, ahora: LocalDateTime): void
+    +reanudar(actorId: Long, ahora: LocalDateTime): void
+    +cerrar(actorId: Long, ahora: LocalDateTime): void
+    +cancelar(actorId: Long, motivo: String, ahora: LocalDateTime): void
+    +cambiarEstado(nuevo: EstadoPublicacion, t: ContextoTransicion): void
+    +marcarPublicada(fecha: LocalDateTime): void
+    +validarCompletaParaPublicar(): void
+    +validarSolicitud(clienteId: Long, franjaId: Long, ahora: LocalDateTime): void
+    +reservarFranja(franjaId: Long, ahora: LocalDateTime): void
+    +liberarFranja(franjaId: Long): void
+    +reprogramarReserva(franjaVieja: Long, franjaNueva: Long, ahora: LocalDateTime): void
+    -exigirFranjaLibre(franjaId: Long, ahora: LocalDateTime): Franja
+    -exigirCupo(): void
+    +buscarFranja(franjaId: Long): Optional<Franja>
+    +admiteSolicitudes(): boolean
+    +esVisiblePara(perfilId: Long): boolean
+    +estaPublicada(): boolean
+    +esAutor(perfilId: Long): boolean
+    +accionesDelAutor(): List<AccionPublicacion>
+    +getCupoDisponible(): int
+  }
+  class HistorialEstado {
+    -id: Long
+    -estadoAnterior: String
+    -estadoNuevo: String
+    -actorId: Long
+    -motivo: String
+    -fecha: LocalDateTime
+    +{static} registrar(estadoAnterior: String, estadoNuevo: String, t: ContextoTransicion): HistorialEstado
+  }
+  class MovimientoCredito {
+    -id: Long
+    -perfilId: Long
+    -tipo: TipoMovimiento
+    -monto: SkillCoins
+    -saldoPosterior: SkillCoins
+    -contratacionId: Long
+    -fecha: LocalDateTime
+  }
+  class Perfil {
+    -id: Long
+    -userId: String
+    -tipo: TipoPerfil
+    -nombreVisible: String
+    -biografia: String
+    -zonaHoraria: ZoneId
+    -habilidades: Set<Habilidad>
+    -intereses: Set<String>
+    -disponibilidad: List<BloqueDisponibilidad>
+    -canalPreferido: CanalNotificacion
+    -reputacion: double
+    -cantidadCalificaciones: int
+    -activo: boolean
+    -creadoEn: LocalDateTime
+    -version: Long
+    +{static} crear(userId: String, nombreVisible: String, tipo: TipoPerfil, zonaHoraria: ZoneId, ahora: LocalDateTime): Perfil
+    +actualizarDatos(nombreVisible: String, biografia: String, zonaHoraria: ZoneId, habilidades: Collection<Habilidad>, intereses: Collection<String>, disponibilidad: Collection<BloqueDisponibilidad>, canalPreferido: CanalNotificacion): void
+    +recalcularReputacion(calificacionesRecibidas: List<Calificacion>): void
+    +darDeBaja(): void
+    -exigirActivo(): void
+    -{static} exigirNombre(nombre: String): String
+    -{static} reemplazar(destino: Collection<T>, origen: Collection<T>): void
+  }
+  class Franja {
+    -id: Long
+    -inicio: LocalDateTime
+    -fin: LocalDateTime
+    -ocupada: boolean
+    +{static} nueva(inicio: LocalDateTime, fin: LocalDateTime): Franja
+    ~ocupar(): void
+    ~liberar(): void
+    +yaComenzo(ahora: LocalDateTime): boolean
+  }
+  interface EstadoPublicacion {
+    +getNombre(): String
+    +publicar(publicacion: Publicacion, t: ContextoTransicion): void
+    +pausar(publicacion: Publicacion, t: ContextoTransicion): void
+    +reanudar(publicacion: Publicacion, t: ContextoTransicion): void
+    +cerrar(publicacion: Publicacion, t: ContextoTransicion): void
+    +cancelar(publicacion: Publicacion, t: ContextoTransicion): void
+    +accionesPermitidas(): Set<AccionPublicacion>
+    +permiteEdicion(): boolean
+    +admiteSolicitudes(): boolean
+    +esVisiblePublicamente(): boolean
+    +esTerminal(): boolean
+  }
+  interface PrecioPublicacion {
+    +calcular(): SkillCoins
+    +detalle(): List<String>
+  }
+}
+
+package "Infrastructure" #FAE0D0 {
+  class IdentidadMockAdapter {
+    -servicio: ServicioIdentidadExterno
+    -tokenActual: String
+    +{static} conUsuariosDemo(): IdentidadMockAdapter
+    +{static} precargarUsuariosDemo(servicio: ServicioIdentidadExterno): void
+    -{static} cuenta(uid: String, nombre: String, email: String): UsuarioExterno
+    +iniciarSesion(userId: String): void
+    +cerrarSesion(): void
+    +usuarioActual(): Optional<UsuarioIdentidad>
+    +buscarPorUserId(userId: String): Optional<UsuarioIdentidad>
+    -{static} traducir(u: UsuarioExterno): UsuarioIdentidad
+  }
+  class EmailCanalAdapter {
+    -sdk: EmailSdkMock
+    -identidad: IdentidadPort
+    +getCanal(): CanalNotificacion
+    +enviar(notificacion: Notificacion, destinatario: Perfil): void
+    -direccionDe(destinatario: Perfil): String
+    -{static} porDefecto(destinatario: Perfil): String
+  }
+  class PushCanalAdapter {
+    -sdk: PushSdkMock
+    +getCanal(): CanalNotificacion
+    +enviar(notificacion: Notificacion, destinatario: Perfil): void
+  }
+  class CanalInterno {
+    +getCanal(): CanalNotificacion
+    +enviar(notificacion: Notificacion, destinatario: Perfil): void
+  }
+  class CanalNotificacionFactoryImpl {
+    -emailSdk: EmailSdkMock
+    -pushSdk: PushSdkMock
+    -identidad: IdentidadPort
+    +crear(canal: CanalNotificacion): CanalNotificacionPort
+  }
+  class RelojSistema {
+    -clock: Clock
+    +ahora(): LocalDateTime
+  }
+  class JpaTransaccionAdapter {
+    -contexto: JpaContexto
+    +ejecutar(trabajo: Supplier<T>): T
+  }
+  class JpaNotificacionRepository {
+    +guardar(notificacion: Notificacion): Notificacion
+    +buscarPorId(id: Long): Optional<Notificacion>
+    +buscarPorDestinatario(destinatarioId: Long, soloNoLeidas: boolean, pagina: PaginaRequest): Pagina<Notificacion>
+  }
+  class JpaWalletRepository {
+    +guardar(wallet: Wallet): Wallet
+    +buscarPorPerfilId(perfilId: Long): Optional<Wallet>
+    +movimientos(perfilId: Long, pagina: PaginaRequest): Pagina<MovimientoCredito>
+  }
+  class JpaPerfilRepository {
+    +guardar(perfil: Perfil): Perfil
+    +buscarPorId(id: Long): Optional<Perfil>
+    +buscarPorUserId(userId: String): Optional<Perfil>
+    +buscarPorIds(ids: Set<Long>): List<Perfil>
+  }
+  class JpaCalificacionRepository {
+    +guardar(calificacion: Calificacion): Calificacion
+    +existe(contratacionId: Long, autorId: Long): boolean
+    +buscarPorDestinatario(destinatarioId: Long): List<Calificacion>
+    +paginarPorDestinatario(destinatarioId: Long, pagina: PaginaRequest): Pagina<Calificacion>
+    -{static} aDominio(filas: List<CalificacionJpaEntity>): List<Calificacion>
+  }
+  class JpaContratacionRepository {
+    +guardar(contratacion: Contratacion): Contratacion
+    +buscarPorId(id: Long): Optional<Contratacion>
+    +buscarPorParticipante(perfilId: Long, pagina: PaginaRequest): Pagina<Contratacion>
+  }
+  class JpaPublicacionRepository {
+    +guardar(publicacion: Publicacion): Publicacion
+    +buscarPorId(id: Long): Optional<Publicacion>
+    +buscar(filtro: FiltroBusqueda, pagina: PaginaRequest): Pagina<Publicacion>
+    +buscarPorAutor(autorId: Long, pagina: PaginaRequest): Pagina<Publicacion>
+    +buscarPublicadas(limite: int): List<Publicacion>
+    -cargar(em: EntityManager, ids: List<Long>): List<Publicacion>
+    -{static} orden(criterio: CriterioOrden, hayTexto: boolean): String
+    -{static} condiciones(f: FiltroBusqueda): Condiciones
+    -{static} hayTexto(s: String): boolean
+  }
+  class JpaPromocionRepository {
+    +guardar(promocion: Promocion): Promocion
+    +buscarActivasPorPublicacion(publicacionId: Long): List<Promocion>
+    +buscarActivasPorPublicaciones(publicacionIds: Collection<Long>): Map<Long, List<Promocion>>
+  }
+  abstract class SimpleJpaRepository {
+    #contexto: JpaContexto
+    #leer(trabajo: Function<EntityManager, R>): R
+    #escribir(trabajo: Function<EntityManager, R>): R
+    #{static} exigirVersion(agregado: String, id: Object, versionDominio: Long, versionPersistida: Long): void
+    #consulta(em: EntityManager, jpql: String, tipo: Class<R>, parametros: Map<String, Object>): TypedQuery<R>
+    #listar(em: EntityManager, jpql: String, tipo: Class<R>, parametros: Map<String, Object>): List<R>
+    #contar(em: EntityManager, jpqlCount: String, parametros: Map<String, Object>): long
+    #idsPaginados(em: EntityManager, jpql: String, parametros: Map<String, Object>, pagina: PaginaRequest): List<Long>
+    #precargar(em: EntityManager, clase: Class<E>, ids: Collection<Long>, colecciones: String...): void
+    #cargarEnOrden(em: EntityManager, clase: Class<E>, ids: List<Long>, idDe: Function<E, Long>): List<E>
+    #{static} escaparLike(texto: String): String
+  }
+}
+
+' --- herencia ---
+JpaNotificacionRepository ---|> SimpleJpaRepository
+JpaWalletRepository ---|> SimpleJpaRepository
+JpaPerfilRepository ---|> SimpleJpaRepository
+JpaCalificacionRepository ---|> SimpleJpaRepository
+JpaContratacionRepository --|> SimpleJpaRepository
+JpaPublicacionRepository --|> SimpleJpaRepository
+JpaPromocionRepository --|> SimpleJpaRepository
+
+' --- realizacion ---
+NotificacionUseCase <|.. NotificacionService
+WalletUseCase <|.. WalletService
+SesionUseCase <|.. SesionService
+PerfilUseCase <|.. PerfilService
+PerfilPublicoUseCase <|... PerfilPublicoFacade
+CalificacionUseCase <|.. CalificacionService
+ContratacionUseCase <|.. ContratacionService
+PublicacionUseCase <|.. PublicacionService
+BusquedaUseCase <|.. BusquedaService
+RecomendacionUseCase <|.. RecomendacionService
+NotificadorObserver ..|> ContratacionObserver
+ContratacionSubject <|.. Contratacion
+NotificacionRepository <|.. JpaNotificacionRepository
+WalletRepository <|.. JpaWalletRepository
+PerfilRepository <|.. JpaPerfilRepository
+CalificacionRepository <|.. JpaCalificacionRepository
+ContratacionRepository <|.. JpaContratacionRepository
+PublicacionRepository <|.. JpaPublicacionRepository
+PromocionRepository <|.. JpaPromocionRepository
+IdentidadPort <|... IdentidadMockAdapter
+CanalNotificacionPort <|... EmailCanalAdapter
+CanalNotificacionPort <|... PushCanalAdapter
+CanalNotificacionPort <|... CanalInterno
+CanalNotificacionFactory <|... CanalNotificacionFactoryImpl
+RelojPort <|... RelojSistema
+TransaccionPort <|... JpaTransaccionAdapter
+
+' --- composicion ---
+Contratacion "1" *-- "1" EstadoContratacion : +se encuentra en
+Contratacion "0..1" *-- "1..*" HistorialEstado : +registra
+Publicacion "0..1" *-- "1..*" HistorialEstado : +registra
+Publicacion "1" *-- "1" EstadoPublicacion : +se encuentra en
+Publicacion "1" *-- "0..*" Franja : +ofrece
+Wallet "1" *-- "0..*" MovimientoCredito : +registra
+
+' --- agregacion ---
+Contratacion "0..*" o-- "0..*" ContratacionObserver : +notifica a
+ContratacionService "1" o--- "0..*" ContratacionObserver : +suscribe
+
+' --- asociacion ---
+NotificacionController "1" --> "1" NotificacionUseCase : +usa
+WalletController "1" --> "1" WalletUseCase : +usa
+PerfilController "1" --> "1" PerfilUseCase : +usa
+PerfilController "1" --> "1" PerfilPublicoUseCase : +usa
+CalificacionController "1" --> "1" CalificacionUseCase : +usa
+ContratacionController "1" --> "1" ContratacionUseCase : +usa
+PublicacionController "1" --> "1" PublicacionUseCase : +usa
+BusquedaController "1" --> "1" BusquedaUseCase : +usa
+RecomendacionController "1" --> "1" RecomendacionUseCase : +usa
+PerfilUseCase "1" <--- "1" PerfilPublicoFacade : +usa
+CalificacionUseCase "1" <--- "1" PerfilPublicoFacade : +usa
+PublicacionUseCase "1" <--- "1" PerfilPublicoFacade : +usa
+SesionService "1" --> "1" IdentidadPort : +usa
+NotificadorObserver "1" -right-> "1" CanalNotificacionFactory : +usa
+NotificacionService "1" ---> "1" NotificacionRepository : +accede a
+WalletService "1" ---> "1" WalletRepository : +accede a
+SesionService "1" ---> "1" PerfilRepository : +accede a
+PerfilService "1" ---> "1" PerfilRepository : +accede a
+CalificacionService "1" ---> "1" CalificacionRepository : +accede a
+ContratacionService "1" ---> "1" ContratacionRepository : +accede a
+PublicacionService "1" ---> "1" PublicacionRepository : +accede a
+PublicacionService "1" ---> "1" PromocionRepository : +accede a
+BusquedaService "1" ---> "1" PublicacionRepository : +accede a
+RecomendacionService "1" ---> "1" PublicacionRepository : +accede a
+NotificadorObserver "1" --> "1" NotificacionRepository : +accede a
+Calificacion "0..2" --> "1" Contratacion : +califica
+Calificacion "0..*" --> "2" Perfil : +autor y +destinatario
+Contratacion "0..*" --> "1" Publicacion : +contrata
+Contratacion "0..*" --> "2" Perfil : +cliente y +proveedor
+Contratacion "0..*" --> "1" Franja : +reserva
+Publicacion "0..*" --> "1" Perfil : +autor
+Promocion "0..*" --> "1" Publicacion : +aplica a
+Notificacion "0..*" --> "1" Perfil : +destinatario
+Wallet "1" --> "1" Perfil : +pertenece a
+
+' --- dependencia ---
+NotificacionRepository ..> Notificacion
+WalletRepository ..> Wallet
+WalletRepository ..> MovimientoCredito
+PerfilRepository ..> Perfil
+CalificacionRepository ..> Calificacion
+ContratacionRepository ..> Contratacion
+PublicacionRepository ..> Publicacion
+PromocionRepository ..> Promocion
+CanalNotificacionFactory .right.> CanalNotificacionPort : +crea
+RecomendacionService ..> EstrategiaRecomendacion
+Contratacion ..> PoliticaCancelacion
+
+' --- ordenamiento (no son relaciones) ---
+NotificacionService -[hidden]down- NotificadorObserver
+PerfilService -[hidden]down- RelojPort
+PerfilService -[hidden]down- TransaccionPort
+Wallet -[hidden]down- Promocion
+IdentidadMockAdapter -[hidden]down- JpaNotificacionRepository
+Franja -[hidden]down- HistorialEstado
+Wallet -[hidden]right- IdentidadMockAdapter
+
+@enduml
