@@ -5,12 +5,12 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 ## Estado
 
-`mvnw verify` pasa completo: **737 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+`mvnw verify` pasa completo: **738 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
 | Dominio | `domain/**` | 224 |
-| Aplicación | `application/**` | 222 |
+| Aplicación | `application/**` | 223 |
 | Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 48 |
 | Persistencia JPA | `infrastructure/persistence/jpa/**` | 88 |
 | Controllers: integración sobre JPA/H2 y `ValidadorEntrada` | `presentation/controller/**` | 79 |
@@ -64,7 +64,7 @@ skillswap/
                                  · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 219 clases de producción, 102 clases de test (737 tests), ~12.9 mil líneas de código y ~15.6 mil de tests.
+Números: 219 clases de producción, 102 clases de test (738 tests), ~12.9 mil líneas de código y ~15.6 mil de tests.
 
 ---
 
@@ -165,7 +165,7 @@ Reglas que se respetan (verificables con un `grep` de imports): `domain` no impo
 - **Reserva dentro de `Contratacion`** (franjaId + `Publicacion.reservarFranja/liberarFranja/reprogramarReserva`), sin entidad `Reserva` aparte.
 - **Reprogramación** = propuesta pendiente en la contratación que la contraparte acepta o rechaza; al aceptar se mueve la reserva sin alterar el cupo.
 - **Permisos.** Todo caso de uso recibe `actorId`; los controllers lo obtienen de `SesionUseCase` (que sale de `IdentidadPort`). Los servicios validan autor/cliente/proveedor/participante con `NoAutorizadoException`.
-- **Validación de entrada en dos niveles.** Cada controller valida con `ValidadorEntrada` lo que se puede decidir mirando solo los datos que llegaron: obligatorios, formatos (ids positivos, zona horaria, largo de los textos según `V1__esquema.sql`) y rangos (números no negativos, puntaje de 1 a 5, porcentaje hasta 100, reputación de 0 a 5, fechas entre los años 2000 y 2100, inicio antes del fin). Si algo falla, responde `VALIDACION` sin llegar al caso de uso. Lo que depende del estado, del actor o del reloj sigue en el dominio, y el caso de uso mantiene sus propias validaciones (`Entradas`) porque es un puerto que no confía en quien lo llama. La sesión se resuelve primero: sin sesión la respuesta es `NO_AUTORIZADO` aunque la entrada también esté mal.
+- **Validación de entrada en dos niveles.** Cada controller valida con `ValidadorEntrada` lo que se puede decidir mirando solo los datos que llegaron: obligatorios, formatos (ids positivos, zona horaria, largo de los textos según `V1__esquema.sql`) y rangos (números no negativos, montos de hasta 1.000.000.000 en el precio base y en el valor de una promoción, puntaje de 1 a 5, porcentaje hasta 100, reputación de 0 a 5, fechas entre los años 2000 y 2100, inicio antes del fin). El tope de montos existe porque un monto que no entra en las columnas `DECIMAL` del esquema llegaba a la base y salía como `ERROR_INTERNO`. Si algo falla, responde `VALIDACION` sin llegar al caso de uso. Lo que depende del estado, del actor o del reloj sigue en el dominio, y el caso de uso mantiene sus propias validaciones (`Entradas`) porque es un puerto que no confía en quien lo llama. La sesión se resuelve primero: sin sesión la respuesta es `NO_AUTORIZADO` aunque la entrada también esté mal.
 - **Errores uniformes.** Los controllers nunca lanzan: devuelven `Resultado<T>` con `ErrorCode` (`VALIDACION`, `NO_ENCONTRADO`, `NO_AUTORIZADO`, `REGLA_DE_NEGOCIO`, `TRANSICION_INVALIDA`, `SALDO_INSUFICIENTE`, `CUPO_AGOTADO`, `FRANJA_NO_DISPONIBLE`, `CONFLICTO_CONCURRENCIA`, `ERROR_INTERNO`).
 
 ### Diagramas de clases (`uml/`)
@@ -218,8 +218,8 @@ Descartados a propósito (justificar en el informe): **Composite** (no hay jerar
 - **Esquema:** `db/migration/V1__esquema.sql` (16 tablas, portable MySQL 8 / H2 en modo MySQL). Únicos: `perfil.user_id`, `calificacion(contratacion_id, autor_id)`. Índices: `publicacion(estado, categoria, precio_base)`, historiales, `notificacion(destinatario_id, leida)`. Sin `ddl-auto=create`.
 - **Mapeo:** estado como `String`; el objeto State se reconstruye con `EstadoXFactory.desdeNombre` (equivale al `@Transient + @PostLoad` del ejemplo del curso). Historial **append-only** (se insertan solo entradas nuevas). Colecciones con `@ElementCollection` / entidades hijas.
 - **Transacciones:** `TransaccionPort.ejecutar(...)` implementado por `JpaTransaccionAdapter` (reentrante, un `EntityManager` por unidad de trabajo vía `JpaContexto`). Cada operación mutante de un servicio corre en **una** transacción: aceptar (estado + franja/cupo), pagar (débito + estado), completar (acreditación + estado), cancelar (estado + franja + reintegro + compensación). Las notificaciones salen después del commit y en su propia transacción; si un canal falla no se deshace la operación.
-- **Concurrencia:** `@Version` en Perfil, Publicacion, Contratacion y Wallet, más un chequeo de versión previo al guardado; los conflictos se traducen a `ConflictoConcurrenciaException`. Al reprogramar una reserva sube `publicacion.revision` para que el `@Version` detecte el cambio de franjas.
-- **Sin N+1 / paginación:** todos los listados son paginados (`PaginaRequest`, tamaño máximo 100). La búsqueda hace `count` + ids paginados + una consulta `JOIN FETCH` por colección (nunca `JOIN FETCH` con `setMaxResults`; `hibernate.query.fail_on_pagination_over_collection_fetch=true` lo hace fallar fuerte si alguien lo reintroduce). Autores y promociones se cargan **por lote** (`buscarPorIds`, `buscarActivasPorPublicaciones`). Hay un test que verifica una sola consulta de autores y de promociones por página.
+- **Concurrencia:** `@Version` en Perfil, Publicacion, Contratacion y Wallet, más un chequeo de versión previo al guardado; los conflictos se traducen a `ConflictoConcurrenciaException`. Al reprogramar una reserva sube `publicacion.revision` para que el `@Version` detecte el cambio de franjas. Una clave duplicada también se traduce a `ConflictoConcurrenciaException` en `ErroresJpa` (SQLState `23505` en H2, código `1062` en MySQL): es lo que pasa cuando dos pedidos simultáneos insertan lo mismo, por ejemplo dos registros del mismo usuario o dos calificaciones del mismo autor, y el segundo choca con el `UNIQUE`. Las demás violaciones (clave foránea, `NOT NULL`) siguen siendo `ERROR_INTERNO`.
+- **Sin N+1 / paginación:** todos los listados son paginados (`PaginaRequest`, tamaño máximo 100). La búsqueda hace `count` + ids paginados + una consulta `JOIN FETCH` por colección (nunca `JOIN FETCH` con `setMaxResults`; `hibernate.query.fail_on_pagination_over_collection_fetch=true` lo hace fallar fuerte si alguien lo reintroduce). Autores y promociones se cargan **por lote** (`buscarPorIds`, `buscarActivasPorPublicaciones`); en "mis contrataciones", también las publicaciones de la página (`PublicacionRepository.buscarPorIds`) y cuáles ya calificó quien consulta (`CalificacionRepository.calificadasPor`). Lo verifican tres tests: `BusquedaServiceTest.sinNMasUno` (una sola consulta de autores y una de promociones por página, sobre los fakes) y dos que cuentan las sentencias SQL reales con las estadísticas de Hibernate y exigen la misma cantidad con 2 y con 6 publicaciones: `ContratacionControllerTest.misContratacionesSinNMasUno` y `PublicacionControllerTest.misPublicacionesSinNMasUno`.
 - **Datos de demostración:** `DatosDemo` (idempotente, vía casos de uso, fechas relativas a "ahora"); no hay seed en SQL porque las franjas deben ser futuras.
 
 ---
@@ -257,7 +257,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 9 | Controllers delgados que validan la entrada, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `ValidadorEntrada`, `Resultado`; tests en `presentation/controller/**` (ver nota de nombres abajo) |
 | 10 | Mock UI Kit conectado por interfaces | ✅ | `SkillSwapView` → `UiControllers` (contrato del kit) ← `UiControllersAdapter` → los 8 controllers; `Main --ui`; `UiControllersAdapterTest`, `DependenciasUiTest` (sección 8, punto 11) |
 | 11 | Entregas incrementales | ⬜ | — |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 737 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 738 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (todas las capas) y `uml/01-patrones-aplicados.puml` (los 7 patrones con sus roles); PlantUML, sección 3 |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
@@ -270,7 +270,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 - **4.3 Relevancia:** hoy ordena por título > reputación > fecha; se puede enriquecer.
 - **4.3 Popularidad reciente:** hoy usa cupo ocupado + reputación; evaluar agregar una ventana temporal.
 - **6 y 7 (informe):** dibujar el diagrama de capas y justificar cada patrón (problema, alternativa, consecuencias, evidencia).
-- **8 (informe):** justificar los fetch plans; opcional: un test que cuente sentencias SQL.
+- **8 (informe):** justificar los fetch plans. Los tests que cuentan sentencias SQL ya están (sección 5).
 - **10 Mock UI Kit:** consultar con la cátedra los cambios hechos al contrato del kit (sección 8, punto 11), en especial que la pantalla ya no ofrezca el filtro por precio máximo.
 - **11 Entregas incrementales:** planificarlas con el equipo.
 - **13:** revisar el informe y ensayar la demo.
@@ -301,12 +301,12 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 | Módulo | Carpeta(s) | Estado | Próximas tareas |
 |---|---|---|---|
 | **A — Servicios** | `application/service`, `application/notificacion`, `application/mapper` | ✅ | Decidir los huecos de la sección 8 (publicación cancelada con contrataciones activas, retiro de solicitud pendiente) |
-| **B — Persistencia** | `infrastructure/persistence/**`, `persistence.xml`, `db/migration` | ✅ | Probar el camino contra MySQL real; opcional: test que cuente sentencias SQL |
+| **B — Persistencia** | `infrastructure/persistence/**`, `persistence.xml`, `db/migration` | ✅ | Probar el camino contra MySQL real |
 | **C — Presentación y demo** | `presentation/**`, `bootstrap/**`, `Main`, tests en `src/test/.../presentation` | ✅ | Probar a mano la pantalla (`--ui`) con H2 y con MySQL |
 | **D — Adapters y soporte de tests** | `infrastructure/{identidad,notificacion,time}`, `src/test/.../support` | ✅ | Opcional: rollback simulado en `TransaccionSimulada` para que los fakes reflejen JPA |
 | **E — Tests de aplicación** | `src/test/.../application` | ✅ | Mantener la cobertura al agregar casos (hoy 99,4 % de líneas en `application`) |
 | **F — Aceptación** | `src/test/.../acceptance` | ✅ | Mantener alineados los juegos en memoria y sobre JPA |
-| **G — UML** | `uml/` | ✅ | Mantener el diagrama al día con el código |
+| **G — UML** | `uml/` | ✅ | Mantener los dos diagramas (`00-aplicacion-completa` y `01-patrones-aplicados`) al día con el código y volver a exportarlos |
 | **H — Informe PDF** | `Informe_SkillSwap.pdf` | 🟡 | Revisar que cada decisión tenga problema, alternativa, consecuencias y evidencia (código/tests) |
 | **I — Defensa** | — | ⬜ | Cada integrante elige una parte (p. ej. State, persistencia, Observer, Decorator, controllers) y practica modificarla en vivo |
 
@@ -330,6 +330,8 @@ Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a me
 12. **Comisiones** (Decorator de comisión de plataforma) y **Composite de categorías** quedaron fuera a propósito.
 13. **La entrada se valida dos veces.** Primero el controller (`ValidadorEntrada`) y después el caso de uso (`Entradas`) y el dominio. Por eso, a través del controller, faltar el mensaje o el objetivo de una solicitud, el motivo de un rechazo o una cancelación, un puntaje fuera de 1 a 5 o un porcentaje mayor a 100 da `VALIDACION`; llamando directo al caso de uso da `REGLA_DE_NEGOCIO`, como antes. Los largos máximos copian los `VARCHAR` de `V1__esquema.sql`: si cambia la migración, hay que cambiarlos también en `ValidadorEntrada`.
 14. **Recomendaciones e historial paginados en memoria.** El puntaje de recomendación se calcula en Java sobre todas las candidatas (`candidatasRecomendacion`), así que no se puede paginar en la consulta: se arma el top `limiteRecomendaciones` y se recorta la página con `Pagina.recortar`. El historial de una contratación ya viene completo con el agregado (que igual se carga para validar al participante) y se recorta igual. `ContratacionDto.historial`, el detalle completo, no cambió.
+15. **Solo la cancelación se notifica a las dos partes.** Cada parte la recibe por la bandeja interna y por su canal preferido; quien cancela recibe la constancia. Los demás eventos van a una sola parte: la solicitud y el pago, al proveedor; la aceptación y el rechazo, al cliente; la reprogramación y la sesión completada, a la contraparte de quien actuó. Razón: el mensaje de la cancelación sirve para las dos ("Se cancelo la contratacion #N (motivo)") y a las dos les cambia la contratación (estado, reserva y, si estaba pagada, el dinero retenido); los demás mensajes están escritos para quien los recibe ("Recibiste una nueva solicitud" no le sirve a quien la mandó). La sección 4.6 de la consigna dice "notificar a las partes" sin precisar a cuál; si se decide que otro evento llegue a las dos, se cambia solo `NotificadorObserver.destinatariosDe`. Si falla el aviso a una parte, la otra lo recibe igual.
+16. **Fechas entre los años 2000 y 2100.** Las franjas, la vigencia de las promociones y el rango de disponibilidad de la búsqueda se aceptan solo entre el 01/01/2000 y el 31/12/2100 (`ValidadorEntrada.exigirFechaEnRango`; fuera de ese rango, `VALIDACION`). La columna `DATETIME` no admite cualquier `LocalDateTime` (por ejemplo `LocalDateTime.MAX`): sin este control, esa fecha llegaba a la base y salía como `ERROR_INTERNO`. Es un tope técnico, no una regla de negocio: que una franja sea futura lo sigue decidiendo el dominio con el reloj. Lo controla el controller; llamando directo al caso de uso, una fecha así sigue llegando a la base.
 
 ---
 
