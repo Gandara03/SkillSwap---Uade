@@ -337,7 +337,7 @@ Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a me
 2. **H2 en modo MySQL + Flyway**: hoy migra sin ajustes; si deja de hacerlo, probar agregar `DATABASE_TO_LOWER=TRUE` a la URL de `BaseDeDatos.iniciarH2()`.
 3. **HQL de colecciones básicas**: `join ph.habilidades h where h = :x`, `lower(...)` sobre el alias del elemento y `escape '!'` en `JpaPublicacionRepository` son las construcciones más delicadas para Hibernate 6.5. También el orden `RELEVANCIA` (`case when ... like :texto`).
 4. **`autor`** como `@ManyToOne` de solo lectura sobre `autor_id` (usado en `join p.autor a` para reputación y orden).
-5. **Tests de unicidad y FK** esperan `PersistenceException`; si otra versión de Hibernate lanza otra subclase, ajustar el `assertThrows`.
+5. **Tests de unicidad y FK:** los de unicidad esperan `ConflictoConcurrenciaException` (`ErroresJpa` traduce la clave duplicada) y el de FK, `PersistenceException`; si otra versión de Hibernate lanza otra subclase, ajustar el `assertThrows`.
 6. **"Guardar sin cambios no incrementa la versión"** depende de que el dirty-checking no vea cambios espurios (las fechas se truncan a microsegundos antes de escribir para evitarlo).
 7. **Concurrencia con hilos** (`Caso04UltimoCupoJpaTest`, test de wallet): asume `READ_COMMITTED` en H2; un `ERROR_INTERNO` por timeout de lock haría fallar el test.
 8. **Flyway 10**: con H2 alcanza `flyway-core`; para MySQL el `pom.xml` ya incluye `flyway-mysql`.
