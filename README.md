@@ -45,7 +45,7 @@ skillswap/
 ├── pom.xml                      Java 17 · Hibernate 6.5.2 · MySQL 9.0.0 · Flyway 10.17 · H2 2.2 · JUnit 5.10 · JaCoCo
 ├── README.md                    este archivo
 ├── mvnw, mvnw.cmd, .mvn/        Maven Wrapper (descarga Maven 3.9.16; no hace falta tener Maven instalado)
-├── uml/                         diagrama de clases (PlantUML: .puml, .svg y .png)
+├── uml/                         diagramas de clases (PlantUML: .puml, .svg y .png)
 ├── Informe_SkillSwap.pdf        informe de decisiones de diseño
 └── src/
     ├── main/java/com/uade/skillswap/
@@ -168,28 +168,32 @@ Reglas que se respetan (verificables con un `grep` de imports): `domain` no impo
 - **Validación de entrada en dos niveles.** Cada controller valida con `ValidadorEntrada` lo que se puede decidir mirando solo los datos que llegaron: obligatorios, formatos (ids positivos, zona horaria, largo de los textos según `V1__esquema.sql`) y rangos (números no negativos, puntaje de 1 a 5, porcentaje hasta 100, reputación de 0 a 5, fechas entre los años 2000 y 2100, inicio antes del fin). Si algo falla, responde `VALIDACION` sin llegar al caso de uso. Lo que depende del estado, del actor o del reloj sigue en el dominio, y el caso de uso mantiene sus propias validaciones (`Entradas`) porque es un puerto que no confía en quien lo llama. La sesión se resuelve primero: sin sesión la respuesta es `NO_AUTORIZADO` aunque la entrada también esté mal.
 - **Errores uniformes.** Los controllers nunca lanzan: devuelven `Resultado<T>` con `ErrorCode` (`VALIDACION`, `NO_ENCONTRADO`, `NO_AUTORIZADO`, `REGLA_DE_NEGOCIO`, `TRANSICION_INVALIDA`, `SALDO_INSUFICIENTE`, `CUPO_AGOTADO`, `FRANJA_NO_DISPONIBLE`, `CONFLICTO_CONCURRENCIA`, `ERROR_INTERNO`).
 
-### Diagrama de clases (`uml/`)
+### Diagramas de clases (`uml/`)
 
-`uml/` tiene un solo diagrama, `00-aplicacion-completa`, en tres archivos: el fuente PlantUML (`.puml`) y sus exportaciones `.svg` y `.png`.
+`uml/` tiene dos diagramas, cada uno en tres archivos: el fuente PlantUML (`.puml`) y sus exportaciones `.svg` y `.png`.
 
-Muestra las clases de la aplicación en las 4 capas, cada una en su paquete:
+**`00-aplicacion-completa`** muestra las clases de la aplicación en las 4 capas, cada una en su paquete:
 
 - **Presentation**: los 8 controllers.
 - **Application**: los 10 casos de uso (`port/in`), los servicios que los implementan, `PerfilPublicoFacade`, `NotificadorObserver` y los puertos de salida y repositorios (`port/out`).
 - **Domain**: las entidades del dominio y las interfaces de State, Strategy, Observer y Decorator.
 - **Infrastructure**: las clases que implementan los puertos: los 7 repositorios JPA (con su base `SimpleJpaRepository`) y los adapters de identidad, transacción, canales de notificación y reloj.
 
-Cada clase lleva sus campos y métodos con visibilidad y tipos. Las relaciones distinguen herencia, realización, composición, agregación, asociación (con multiplicidades) y dependencia.
+Cada clase lleva sus campos y métodos con visibilidad y tipos.
 
-Cómo abrirlo:
+**`01-patrones-aplicados`** muestra los 7 patrones con todos sus roles, agrupados por capa y por patrón: las interfaces y clases base de State con los 12 estados concretos; las políticas de cancelación y las estrategias de recomendación (Strategy); `PrecioBase` y los decoradores de promoción (Decorator); `Contratacion` como Subject, `ContratacionEvent` y `NotificadorObserver` (Observer); los 5 Adapters, incluido `UiControllersAdapter` entre `SkillSwapView` y los controllers; las fábricas (Simple Factory) y `PerfilPublicoFacade` con su cliente `PerfilController` (Facade). De cada clase muestra los miembros que hacen al patrón.
 
-- **`.puml`**: con PlantUML, por ejemplo con la extensión PlantUML de VS Code (necesita Graphviz). El diagrama pasa de 4096 px, el tamaño máximo que PlantUML dibuja por defecto, y sin subir ese límite recorta la imagen sin avisar. En VS Code se configura en `settings.json` con `"plantuml.commandArgs": ["-DPLANTUML_LIMIT_SIZE=16384"]`; desde la consola:
+En los dos, las relaciones distinguen herencia, realización, composición, agregación, asociación (con multiplicidades) y dependencia.
+
+Cómo abrirlos:
+
+- **`.puml`**: con PlantUML, por ejemplo con la extensión PlantUML de VS Code (necesita Graphviz). Los dos diagramas pasan de 4096 px, el tamaño máximo que PlantUML dibuja por defecto, y sin subir ese límite recorta la imagen sin avisar. En VS Code se configura en `settings.json` con `"plantuml.commandArgs": ["-DPLANTUML_LIMIT_SIZE=16384"]`; desde la consola:
 
   ```
-  java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg uml/00-aplicacion-completa.puml
+  java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg uml/00-aplicacion-completa.puml uml/01-patrones-aplicados.puml
   ```
 
-- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. El `.png` (6535 × 5030 px) sirve para insertarlo en un documento.
+- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. Los `.png` (6535 × 5030 px el 00 y 6568 × 4761 px el 01) sirven para insertarlos en un documento.
 
 ---
 
@@ -255,7 +259,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 11 | Entregas incrementales | ⬜ | — |
 | 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 737 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
 | 12 | README reproducible | ✅ | este archivo |
-| 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (PlantUML, sección 3) |
+| 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (todas las capas) y `uml/01-patrones-aplicados.puml` (los 7 patrones con sus roles); PlantUML, sección 3 |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
 | 13 | Demo en vivo del recorrido principal | ✅ | `mvnw compile exec:java` con `--h2` (consola) o `--h2 --ui` (pantalla) (sección 2) |
 | 15 | **10 casos de aceptación** | ✅ | `acceptance/memoria/Caso01…Caso10`, `acceptance/jpa/Caso01…Caso10…JpaTest` |

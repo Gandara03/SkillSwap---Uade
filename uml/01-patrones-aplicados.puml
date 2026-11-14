@@ -1,0 +1,496 @@
+@startuml 01-patrones-aplicados
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam nodesep 28
+skinparam ranksep 55
+hide empty members
+skinparam linetype polyline
+title SkillSwap: patrones de diseno aplicados
+
+package "Presentation" #FADBD8 {
+  package "Facade" as PreFacade #FADBD8 {
+    class PerfilController {
+      -perfiles: PerfilUseCase
+      -perfilPublico: PerfilPublicoUseCase
+      -sesion: SesionUseCase
+      +registrar(comando: RegistrarPerfilCommand): Resultado<PerfilDto>
+      +actualizar(comando: ActualizarPerfilCommand): Resultado<PerfilDto>
+      +miPerfil(): Resultado<PerfilDto>
+      +verPerfilPublico(perfilId: Long): Resultado<PerfilPublicoDto>
+      +darDeBaja(): Resultado<Void>
+    }
+  }
+  package "Adapter" as PreAdapter #FADBD8 {
+    class SkillSwapView {
+      -controllers: UiControllers
+    }
+    interface UiControllers {
+      +busqueda(): UiControllers.BusquedaController
+      +publicaciones(): UiControllers.PublicacionController
+      +contrataciones(): UiControllers.ContratacionController
+      +calificaciones(): UiControllers.CalificacionController
+      +wallet(): UiControllers.WalletController
+      +notificaciones(): UiControllers.NotificacionController
+      +perfiles(): UiControllers.PerfilController
+    }
+    class UiControllersAdapter {
+      -autenticador: Autenticador
+      -perfiles: PerfilController
+      -publicaciones: PublicacionController
+      -busquedas: BusquedaController
+      -recomendaciones: RecomendacionController
+      -contrataciones: ContratacionController
+      -calificaciones: CalificacionController
+      -notificaciones: NotificacionController
+      -wallet: WalletController
+      +busqueda(): UiControllers.BusquedaController
+      +publicaciones(): UiControllers.PublicacionController
+      +contrataciones(): UiControllers.ContratacionController
+      +calificaciones(): UiControllers.CalificacionController
+      +wallet(): UiControllers.WalletController
+      +notificaciones(): UiControllers.NotificacionController
+      +perfiles(): UiControllers.PerfilController
+      +verPerfil(userId: String): Models.Perfil
+      -iniciarSesion(userId: String): void
+      -{static} valor(resultado: Resultado<T>): T
+    }
+  }
+}
+
+package "Application" #D6E4F7 {
+  package "Observer" as AppObserver #D6E4F7 {
+    class ContratacionService {
+      -observers: List<ContratacionObserver>
+      -politicas: PoliticaCancelacionFactory
+      +cancelar(actorId: Long, contratacionId: Long, motivo: String): ResultadoCancelacionDto
+      -despachar(contratacion: Contratacion): void
+    }
+    class NotificadorObserver {
+      -notificacionRepository: NotificacionRepository
+      -perfilRepository: PerfilRepository
+      -canales: CanalNotificacionFactory
+      -transaccion: TransaccionPort
+      -reloj: RelojPort
+      +actualizar(evento: ContratacionEvent): void
+      -notificarA(destinatarioId: Long, evento: ContratacionEvent): void
+      -{static} canalesPara(destinatario: Perfil): Set<CanalNotificacion>
+      -{static} destinatariosDe(e: ContratacionEvent): List<Long>
+      -{static} contraparteDelActor(e: ContratacionEvent): Long
+      -{static} mensajeDe(e: ContratacionEvent): String
+      -{static} recortar(mensaje: String): String
+    }
+  }
+  package "Facade" as AppFacade #D6E4F7 {
+    interface PerfilPublicoUseCase {
+      +verPerfilPublico(perfilId: Long): PerfilPublicoDto
+    }
+    class PerfilPublicoFacade {
+      -perfiles: PerfilUseCase
+      -calificaciones: CalificacionUseCase
+      -publicaciones: PublicacionUseCase
+      -config: SkillSwapConfig
+      +verPerfilPublico(perfilId: Long): PerfilPublicoDto
+      -{static} tamano(solicitado: int): int
+    }
+    interface PerfilUseCase {
+      +obtener(perfilId: Long): PerfilDto
+    }
+    interface CalificacionUseCase {
+      +listarRecibidas(perfilId: Long, pagina: PaginaRequest): Pagina<CalificacionDto>
+    }
+    interface PublicacionUseCase {
+      +listarPublicadasDe(autorId: Long, limite: int): List<PublicacionResumenDto>
+    }
+  }
+  class RecomendacionService {
+    +recomendar(actorId: Long, tipoEstrategia: TipoEstrategiaRecomendacion, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
+  }
+  package "Strategy" as AppStrategy #D6E4F7 {
+    interface EstrategiaRecomendacion {
+      +getTipo(): TipoEstrategiaRecomendacion
+      +recomendar(datos: DatosRecomendacion, candidatas: List<Publicacion>, limite: int): List<Publicacion>
+    }
+    class RecomendacionPorAfinidad {
+      +getTipo(): TipoEstrategiaRecomendacion
+      +recomendar(datos: DatosRecomendacion, candidatas: List<Publicacion>, limite: int): List<Publicacion>
+      -afinidad(p: Publicacion, intereses: Set<String>): int
+    }
+    class RecomendacionPorPopularidad {
+      +getTipo(): TipoEstrategiaRecomendacion
+      +recomendar(datos: DatosRecomendacion, candidatas: List<Publicacion>, limite: int): List<Publicacion>
+    }
+  }
+  package "Simple Factory" as AppFactory #D6E4F7 {
+    class EstrategiaRecomendacionFactory {
+      +{static} crear(tipo: TipoEstrategiaRecomendacion): EstrategiaRecomendacion
+    }
+    interface CanalNotificacionFactory {
+      +crear(canal: CanalNotificacion): CanalNotificacionPort
+    }
+  }
+  package "Adapter" as AppAdapter #D6E4F7 {
+    interface IdentidadPort {
+      +usuarioActual(): Optional<UsuarioIdentidad>
+      +buscarPorUserId(userId: String): Optional<UsuarioIdentidad>
+    }
+    interface CanalNotificacionPort {
+      +getCanal(): CanalNotificacion
+      +enviar(notificacion: Notificacion, destinatario: Perfil): void
+    }
+    interface TransaccionPort {
+      +ejecutar(trabajo: Supplier<T>): T
+      +ejecutar(trabajo: Runnable): void
+    }
+  }
+}
+
+package "Domain" #D5F0D5 {
+  class Contratacion {
+    -estadoActual: EstadoContratacion
+    -observers: List<ContratacionObserver>
+    -eventosPendientes: List<ContratacionEvent>
+    +aceptar(actorId: Long, ahora: LocalDateTime): void
+    +rechazar(actorId: Long, motivo: String, ahora: LocalDateTime): void
+    +pagar(actorId: Long, ahora: LocalDateTime): void
+    +iniciar(actorId: Long, ahora: LocalDateTime): void
+    +completar(actorId: Long, ahora: LocalDateTime): void
+    +cancelar(actorId: Long, motivo: String, ahora: LocalDateTime): void
+    +repartirRetenido(politica: PoliticaCancelacion, anticipacion: Duration): RepartoCancelacion
+    +cambiarEstado(nuevo: EstadoContratacion, t: ContextoTransicion): void
+    -registrarEvento(tipo: TipoEventoContratacion, actorId: Long, detalle: String, fecha: LocalDateTime): void
+    +agregarObserver(observer: ContratacionObserver): void
+    +quitarObserver(observer: ContratacionObserver): void
+    +notificarObservers(evento: ContratacionEvent): void
+    +notificarEventosPendientes(): void
+  }
+  class Publicacion {
+    -politicaCancelacion: TipoPoliticaCancelacion
+    -estadoActual: EstadoPublicacion
+    +publicar(actorId: Long, ahora: LocalDateTime): void
+    +pausar(actorId: Long, ahora: LocalDateTime): void
+    +reanudar(actorId: Long, ahora: LocalDateTime): void
+    +cerrar(actorId: Long, ahora: LocalDateTime): void
+    +cancelar(actorId: Long, motivo: String, ahora: LocalDateTime): void
+    +cambiarEstado(nuevo: EstadoPublicacion, t: ContextoTransicion): void
+  }
+  package "Observer" as DomObserver #D5F0D5 {
+    interface ContratacionSubject {
+      +agregarObserver(observer: ContratacionObserver): void
+      +quitarObserver(observer: ContratacionObserver): void
+      +notificarObservers(evento: ContratacionEvent): void
+    }
+    interface ContratacionObserver {
+      +actualizar(evento: ContratacionEvent): void
+    }
+    class ContratacionEvent {
+      -tipo: TipoEventoContratacion
+      -contratacionId: Long
+      -publicacionId: Long
+      -clienteId: Long
+      -proveedorId: Long
+      -actorId: Long
+      -detalle: String
+      -fecha: LocalDateTime
+    }
+  }
+  package "State" as DomState #D5F0D5 {
+    interface EstadoContratacion {
+      +getNombre(): String
+      +aceptar(c: Contratacion, t: ContextoTransicion): void
+      +rechazar(c: Contratacion, t: ContextoTransicion): void
+      +pagar(c: Contratacion, t: ContextoTransicion): void
+      +iniciar(c: Contratacion, t: ContextoTransicion): void
+      +completar(c: Contratacion, t: ContextoTransicion): void
+      +cancelar(c: Contratacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionContratacion>
+      +permiteReprogramacion(): boolean
+      +esTerminal(): boolean
+    }
+    abstract class EstadoContratacionBase {
+      +aceptar(c: Contratacion, t: ContextoTransicion): void
+      +rechazar(c: Contratacion, t: ContextoTransicion): void
+      +pagar(c: Contratacion, t: ContextoTransicion): void
+      +iniciar(c: Contratacion, t: ContextoTransicion): void
+      +completar(c: Contratacion, t: ContextoTransicion): void
+      +cancelar(c: Contratacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionContratacion>
+      +permiteReprogramacion(): boolean
+      +esTerminal(): boolean
+    }
+    class EstadoPendiente {
+      +getNombre(): String
+      +aceptar(c: Contratacion, t: ContextoTransicion): void
+      +rechazar(c: Contratacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionContratacion>
+    }
+    class EstadoAceptada {
+      +getNombre(): String
+      +pagar(c: Contratacion, t: ContextoTransicion): void
+      +cancelar(c: Contratacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionContratacion>
+      +permiteReprogramacion(): boolean
+    }
+    class EstadoConfirmada {
+      +getNombre(): String
+      +iniciar(c: Contratacion, t: ContextoTransicion): void
+      +cancelar(c: Contratacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionContratacion>
+      +permiteReprogramacion(): boolean
+    }
+    class EstadoEnCurso {
+      +getNombre(): String
+      +completar(c: Contratacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionContratacion>
+    }
+    class EstadoCompletada {
+      +getNombre(): String
+      +accionesPermitidas(): Set<AccionContratacion>
+      +esTerminal(): boolean
+    }
+    class EstadoRechazada {
+      +getNombre(): String
+      +esTerminal(): boolean
+    }
+    class "EstadoCancelada" as EstadoCanceladaContratacion {
+      +getNombre(): String
+      +esTerminal(): boolean
+    }
+    interface EstadoPublicacion {
+      +getNombre(): String
+      +publicar(publicacion: Publicacion, t: ContextoTransicion): void
+      +pausar(publicacion: Publicacion, t: ContextoTransicion): void
+      +reanudar(publicacion: Publicacion, t: ContextoTransicion): void
+      +cerrar(publicacion: Publicacion, t: ContextoTransicion): void
+      +cancelar(publicacion: Publicacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionPublicacion>
+      +permiteEdicion(): boolean
+      +admiteSolicitudes(): boolean
+      +esVisiblePublicamente(): boolean
+      +esTerminal(): boolean
+    }
+    abstract class EstadoPublicacionBase {
+      +publicar(p: Publicacion, t: ContextoTransicion): void
+      +pausar(p: Publicacion, t: ContextoTransicion): void
+      +reanudar(p: Publicacion, t: ContextoTransicion): void
+      +cerrar(p: Publicacion, t: ContextoTransicion): void
+      +cancelar(p: Publicacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionPublicacion>
+      +permiteEdicion(): boolean
+      +admiteSolicitudes(): boolean
+      +esVisiblePublicamente(): boolean
+      +esTerminal(): boolean
+    }
+    class EstadoBorrador {
+      +getNombre(): String
+      +publicar(p: Publicacion, t: ContextoTransicion): void
+      +cancelar(p: Publicacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionPublicacion>
+      +permiteEdicion(): boolean
+    }
+    class EstadoPublicada {
+      +getNombre(): String
+      +pausar(p: Publicacion, t: ContextoTransicion): void
+      +cerrar(p: Publicacion, t: ContextoTransicion): void
+      +cancelar(p: Publicacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionPublicacion>
+      +admiteSolicitudes(): boolean
+      +esVisiblePublicamente(): boolean
+    }
+    class EstadoPausada {
+      +getNombre(): String
+      +reanudar(p: Publicacion, t: ContextoTransicion): void
+      +cerrar(p: Publicacion, t: ContextoTransicion): void
+      +cancelar(p: Publicacion, t: ContextoTransicion): void
+      +accionesPermitidas(): Set<AccionPublicacion>
+    }
+    class EstadoCerrada {
+      +getNombre(): String
+      +esTerminal(): boolean
+    }
+    class "EstadoCancelada" as EstadoCanceladaPublicacion {
+      +getNombre(): String
+      +esTerminal(): boolean
+    }
+  }
+  package "Strategy" as DomStrategy #D5F0D5 {
+    interface PoliticaCancelacion {
+      +getTipo(): TipoPoliticaCancelacion
+      +calcularReintegro(montoPagado: SkillCoins, anticipacion: Duration): SkillCoins
+    }
+    abstract class PoliticaPorUmbrales {
+      -umbrales: UmbralesCancelacion
+      +calcularReintegro(montoPagado: SkillCoins, anticipacion: Duration): SkillCoins
+      +getUmbrales(): UmbralesCancelacion
+    }
+    class PoliticaFlexible {
+      +getTipo(): TipoPoliticaCancelacion
+    }
+    class PoliticaEstricta {
+      +getTipo(): TipoPoliticaCancelacion
+    }
+  }
+  package "Decorator" as DomDecorator #D5F0D5 {
+    interface PrecioPublicacion {
+      +calcular(): SkillCoins
+      +detalle(): List<String>
+    }
+    class PrecioBase {
+      -base: SkillCoins
+      +calcular(): SkillCoins
+      +detalle(): List<String>
+    }
+    abstract class PromocionDecorator {
+      #interno: PrecioPublicacion
+    }
+    class PromocionPorcentaje {
+      -porcentaje: BigDecimal
+      -nombre: String
+      +calcular(): SkillCoins
+      +detalle(): List<String>
+    }
+    class PromocionMontoFijo {
+      -monto: SkillCoins
+      -nombre: String
+      +calcular(): SkillCoins
+      +detalle(): List<String>
+    }
+  }
+  package "Simple Factory" as DomFactory #D5F0D5 {
+    class EstadoContratacionFactory {
+      +{static} desdeNombre(nombre: String): EstadoContratacion
+    }
+    class EstadoPublicacionFactory {
+      +{static} desdeNombre(nombre: String): EstadoPublicacion
+    }
+    class PoliticaCancelacionFactory {
+      -flexible: UmbralesCancelacion
+      -estricta: UmbralesCancelacion
+      +crear(tipo: TipoPoliticaCancelacion): PoliticaCancelacion
+    }
+    class PrecioPublicacionFactory {
+      +{static} construir(precioBase: SkillCoins, promociones: List<Promocion>, ahora: LocalDateTime): PrecioPublicacion
+    }
+  }
+}
+
+package "Infrastructure" #FAE0D0 {
+  package "Adapter" as InfAdapter #FAE0D0 {
+    class IdentidadMockAdapter {
+      -servicio: ServicioIdentidadExterno
+      -tokenActual: String
+      +{static} conUsuariosDemo(): IdentidadMockAdapter
+      +{static} precargarUsuariosDemo(servicio: ServicioIdentidadExterno): void
+      -{static} cuenta(uid: String, nombre: String, email: String): UsuarioExterno
+      +iniciarSesion(userId: String): void
+      +cerrarSesion(): void
+      +usuarioActual(): Optional<UsuarioIdentidad>
+      +buscarPorUserId(userId: String): Optional<UsuarioIdentidad>
+      -{static} traducir(u: UsuarioExterno): UsuarioIdentidad
+    }
+    class EmailCanalAdapter {
+      -sdk: EmailSdkMock
+      -identidad: IdentidadPort
+      +getCanal(): CanalNotificacion
+      +enviar(notificacion: Notificacion, destinatario: Perfil): void
+      -direccionDe(destinatario: Perfil): String
+      -{static} porDefecto(destinatario: Perfil): String
+    }
+    class PushCanalAdapter {
+      -sdk: PushSdkMock
+      +getCanal(): CanalNotificacion
+      +enviar(notificacion: Notificacion, destinatario: Perfil): void
+    }
+    class JpaTransaccionAdapter {
+      -contexto: JpaContexto
+      +ejecutar(trabajo: Supplier<T>): T
+    }
+  }
+  package "Simple Factory" as InfFactory #FAE0D0 {
+    class CanalNotificacionFactoryImpl {
+      -emailSdk: EmailSdkMock
+      -pushSdk: PushSdkMock
+      -identidad: IdentidadPort
+      +crear(canal: CanalNotificacion): CanalNotificacionPort
+    }
+  }
+}
+
+' --- herencia ---
+EstadoContratacionBase <|-- EstadoPendiente
+EstadoContratacionBase <|-- EstadoAceptada
+EstadoContratacionBase <|-- EstadoConfirmada
+EstadoContratacionBase <|-- EstadoEnCurso
+EstadoContratacionBase <|-- EstadoCompletada
+EstadoContratacionBase <|-- EstadoRechazada
+EstadoContratacionBase <|-- EstadoCanceladaContratacion
+EstadoPublicacionBase <|-- EstadoBorrador
+EstadoPublicacionBase <|-- EstadoPublicada
+EstadoPublicacionBase <|-- EstadoPausada
+EstadoPublicacionBase <|-- EstadoCerrada
+EstadoPublicacionBase <|-- EstadoCanceladaPublicacion
+PoliticaPorUmbrales <|-- PoliticaFlexible
+PoliticaPorUmbrales <|-- PoliticaEstricta
+PromocionDecorator <|-- PromocionPorcentaje
+PromocionDecorator <|-- PromocionMontoFijo
+
+' --- realizacion ---
+EstadoContratacion <|.. EstadoContratacionBase
+EstadoPublicacion <|.. EstadoPublicacionBase
+PoliticaCancelacion <|.. PoliticaPorUmbrales
+PrecioPublicacion <|.. PrecioBase
+PrecioPublicacion <|.. PromocionDecorator
+Contratacion ..|> ContratacionSubject
+NotificadorObserver ..|> ContratacionObserver
+EstrategiaRecomendacion <|.. RecomendacionPorAfinidad
+EstrategiaRecomendacion <|.. RecomendacionPorPopularidad
+PerfilPublicoUseCase <|.. PerfilPublicoFacade
+IdentidadPort <|.. IdentidadMockAdapter
+CanalNotificacionPort <|.. EmailCanalAdapter
+CanalNotificacionPort <|.. PushCanalAdapter
+TransaccionPort <|.. JpaTransaccionAdapter
+CanalNotificacionFactory <|.. CanalNotificacionFactoryImpl
+UiControllers <|.. UiControllersAdapter
+
+' --- composicion ---
+Contratacion "1" *-- "1" EstadoContratacion : +se encuentra en
+Publicacion "1" *-- "1" EstadoPublicacion : +se encuentra en
+Contratacion "1" *-- "0..*" ContratacionEvent : +acumula
+
+' --- agregacion ---
+Contratacion "0..*" o-- "0..*" ContratacionObserver : +notifica a
+ContratacionService "1" o-- "0..*" ContratacionObserver : +suscribe
+PrecioPublicacion "1" --o "0..1" PromocionDecorator : +envuelve
+
+' --- asociacion ---
+PerfilPublicoFacade "1" --> "1" PerfilUseCase : +usa
+PerfilPublicoFacade "1" --> "1" CalificacionUseCase : +usa
+PerfilPublicoFacade "1" --> "1" PublicacionUseCase : +usa
+NotificadorObserver "1" -right-> "1" CanalNotificacionFactory : +usa
+ContratacionService "1" --> "1" PoliticaCancelacionFactory : +usa
+PerfilController "1" --> "1" PerfilPublicoUseCase : +usa
+SkillSwapView "1" --> "1" UiControllers : +usa
+UiControllersAdapter "1" --> "1" PerfilController : +adapta
+
+' --- dependencia ---
+EstadoContratacionFactory ..> EstadoContratacion : +crea
+EstadoPublicacionFactory ..> EstadoPublicacion : +crea
+PoliticaCancelacionFactory ..> PoliticaCancelacion : +crea
+PrecioPublicacionFactory ..> PrecioPublicacion : +crea
+EstrategiaRecomendacionFactory ..> EstrategiaRecomendacion : +crea
+CanalNotificacionFactory .right.> CanalNotificacionPort : +crea
+Contratacion ..> EstadoContratacionFactory
+Publicacion ..> EstadoPublicacionFactory
+Contratacion ..> PoliticaCancelacion
+ContratacionService .....> Contratacion
+RecomendacionService ..> EstrategiaRecomendacionFactory
+RecomendacionService ..> EstrategiaRecomendacion
+ContratacionSubject ..> ContratacionEvent
+ContratacionObserver ..> ContratacionEvent
+
+' --- ordenamiento (no son relaciones) ---
+EstadoEnCurso -[hidden]down- EstadoPublicacion
+IdentidadPort -[hidden]down- EmailCanalAdapter
+IdentidadPort -[hidden]down- CanalNotificacionFactoryImpl
+
+@enduml
