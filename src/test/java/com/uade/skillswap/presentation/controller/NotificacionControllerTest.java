@@ -61,6 +61,24 @@ class NotificacionControllerTest extends ControllerJpaTestBase {
         assertEquals(1, segundaDeUna.contenido().size());
     }
 
+    @Test
+    @DisplayName("una cancelacion con el motivo mas largo admitido igual notifica: el mensaje se recorta a su columna")
+    void cancelacionConMotivoLargoNotifica() {
+        profesional("u-ana", "Ana");
+        profesional("u-bruno", "Bruno");
+        PublicacionDto mentoria = publicarMentoria("u-ana", 40, 1, 1);
+        Long contratacion = contratarYPagar("u-ana", "u-bruno", mentoria, 0).id();
+        como("u-bruno");
+
+        ok(app.getContratacionController().cancelar(contratacion, texto(ValidadorEntrada.LARGO_MOTIVO)));
+
+        como("u-ana");
+        NotificacionDto ultima = ok(notificaciones().listar(true, primeraPagina())).contenido().get(0);
+        assertEquals(TipoEventoContratacion.CANCELACION, ultima.tipoEvento());
+        assertTrue(ultima.mensaje().startsWith("Se cancelo la contratacion #" + contratacion));
+        assertTrue(ultima.mensaje().length() <= 1000);
+    }
+
     // ---------- validacion de entrada ----------
 
     @Test

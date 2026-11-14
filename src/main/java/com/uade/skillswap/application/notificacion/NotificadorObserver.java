@@ -28,6 +28,10 @@ public class NotificadorObserver implements ContratacionObserver {
 
     private static final Logger LOG = Logger.getLogger(NotificadorObserver.class.getName());
 
+    // Largo de notificacion.mensaje (VARCHAR(1000)). El detalle (un motivo) puede tener hasta 1000 caracteres y el
+    // mensaje le suma un prefijo: sin recortarlo, la notificacion no se podria guardar.
+    private static final int LARGO_MAXIMO_MENSAJE = 1000;
+
     private final NotificacionRepository notificacionRepository;
     private final PerfilRepository perfilRepository;
     private final CanalNotificacionFactory canales;
@@ -51,7 +55,7 @@ public class NotificadorObserver implements ContratacionObserver {
             LOG.warning("Se omite la notificacion " + evento.getTipo() + ": no existe el perfil " + destinatarioId);
             return;
         }
-        String mensaje = mensajeDe(evento);
+        String mensaje = recortar(mensajeDe(evento));
         LocalDateTime ahora = reloj.ahora();
 
         List<Notificacion> registradas = transaccion.ejecutar(() -> {
@@ -111,5 +115,12 @@ public class NotificadorObserver implements ContratacionObserver {
             case CANCELACION -> "Se cancelo la " + ref + detalle;
             case SESION_COMPLETADA -> "Se completo la sesion de la " + ref;
         };
+    }
+
+    private static String recortar(String mensaje) {
+        if (mensaje.length() <= LARGO_MAXIMO_MENSAJE) {
+            return mensaje;
+        }
+        return mensaje.substring(0, LARGO_MAXIMO_MENSAJE - 3) + "...";
     }
 }
