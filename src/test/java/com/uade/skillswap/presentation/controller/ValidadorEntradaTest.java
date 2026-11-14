@@ -124,6 +124,10 @@ class ValidadorEntradaTest {
         assertDoesNotThrow(() -> ValidadorEntrada.exigirMaximo(null, 100, "el porcentaje"));
         assertDoesNotThrow(() -> ValidadorEntrada.exigirMaximo(BigDecimal.valueOf(100), 100, "el porcentaje"));
         rechaza(() -> ValidadorEntrada.exigirMaximo(new BigDecimal("100.5"), 100, "el porcentaje"));
+        assertDoesNotThrow(() -> ValidadorEntrada.exigirMaximo(BigDecimal.valueOf(ValidadorEntrada.MONTO_MAXIMO),
+                ValidadorEntrada.MONTO_MAXIMO, "el precio"));
+        rechaza(() -> ValidadorEntrada.exigirMaximo(new BigDecimal("1e400"), ValidadorEntrada.MONTO_MAXIMO,
+                "el precio"));
     }
 
     @Test

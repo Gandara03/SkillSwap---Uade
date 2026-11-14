@@ -12,11 +12,13 @@ import com.uade.skillswap.application.port.out.PerfilRepository;
 import com.uade.skillswap.application.port.out.PublicacionRepository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -55,6 +57,11 @@ public class InMemoryPublicacionRepository implements PublicacionRepository {
     @Override
     public Optional<Publicacion> buscarPorId(Long id) {
         return Optional.ofNullable(publicaciones.get(id));
+    }
+
+    @Override
+    public List<Publicacion> buscarPorIds(Collection<Long> ids) {
+        return ids.stream().distinct().map(publicaciones::get).filter(Objects::nonNull).toList();
     }
 
     @Override

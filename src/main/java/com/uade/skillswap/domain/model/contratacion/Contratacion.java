@@ -124,6 +124,16 @@ public class Contratacion implements ContratacionSubject {
         registrarEvento(TipoEventoContratacion.SOLICITUD_RECHAZADA, actorId, motivo, ahora);
     }
 
+    /**
+     * Comprueba, sin cambiar nada, que el estado actual admite pagar. Permite validar la transicion antes que el
+     * saldo: pagar dos veces es una transicion invalida aunque ya no alcance el saldo para otro pago.
+     */
+    public void exigirPagoPermitido() {
+        if (!estadoActual.accionesPermitidas().contains(AccionContratacion.PAGAR)) {
+            throw new TransicionInvalidaException("contratacion", estado, "pagar");
+        }
+    }
+
     public void pagar(Long actorId, LocalDateTime ahora) {
         exigirParte(AccionContratacion.PAGAR.getParte(), actorId);
         estadoActual.pagar(this, new ContextoTransicion(actorId, "Pago confirmado con SkillCoins", ahora));
@@ -134,6 +144,7 @@ public class Contratacion implements ContratacionSubject {
     public void iniciar(Long actorId, LocalDateTime ahora) {
         exigirParte(AccionContratacion.INICIAR.getParte(), actorId);
         estadoActual.iniciar(this, new ContextoTransicion(actorId, "Sesion iniciada", ahora));
+        this.propuestaReprogramacion = null;
     }
 
     public void completar(Long actorId, LocalDateTime ahora) {
@@ -238,11 +249,14 @@ public class Contratacion implements ContratacionSubject {
     /**
      * Acciones que ese actor puede pedir ahora: las que admite el estado actual (State) y le corresponden por su
      * parte. Un tercero no tiene ninguna. Vienen en el orden en que se declaran en AccionContratacion.
+     * La calificacion es otro agregado: si ese actor ya califico ({@code yaCalifico}), CALIFICAR no se ofrece.
      */
-    public List<AccionContratacion> accionesDisponiblesPara(Long actorId) {
+    public List<AccionContratacion> accionesDisponiblesPara(Long actorId, boolean yaCalifico) {
         List<AccionContratacion> disponibles = new ArrayList<>();
         for (AccionContratacion accion : AccionContratacion.values()) {
-            if (estadoActual.accionesPermitidas().contains(accion) && esParte(accion.getParte(), actorId)) {
+            boolean yaHecha = yaCalifico && accion == AccionContratacion.CALIFICAR;
+            if (estadoActual.accionesPermitidas().contains(accion) && esParte(accion.getParte(), actorId)
+                    && !yaHecha) {
                 disponibles.add(accion);
             }
         }
@@ -322,8 +336,9 @@ public class Contratacion implements ContratacionSubject {
 
     // ---------- consultas ----------
 
+    /** COMPLETADA es el estado que admite calificar (y pedir el comprobante): lo responde el State. */
     public boolean estaCompletada() {
-        return "COMPLETADA".equals(estado);
+        return estadoActual.accionesPermitidas().contains(AccionContratacion.CALIFICAR);
     }
 
     public boolean estaPagada() {

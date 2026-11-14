@@ -96,14 +96,16 @@ public final class Mapeador {
     /**
      * @param publicacion de donde salen el titulo y el inicio de la franja; puede ser null si ya no esta disponible.
      * @param actorId quien consulta: define las acciones que se informan.
+     * @param yaCalifico si ese actor ya califico la contratacion: entonces no se le ofrece CALIFICAR.
      */
-    public static ContratacionDto contratacion(Contratacion c, Publicacion publicacion, Long actorId) {
+    public static ContratacionDto contratacion(Contratacion c, Publicacion publicacion, Long actorId,
+                                               boolean yaCalifico) {
         String titulo = publicacion == null ? null : publicacion.getTitulo();
         LocalDateTime franjaInicio = publicacion == null ? null
                 : publicacion.buscarFranja(c.getFranjaId()).map(Franja::getInicio).orElse(null);
         return new ContratacionDto(c.getId(), c.getPublicacionId(), titulo, c.getClienteId(), c.getProveedorId(),
                 c.getFranjaId(), franjaInicio, c.getMensaje(), c.getObjetivo(), monto(c.getPrecioFinal()),
-                c.getEstado(), c.accionesDisponiblesPara(actorId), propuesta(c.getPropuestaReprogramacion()),
+                c.getEstado(), c.accionesDisponiblesPara(actorId, yaCalifico), propuesta(c.getPropuestaReprogramacion()),
                 historial(c.getHistorial()), c.getCreadaEn(), c.getPagadaEn(), c.getCompletadaEn());
     }
 

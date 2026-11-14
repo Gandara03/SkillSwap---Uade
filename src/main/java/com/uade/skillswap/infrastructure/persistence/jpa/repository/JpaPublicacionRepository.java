@@ -15,6 +15,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -61,6 +62,14 @@ public class JpaPublicacionRepository extends SimpleJpaRepository
             return Optional.empty();
         }
         return leer(em -> Optional.ofNullable(em.find(PublicacionJpaEntity.class, id)).map(PublicacionMapper::aDominio));
+    }
+
+    @Override
+    public List<Publicacion> buscarPorIds(Collection<Long> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return leer(em -> cargar(em, List.copyOf(ids)));
     }
 
     // ---------- busqueda ----------
@@ -125,7 +134,9 @@ public class JpaPublicacionRepository extends SimpleJpaRepository
         precargar(em, PublicacionJpaEntity.class, ids, "franjas", "etiquetas", "habilidades", "historial");
         List<Publicacion> resultado = new ArrayList<>(entidades.size());
         for (PublicacionJpaEntity e : entidades) {
-            resultado.add(PublicacionMapper.aDominio(e));
+            if (e != null) { // buscarPorIds puede pedir un id que no existe
+                resultado.add(PublicacionMapper.aDominio(e));
+            }
         }
         return resultado;
     }

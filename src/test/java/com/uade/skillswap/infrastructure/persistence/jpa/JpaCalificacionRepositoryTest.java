@@ -1,5 +1,6 @@
 package com.uade.skillswap.infrastructure.persistence.jpa;
 
+import com.uade.skillswap.application.exception.ConflictoConcurrenciaException;
 import com.uade.skillswap.domain.model.calificacion.Calificacion;
 import com.uade.skillswap.domain.model.contratacion.Contratacion;
 import com.uade.skillswap.domain.model.perfil.Perfil;
@@ -7,12 +8,12 @@ import com.uade.skillswap.domain.model.publicacion.Publicacion;
 import com.uade.skillswap.domain.model.vo.Puntaje;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
-import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -70,11 +71,22 @@ class JpaCalificacionRepositoryTest extends JpaTestBase {
     }
 
     @Test
-    @DisplayName("restriccion unica (contratacion, autor): no se puede calificar dos veces la misma contratacion")
+    @DisplayName("calificadasPor devuelve, de las contrataciones pedidas, las que ese autor ya califico")
+    void calificadasPor() {
+        calificaciones.guardar(calificar(completada, cliente, 4, null, 10));
+
+        assertEquals(Set.of(completada.getId()),
+                calificaciones.calificadasPor(cliente.getId(), List.of(completada.getId(), 9999L)));
+        assertEquals(Set.of(), calificaciones.calificadasPor(proveedor.getId(), List.of(completada.getId())));
+        assertEquals(Set.of(), calificaciones.calificadasPor(cliente.getId(), List.of()));
+    }
+
+    @Test
+    @DisplayName("restriccion unica (contratacion, autor): la segunda calificacion es un conflicto, no un error interno")
     void unicaPorContratacionYAutor() {
         calificaciones.guardar(calificar(completada, cliente, 5, "Muy bueno", 10));
 
-        assertThrows(PersistenceException.class,
+        assertThrows(ConflictoConcurrenciaException.class,
                 () -> calificaciones.guardar(calificar(completada, cliente, 1, "Cambie de opinion", 11)));
         assertEquals(1, calificaciones.buscarPorDestinatario(proveedor.getId()).size());
     }

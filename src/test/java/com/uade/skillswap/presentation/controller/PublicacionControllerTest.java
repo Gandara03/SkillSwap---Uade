@@ -87,6 +87,25 @@ class PublicacionControllerTest extends ControllerJpaTestBase {
     }
 
     @Test
+    @DisplayName("misPublicaciones sin N+1: las sentencias SQL no crecen con la cantidad de publicaciones")
+    void misPublicacionesSinNMasUno() {
+        profesional("u-ana", "Ana");
+        for (int i = 0; i < 2; i++) {
+            publicarMentoria("u-ana", 50, 1, 1);
+        }
+        como("u-ana");
+        long conDos = sentenciasSql(() -> ok(publicaciones().misPublicaciones(primeraPagina())));
+
+        for (int i = 0; i < 4; i++) {
+            publicarMentoria("u-ana", 50, 1, 1);
+        }
+        como("u-ana");
+        long conSeis = sentenciasSql(() -> ok(publicaciones().misPublicaciones(primeraPagina())));
+
+        assertEquals(conDos, conSeis, "con 2 publicaciones: " + conDos + " sentencias; con 6: " + conSeis);
+    }
+
+    @Test
     @DisplayName("cambiarEstado recorre PUBLICAR, PAUSAR, REANUDAR y CERRAR y deja cada paso en el historial")
     void cambiarEstadoRecorreLasAcciones() {
         profesional("u-ana", "Ana");
@@ -214,6 +233,29 @@ class PublicacionControllerTest extends ControllerJpaTestBase {
 
         assertEquals(0, new BigDecimal("50").compareTo(publicacionVista("u-ana", publicada.id()).precioFinal()),
                 "ninguna promocion se guardo");
+    }
+
+    @Test
+    @DisplayName("un precio o una promocion de monto fijo por encima de MONTO_MAXIMO es VALIDACION y no guarda nada")
+    void montoPorEncimaDelTope() {
+        profesional("u-ana", "Ana");
+        PublicacionDto publicada = publicarMentoria("u-ana", 50, 2, 1);
+        Long borrador = borradorDeAna().id();
+        BigDecimal tope = BigDecimal.valueOf(ValidadorEntrada.MONTO_MAXIMO);
+        BigDecimal enorme = new BigDecimal("1e18");
+
+        falla(VALIDACION, publicaciones().crearBorrador(conNumeros(60, 1, enorme)));
+        falla(VALIDACION, publicaciones().crearBorrador(conNumeros(60, 1, tope.add(new BigDecimal("0.01")))));
+        falla(VALIDACION, publicaciones().editar(borrador, new EditarPublicacionCommand("Java", "Descripcion",
+                "programacion", Modalidad.REMOTA, 60, 1, enorme, Set.of(), Set.of(), TipoPoliticaCancelacion.FLEXIBLE)));
+        falla(VALIDACION, publicaciones().agregarPromocion(new CrearPromocionCommand(publicada.id(), "Enorme",
+                TipoPromocion.MONTO_FIJO, new BigDecimal("99999999999999999.99"), null, null)));
+
+        assertEquals(2L, ok(publicaciones().misPublicaciones(primeraPagina())).totalElementos());
+        assertEquals(0, new BigDecimal("50").compareTo(publicacionVista("u-ana", borrador).precioBase()));
+        assertEquals(0, new BigDecimal("50").compareTo(publicacionVista("u-ana", publicada.id()).precioFinal()));
+        assertEquals(0, tope.compareTo(ok(publicaciones().crearBorrador(conNumeros(60, 1, tope))).precioBase()),
+                "el tope justo es un precio valido");
     }
 
     // ---------- permisos ----------

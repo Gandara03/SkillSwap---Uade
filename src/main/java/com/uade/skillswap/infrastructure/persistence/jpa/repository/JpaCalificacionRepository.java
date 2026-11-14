@@ -9,9 +9,12 @@ import com.uade.skillswap.infrastructure.persistence.jpa.entity.CalificacionJpaE
 import com.uade.skillswap.infrastructure.persistence.jpa.mapper.CalificacionMapper;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Las calificaciones son inmutables: guardar siempre inserta. El unico (contratacion, autor) lo impone la base. */
 public class JpaCalificacionRepository extends SimpleJpaRepository
@@ -45,6 +48,20 @@ public class JpaCalificacionRepository extends SimpleJpaRepository
             parametros.put("autorId", autorId);
             return contar(em, "select count(c) from CalificacionJpaEntity c "
                     + "where c.contratacionId = :contratacionId and c.autorId = :autorId", parametros) > 0;
+        });
+    }
+
+    @Override
+    public Set<Long> calificadasPor(Long autorId, Collection<Long> contratacionIds) {
+        if (contratacionIds.isEmpty()) {
+            return Set.of();
+        }
+        return leer(em -> {
+            Map<String, Object> parametros = new HashMap<>();
+            parametros.put("autorId", autorId);
+            parametros.put("contratacionIds", contratacionIds);
+            return new HashSet<>(listar(em, "select c.contratacionId from CalificacionJpaEntity c "
+                    + "where c.autorId = :autorId and c.contratacionId in :contratacionIds", Long.class, parametros));
         });
     }
 

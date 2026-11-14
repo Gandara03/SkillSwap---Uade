@@ -107,6 +107,21 @@ class JpaPublicacionRepositoryTest extends JpaTestBase {
     }
 
     @Test
+    @DisplayName("buscarPorIds trae varias publicaciones completas con una carga; ignora ids repetidos o inexistentes")
+    void buscarPorIds() {
+        Publicacion una = publicacion(ana).franjasEn(AHORA.plusDays(1), AHORA.plusDays(2)).guardar();
+        Publicacion otra = publicacion(ana).guardar();
+
+        List<Publicacion> leidas = publicaciones.buscarPorIds(List.of(otra.getId(), una.getId(), una.getId(), 9999L));
+
+        assertEquals(Set.of(una.getId(), otra.getId()),
+                Set.copyOf(leidas.stream().map(Publicacion::getId).toList()));
+        assertEquals(2, leidas.stream().filter(p -> p.getId().equals(una.getId())).findFirst().orElseThrow()
+                .getFranjas().size());
+        assertTrue(publicaciones.buscarPorIds(List.of()).isEmpty());
+    }
+
+    @Test
     @DisplayName("agregar una franja a una publicacion ya guardada inserta solo la nueva")
     void agregarFranjaDespues() {
         Publicacion guardada = publicacion(ana).borrador().franjasEn(AHORA.plusDays(1)).guardar();

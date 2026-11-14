@@ -148,11 +148,11 @@ class JpaWalletRepositoryTest extends JpaTestBase {
     }
 
     @Test
-    @DisplayName("hay una sola wallet por perfil (restriccion unica)")
+    @DisplayName("hay una sola wallet por perfil (restriccion unica): la segunda es un conflicto")
     void unaWalletPorPerfil() {
         abrir(ana, 100);
 
-        assertThrows(PersistenceException.class, () -> abrir(ana, 50));
+        assertThrows(ConflictoConcurrenciaException.class, () -> abrir(ana, 50));
         assertEquals(1, contarFilas(ctx, WalletJpaEntity.class));
     }
 

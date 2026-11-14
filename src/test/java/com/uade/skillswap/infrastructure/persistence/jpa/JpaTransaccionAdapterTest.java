@@ -10,10 +10,12 @@ import com.uade.skillswap.infrastructure.persistence.ErroresJpa;
 import com.uade.skillswap.infrastructure.persistence.jpa.entity.PerfilJpaEntity;
 import com.uade.skillswap.infrastructure.persistence.jpa.entity.WalletJpaEntity;
 import jakarta.persistence.OptimisticLockException;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.RollbackException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -162,5 +164,23 @@ class JpaTransaccionAdapterTest extends JpaTestBase {
         RollbackException sinLock = new RollbackException("por otra causa", new IllegalArgumentException("x"));
         assertSame(sinLock, ErroresJpa.traducir(sinLock));
         assertFalse(ErroresJpa.esConflicto(new RuntimeException()));
+    }
+
+    @Test
+    @DisplayName("ErroresJpa traduce una clave duplicada (H2: SQLState 23505; MySQL: codigo 1062) y deja pasar las demas restricciones")
+    void traduccionDeClaveDuplicada() {
+        PersistenceException duplicadaH2 = new PersistenceException("insert",
+                new SQLIntegrityConstraintViolationException("Unique index or primary key violation", "23505", 23505));
+        PersistenceException duplicadaMySql = new PersistenceException("insert",
+                new SQLIntegrityConstraintViolationException("Duplicate entry", "23000", 1062));
+        assertTrue(ErroresJpa.traducir(duplicadaH2) instanceof ConflictoConcurrenciaException);
+        assertTrue(ErroresJpa.traducir(duplicadaMySql) instanceof ConflictoConcurrenciaException);
+
+        PersistenceException foraneaH2 = new PersistenceException("insert",
+                new SQLIntegrityConstraintViolationException("Referential integrity constraint violation", "23506", 23506));
+        PersistenceException foraneaMySql = new PersistenceException("insert",
+                new SQLIntegrityConstraintViolationException("Cannot add or update a child row", "23000", 1452));
+        assertSame(foraneaH2, ErroresJpa.traducir(foraneaH2));
+        assertSame(foraneaMySql, ErroresJpa.traducir(foraneaMySql));
     }
 }

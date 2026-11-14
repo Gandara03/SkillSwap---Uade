@@ -131,8 +131,9 @@ public class PublicacionService implements PublicacionUseCase {
     public Pagina<PublicacionResumenDto> listarPropias(Long actorId, PaginaRequest pagina) {
         Entradas.exigirPagina(pagina);
         Perfil autor = Cargas.perfil(perfilRepository, actorId);
-        return publicacionRepository.buscarPorAutor(actorId, pagina)
-                .mapear(p -> Mapeador.resumen(p, autor, precios.para(p)));
+        Pagina<Publicacion> propias = publicacionRepository.buscarPorAutor(actorId, pagina);
+        return new Pagina<>(armador.resumir(propias.contenido(), Map.of(autor.getId(), autor)), propias.pagina(),
+                propias.tamano(), propias.totalElementos());
     }
 
     @Override

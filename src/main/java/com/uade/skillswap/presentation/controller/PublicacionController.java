@@ -166,6 +166,7 @@ public class PublicacionController {
         ValidadorEntrada.exigirNoNegativo(duracionMinutos, "la duracion");
         ValidadorEntrada.exigirNoNegativo(cupo, "el cupo");
         ValidadorEntrada.exigirNoNegativo(precioBase, "el precio base");
+        ValidadorEntrada.exigirMaximo(precioBase, ValidadorEntrada.MONTO_MAXIMO, "el precio base");
     }
 
     private static void validarFranja(LocalDateTime inicio, LocalDateTime fin) {
@@ -181,6 +182,7 @@ public class PublicacionController {
                 "la descripcion de la promocion");
         ValidadorEntrada.exigir(c.tipo(), "el tipo de promocion");
         ValidadorEntrada.exigirPositivo(c.valor(), "el valor de la promocion");
+        ValidadorEntrada.exigirMaximo(c.valor(), ValidadorEntrada.MONTO_MAXIMO, "el valor de la promocion");
         if (c.tipo() == TipoPromocion.PORCENTAJE) {
             ValidadorEntrada.exigirMaximo(c.valor(), ValidadorEntrada.PORCENTAJE_MAXIMO, "el porcentaje");
         }

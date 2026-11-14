@@ -98,6 +98,14 @@ class AccionesContratacionTest {
     }
 
     @Test
+    @DisplayName("COMPLETADA: quien ya califico no vuelve a tener CALIFICAR; la otra parte si")
+    void completadaYaCalificada() {
+        Contratacion c = Datos.completada();
+        assertEquals(List.of(), c.accionesDisponiblesPara(CLIENTE, true));
+        assertEquals(List.of(CALIFICAR), c.accionesDisponiblesPara(PROVEEDOR, false));
+    }
+
+    @Test
     @DisplayName("RECHAZADA y CANCELADA no tienen acciones para nadie")
     void terminalesSinAcciones() {
         assertAcciones(enEstado("RECHAZADA"), List.of(), List.of());
@@ -124,12 +132,12 @@ class AccionesContratacionTest {
 
     // ---------- soporte ----------
 
-    /** Revisa las acciones de proveedor y cliente; un tercero nunca tiene ninguna. */
+    /** Revisa las acciones de proveedor y cliente (ninguno califico todavia); un tercero nunca tiene ninguna. */
     private static void assertAcciones(Contratacion c, List<AccionContratacion> proveedor,
                                        List<AccionContratacion> cliente) {
-        assertEquals(proveedor, c.accionesDisponiblesPara(PROVEEDOR), "proveedor en " + c.getEstado());
-        assertEquals(cliente, c.accionesDisponiblesPara(CLIENTE), "cliente en " + c.getEstado());
-        assertEquals(List.of(), c.accionesDisponiblesPara(OTRO), "tercero en " + c.getEstado());
+        assertEquals(proveedor, c.accionesDisponiblesPara(PROVEEDOR, false), "proveedor en " + c.getEstado());
+        assertEquals(cliente, c.accionesDisponiblesPara(CLIENTE, false), "cliente en " + c.getEstado());
+        assertEquals(List.of(), c.accionesDisponiblesPara(OTRO, false), "tercero en " + c.getEstado());
     }
 
     private static Contratacion enEstado(String estado) {

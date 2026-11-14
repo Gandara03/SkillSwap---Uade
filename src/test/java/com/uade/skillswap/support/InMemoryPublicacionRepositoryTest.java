@@ -93,6 +93,15 @@ class InMemoryPublicacionRepositoryTest {
     }
 
     @Test
+    @DisplayName("buscarPorIds devuelve las que existen, sin repetir")
+    void buscarPorIds() {
+        Publicacion a = simple(ana, "A", 10);
+        Publicacion b = simple(ana, "B", 10);
+        assertEquals(List.of(b, a), repo.buscarPorIds(List.of(b.getId(), a.getId(), a.getId(), 999L)));
+        assertTrue(repo.buscarPorIds(List.of()).isEmpty());
+    }
+
+    @Test
     @DisplayName("solo devuelve publicaciones PUBLICADAS")
     void soloPublicadas() {
         simple(ana, "Publicada", 10);

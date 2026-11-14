@@ -4,9 +4,11 @@ import com.uade.skillswap.domain.exception.CupoAgotadoException;
 import com.uade.skillswap.domain.exception.FranjaNoDisponibleException;
 import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
 import com.uade.skillswap.domain.exception.TransicionInvalidaException;
+import com.uade.skillswap.domain.model.historial.ContextoTransicion;
 import com.uade.skillswap.domain.model.historial.HistorialEstado;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
+import com.uade.skillswap.domain.model.publicacion.estado.EstadoPublicacionBase;
 import com.uade.skillswap.domain.model.vo.Habilidad;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.support.Datos;
@@ -424,6 +426,27 @@ class PublicacionTest {
         assertTrue(publicada.esVisiblePara(PROVEEDOR));
         assertTrue(publicada.esAutor(PROVEEDOR));
         assertFalse(publicada.esAutor(CLIENTE));
+    }
+
+    /** Estado que no existe en el sistema: visible para todos, pero no se llama PUBLICADA. */
+    private static final class EstadoDestacadaDePrueba extends EstadoPublicacionBase {
+        @Override
+        public String getNombre() {
+            return "DESTACADA";
+        }
+
+        @Override
+        public boolean esVisiblePublicamente() {
+            return true;
+        }
+    }
+
+    @Test
+    @DisplayName("estaPublicada depende de lo que responde el State, no del nombre del estado")
+    void publicadaSeLePreguntaAlEstado() {
+        Publicacion p = Datos.borradorCompleto(PROVEEDOR, 1);
+        p.cambiarEstado(new EstadoDestacadaDePrueba(), new ContextoTransicion(PROVEEDOR, "Destacada", AHORA));
+        assertTrue(p.estaPublicada());
     }
 
     // ---------- validarSolicitud ----------

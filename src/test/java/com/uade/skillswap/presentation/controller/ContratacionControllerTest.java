@@ -6,6 +6,7 @@ import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.HistorialDto;
 import com.uade.skillswap.application.dto.PublicacionDto;
 import com.uade.skillswap.application.dto.ResultadoCancelacionDto;
+import com.uade.skillswap.domain.model.contratacion.AccionContratacion;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,7 @@ import static com.uade.skillswap.application.exception.ErrorCode.REGLA_DE_NEGOCI
 import static com.uade.skillswap.application.exception.ErrorCode.TRANSICION_INVALIDA;
 import static com.uade.skillswap.application.exception.ErrorCode.VALIDACION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -70,6 +72,41 @@ class ContratacionControllerTest extends ControllerJpaTestBase {
         assertEquals(completada.id(), comprobante.contratacionId());
         assertEquals(0, sc(40).compareTo(comprobante.monto()));
         assertEquals(1L, ok(contrataciones().misContrataciones(primeraPagina())).totalElementos());
+    }
+
+    @Test
+    @DisplayName("misContrataciones sin N+1: las sentencias SQL no crecen con la cantidad de publicaciones")
+    void misContratacionesSinNMasUno() {
+        profesional("u-ana", "Ana");
+        profesional("u-bruno", "Bruno");
+        for (int i = 0; i < 2; i++) {
+            solicitar("u-bruno", publicarMentoria("u-ana", 40, 1, 1), 0);
+        }
+        como("u-bruno");
+        long conDos = sentenciasSql(() -> ok(contrataciones().misContrataciones(primeraPagina())));
+
+        for (int i = 0; i < 4; i++) {
+            solicitar("u-bruno", publicarMentoria("u-ana", 40, 1, 1), 0);
+        }
+        como("u-bruno");
+        long conSeis = sentenciasSql(() -> ok(contrataciones().misContrataciones(primeraPagina())));
+
+        assertEquals(conDos, conSeis, "con 2 publicaciones: " + conDos + " sentencias; con 6: " + conSeis);
+    }
+
+    @Test
+    @DisplayName("despues de calificar, CALIFICAR ya no se ofrece a quien califico; a la otra parte si")
+    void calificarNoSeOfreceDosVeces() {
+        escenario();
+        Long id = contratarYCompletar("u-ana", "u-bruno", mentoria, 0).id();
+        assertTrue(contratacionVista("u-bruno", id).acciones().contains(AccionContratacion.CALIFICAR));
+
+        ok(app.getCalificacionController().calificar(calificacion(id, 5)));
+
+        assertFalse(contratacionVista("u-bruno", id).acciones().contains(AccionContratacion.CALIFICAR));
+        ContratacionDto enLaLista = ok(contrataciones().misContrataciones(primeraPagina())).contenido().get(0);
+        assertFalse(enLaLista.acciones().contains(AccionContratacion.CALIFICAR));
+        assertTrue(contratacionVista("u-ana", id).acciones().contains(AccionContratacion.CALIFICAR));
     }
 
     @Test
@@ -221,6 +258,20 @@ class ContratacionControllerTest extends ControllerJpaTestBase {
         falla(TRANSICION_INVALIDA, contrataciones().pagar(pagada.id()));
 
         assertEquals(0, sc(60).compareTo(saldo("u-bruno")));
+    }
+
+    @Test
+    @DisplayName("pagar dos veces es TRANSICION_INVALIDA aunque el saldo que queda ya no alcance para el precio")
+    void pagarDosVecesSinSaldoParaOtroPago() {
+        escenario();
+        PublicacionDto cara = publicarMentoria("u-ana", 60, 1, 1);
+        ContratacionDto pagada = contratarYPagar("u-ana", "u-bruno", cara, 0);
+        como("u-bruno");
+
+        falla(TRANSICION_INVALIDA, contrataciones().pagar(pagada.id()));
+
+        assertEquals(0, sc(40).compareTo(saldo("u-bruno")));
+        assertEquals("CONFIRMADA", contratacionVista("u-bruno", pagada.id()).estado());
     }
 
     @Test

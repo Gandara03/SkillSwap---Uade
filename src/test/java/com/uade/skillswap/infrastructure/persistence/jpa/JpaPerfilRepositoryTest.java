@@ -1,12 +1,12 @@
 package com.uade.skillswap.infrastructure.persistence.jpa;
 
+import com.uade.skillswap.application.exception.ConflictoConcurrenciaException;
 import com.uade.skillswap.domain.model.notificacion.CanalNotificacion;
 import com.uade.skillswap.domain.model.perfil.Perfil;
 import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.domain.model.vo.BloqueDisponibilidad;
 import com.uade.skillswap.domain.model.vo.Habilidad;
 import com.uade.skillswap.infrastructure.persistence.jpa.entity.PerfilJpaEntity;
-import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -128,11 +128,11 @@ class JpaPerfilRepositoryTest extends JpaTestBase {
     }
 
     @Test
-    @DisplayName("el userId es unico: un segundo perfil con el mismo userId viola la restriccion")
+    @DisplayName("el userId es unico: un segundo perfil con el mismo userId es un conflicto, no un error interno")
     void userIdUnico() {
         profesional("u-ana");
 
-        assertThrows(PersistenceException.class, () -> profesional("u-ana"));
+        assertThrows(ConflictoConcurrenciaException.class, () -> profesional("u-ana"));
         assertEquals(1, contarFilas(ctx, PerfilJpaEntity.class));
     }
 

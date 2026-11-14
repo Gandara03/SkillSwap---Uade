@@ -302,7 +302,7 @@ public class Publicacion {
     }
 
     public boolean estaPublicada() {
-        return "PUBLICADA".equals(estado);
+        return estadoActual.esVisiblePublicamente();
     }
 
     public boolean esAutor(Long perfilId) {

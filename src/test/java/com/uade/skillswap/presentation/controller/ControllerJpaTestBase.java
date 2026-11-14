@@ -3,6 +3,8 @@ package com.uade.skillswap.presentation.controller;
 import com.uade.skillswap.acceptance.jpa.AceptacionJpaBase;
 import com.uade.skillswap.application.exception.ErrorCode;
 import com.uade.skillswap.presentation.Resultado;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,5 +32,14 @@ abstract class ControllerJpaTestBase extends AceptacionJpaBase {
     /** Texto de exactamente esa cantidad de caracteres (para probar los largos maximos). */
     protected static String texto(int caracteres) {
         return "x".repeat(caracteres);
+    }
+
+    /** Sentencias SQL que ejecuta la operacion, segun las estadisticas de Hibernate (para detectar N+1). */
+    protected long sentenciasSql(Runnable operacion) {
+        Statistics estadisticas = ctx.emf().unwrap(SessionFactory.class).getStatistics();
+        estadisticas.setStatisticsEnabled(true);
+        long antes = estadisticas.getPrepareStatementCount();
+        operacion.run();
+        return estadisticas.getPrepareStatementCount() - antes;
     }
 }

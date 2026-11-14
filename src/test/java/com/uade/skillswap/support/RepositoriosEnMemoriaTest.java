@@ -90,6 +90,8 @@ class RepositoriosEnMemoriaTest {
         assertNotNull(cal.getId());
         assertTrue(repo.existe(c.getId(), Datos.CLIENTE));
         assertFalse(repo.existe(c.getId(), Datos.PROVEEDOR));
+        assertEquals(Set.of(c.getId()), repo.calificadasPor(Datos.CLIENTE, List.of(c.getId(), 9999L)));
+        assertEquals(Set.of(), repo.calificadasPor(Datos.PROVEEDOR, List.of(c.getId())));
         assertThrows(IllegalStateException.class, () -> repo.guardar(Datos.calificacion(c, Datos.CLIENTE, 5)));
         assertEquals(1, repo.buscarPorDestinatario(Datos.PROVEEDOR).size());
         assertEquals(1L, repo.paginarPorDestinatario(Datos.PROVEEDOR, PaginaRequest.de(0, 5)).totalElementos());

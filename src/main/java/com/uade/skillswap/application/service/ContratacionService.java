@@ -28,6 +28,7 @@ import com.uade.skillswap.domain.model.wallet.TipoMovimiento;
 import com.uade.skillswap.domain.model.wallet.Wallet;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
+import com.uade.skillswap.application.port.out.CalificacionRepository;
 import com.uade.skillswap.application.port.out.ContratacionRepository;
 import com.uade.skillswap.application.port.out.PerfilRepository;
 import com.uade.skillswap.application.port.out.PromocionRepository;
@@ -39,6 +40,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,6 +58,7 @@ public class ContratacionService implements ContratacionUseCase {
     private final PublicacionRepository publicacionRepository;
     private final PerfilRepository perfilRepository;
     private final WalletRepository walletRepository;
+    private final CalificacionRepository calificacionRepository;
     private final List<ContratacionObserver> observers;
     private final TransaccionPort transaccion;
     private final RelojPort reloj;
@@ -69,12 +72,14 @@ public class ContratacionService implements ContratacionUseCase {
     public ContratacionService(ContratacionRepository contratacionRepository,
                                PublicacionRepository publicacionRepository, PerfilRepository perfilRepository,
                                WalletRepository walletRepository, PromocionRepository promocionRepository,
+                               CalificacionRepository calificacionRepository,
                                List<ContratacionObserver> observers, TransaccionPort transaccion, RelojPort reloj,
                                PoliticaCancelacionFactory politicas) {
         this.contratacionRepository = contratacionRepository;
         this.publicacionRepository = publicacionRepository;
         this.perfilRepository = perfilRepository;
         this.walletRepository = walletRepository;
+        this.calificacionRepository = calificacionRepository;
         this.observers = List.copyOf(observers);
         this.transaccion = transaccion;
         this.reloj = reloj;
@@ -141,7 +146,8 @@ public class ContratacionService implements ContratacionUseCase {
             LocalDateTime ahora = reloj.ahora();
             // Escrow: se debita al cliente y el monto queda retenido en la contratacion (no hay wallet de plataforma).
             Wallet billetera = Cargas.wallet(walletRepository, contratacion.getClienteId());
-            // Se valida el saldo ANTES de mutar la contratacion: si no alcanza, no cambia nada.
+            // Se validan la transicion y el saldo ANTES de mutar la contratacion: si algo falla, no cambia nada.
+            contratacion.exigirPagoPermitido();
             billetera.exigirSaldoSuficiente(contratacion.getPrecioFinal());
             contratacion.pagar(actorId, ahora);
             if (!contratacion.getPrecioFinal().esCero()) {
@@ -200,7 +206,7 @@ public class ContratacionService implements ContratacionUseCase {
             acreditar(contratacion.getProveedorId(), reparto.getCompensacion(), TipoMovimiento.COBRO,
                     contratacion.getId(), ahora);
 
-            ContratacionDto dto = Mapeador.contratacion(guardada, publicacion, actorId);
+            ContratacionDto dto = dto(guardada, publicacion, actorId);
             return new Cambio<>(contratacion, new ResultadoCancelacionDto(dto, politica.getTipo().name(),
                     Mapeador.monto(reparto.getReintegro()), Mapeador.monto(reparto.getCompensacion())));
         });
@@ -244,7 +250,7 @@ public class ContratacionService implements ContratacionUseCase {
     @Override
     public ContratacionDto obtener(Long actorId, Long contratacionId) {
         Contratacion contratacion = cargarComoParticipante(actorId, contratacionId);
-        return Mapeador.contratacion(contratacion, publicacion(contratacion.getPublicacionId()), actorId);
+        return dto(contratacion, publicacion(contratacion.getPublicacionId()), actorId);
     }
 
     @Override
@@ -264,10 +270,17 @@ public class ContratacionService implements ContratacionUseCase {
     public Pagina<ContratacionDto> listarMias(Long actorId, PaginaRequest pagina) {
         Entradas.exigir(actorId, "El actor");
         Entradas.exigirPagina(pagina);
-        Map<Long, Publicacion> publicaciones = new HashMap<>(); // una lectura por publicacion distinta de la pagina
-        return contratacionRepository.buscarPorParticipante(actorId, pagina)
-                .mapear(c -> Mapeador.contratacion(c,
-                        publicaciones.computeIfAbsent(c.getPublicacionId(), this::publicacion), actorId));
+        Pagina<Contratacion> contrataciones = contratacionRepository.buscarPorParticipante(actorId, pagina);
+        Set<Long> calificadas = calificacionRepository.calificadasPor(actorId, contrataciones.contenido().stream()
+                .filter(Contratacion::estaCompletada).map(Contratacion::getId).toList());
+        // Todas las publicaciones de la pagina con una sola carga (sin N+1).
+        Map<Long, Publicacion> publicaciones = new HashMap<>();
+        for (Publicacion p : publicacionRepository.buscarPorIds(contrataciones.contenido().stream()
+                .map(Contratacion::getPublicacionId).distinct().toList())) {
+            publicaciones.put(p.getId(), p);
+        }
+        return contrataciones.mapear(c -> Mapeador.contratacion(c, publicaciones.get(c.getPublicacionId()), actorId,
+                calificadas.contains(c.getId())));
     }
 
     // ---------- soporte ----------
@@ -279,10 +292,19 @@ public class ContratacionService implements ContratacionUseCase {
         return cambio(original, guardada, publicacion(guardada.getPublicacionId()), actorId);
     }
 
-    /** El DTO se arma para quien hizo la operacion: sus acciones dependen de su parte en la contratacion. */
     private Cambio<ContratacionDto> cambio(Contratacion original, Contratacion guardada, Publicacion publicacion,
                                            Long actorId) {
-        return new Cambio<>(original, Mapeador.contratacion(guardada, publicacion, actorId));
+        return new Cambio<>(original, dto(guardada, publicacion, actorId));
+    }
+
+    /**
+     * El DTO se arma para quien consulta u opera: sus acciones dependen de su parte en la contratacion y, si ya
+     * esta completada, de si ya la califico (eso lo sabe el repositorio de calificaciones, no la contratacion).
+     */
+    private ContratacionDto dto(Contratacion contratacion, Publicacion publicacion, Long actorId) {
+        boolean yaCalifico = contratacion.estaCompletada()
+                && calificacionRepository.existe(contratacion.getId(), actorId);
+        return Mapeador.contratacion(contratacion, publicacion, actorId, yaCalifico);
     }
 
     /** Ejecuta el trabajo en una transaccion y, una vez confirmada, notifica los eventos acumulados. */

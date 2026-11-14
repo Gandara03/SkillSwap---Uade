@@ -2,6 +2,8 @@ package com.uade.skillswap.domain.model.contratacion;
 
 import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
 import com.uade.skillswap.domain.exception.TransicionInvalidaException;
+import com.uade.skillswap.domain.model.contratacion.estado.EstadoContratacionBase;
+import com.uade.skillswap.domain.model.historial.ContextoTransicion;
 import com.uade.skillswap.domain.model.historial.HistorialEstado;
 import com.uade.skillswap.domain.model.politica.PoliticaEstricta;
 import com.uade.skillswap.domain.model.politica.PoliticaFlexible;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static com.uade.skillswap.support.Datos.AHORA;
 import static com.uade.skillswap.support.Datos.CLIENTE;
@@ -377,6 +380,17 @@ class ContratacionTest {
     }
 
     @Test
+    @DisplayName("iniciar descarta la propuesta de reprogramacion pendiente: una sesion EN_CURSO ya no se reprograma")
+    void iniciarDescartaPropuesta() {
+        Contratacion c = Datos.confirmada();
+        c.proponerReprogramacion(CLIENTE, 2L, AHORA);
+        c.iniciar(PROVEEDOR, AHORA);
+        assertEquals("EN_CURSO", c.getEstado());
+        assertNull(c.getPropuestaReprogramacion());
+        assertEquals(1L, (long) c.getFranjaId(), "la reserva sigue en la franja original");
+    }
+
+    @Test
     @DisplayName("la reprogramacion deja constancia en el historial sin cambiar de estado")
     void reprogramacionEnHistorial() {
         Contratacion c = Datos.confirmada();
@@ -391,6 +405,42 @@ class ContratacionTest {
 
     private static TipoEventoContratacion ultimoEvento(Contratacion c) {
         return c.eventosPendientes().get(c.eventosPendientes().size() - 1).getTipo();
+    }
+
+    @Test
+    @DisplayName("exigirPagoPermitido acepta una ACEPTADA y rechaza una ya pagada, sin cambiar nada")
+    void exigirPagoPermitido() {
+        assertDoesNotThrow(() -> Datos.aceptada().exigirPagoPermitido());
+        Contratacion pagada = Datos.confirmada();
+        int historial = pagada.getHistorial().size();
+        assertThrows(TransicionInvalidaException.class, pagada::exigirPagoPermitido);
+        assertEquals("CONFIRMADA", pagada.getEstado());
+        assertEquals(historial, pagada.getHistorial().size());
+    }
+
+    // ---------- consultas al State ----------
+
+    /** Estado que no existe en el sistema: admite calificar, pero no se llama COMPLETADA. */
+    private static final class EstadoFinalizadaDePrueba extends EstadoContratacionBase {
+        @Override
+        public String getNombre() {
+            return "FINALIZADA";
+        }
+
+        @Override
+        public Set<AccionContratacion> accionesPermitidas() {
+            return Set.of(AccionContratacion.CALIFICAR);
+        }
+    }
+
+    @Test
+    @DisplayName("calificar y el comprobante dependen de lo que admite el State, no del nombre del estado")
+    void completadaSeLePreguntaAlEstado() {
+        Contratacion c = Datos.enCurso();
+        c.cambiarEstado(new EstadoFinalizadaDePrueba(), new ContextoTransicion(PROVEEDOR, "Fin", AHORA));
+        assertTrue(c.estaCompletada());
+        assertDoesNotThrow(c::consultarComprobante);
+        assertDoesNotThrow(() -> Datos.calificacion(c, CLIENTE, 5));
     }
 
     // ---------- participantes ----------

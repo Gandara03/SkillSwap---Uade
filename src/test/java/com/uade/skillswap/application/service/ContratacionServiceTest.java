@@ -95,7 +95,7 @@ class ContratacionServiceTest {
 
     private ContratacionService servicioCon(ContratacionObserver... observers) {
         return new ContratacionService(app.contrataciones, app.publicaciones, app.perfiles, app.wallets,
-                app.promociones, List.of(observers), app.transaccion, app.reloj, app.politicas);
+                app.promociones, app.calificaciones, List.of(observers), app.transaccion, app.reloj, app.politicas);
     }
 
     // ---------- solicitar ----------

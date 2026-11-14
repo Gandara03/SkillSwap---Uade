@@ -37,6 +37,10 @@ final class ValidadorEntrada {
     static final int PUNTAJE_MAXIMO = 5;
     static final int PORCENTAJE_MAXIMO = 100;
 
+    // Tope de los montos (precio y valor de una promocion): entra con margen en los DECIMAL(19,2) y DECIMAL(19,4)
+    // del esquema. Sin tope, un monto que no entra en la columna llega a la base y sale como error interno.
+    static final int MONTO_MAXIMO = 1_000_000_000;
+
     private ValidadorEntrada() { }
 
     // ---------- obligatorios ----------

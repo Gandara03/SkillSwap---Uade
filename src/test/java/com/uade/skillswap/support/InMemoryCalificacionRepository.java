@@ -6,8 +6,10 @@ import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.application.port.out.CalificacionRepository;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Fake de {@link CalificacionRepository}. Emula el unico (contratacion, autor) del esquema real. */
@@ -33,6 +35,14 @@ public class InMemoryCalificacionRepository implements CalificacionRepository {
     public boolean existe(Long contratacionId, Long autorId) {
         return calificaciones.stream()
                 .anyMatch(c -> c.getContratacionId().equals(contratacionId) && c.getAutorId().equals(autorId));
+    }
+
+    @Override
+    public Set<Long> calificadasPor(Long autorId, Collection<Long> contratacionIds) {
+        return calificaciones.stream()
+                .filter(c -> c.getAutorId().equals(autorId) && contratacionIds.contains(c.getContratacionId()))
+                .map(Calificacion::getContratacionId)
+                .collect(Collectors.toSet());
     }
 
     @Override
