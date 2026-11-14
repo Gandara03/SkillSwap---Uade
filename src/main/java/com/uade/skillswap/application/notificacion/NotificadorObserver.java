@@ -23,7 +23,8 @@ import java.util.logging.Logger;
  * Observer concreto de Contratacion. Ante cada evento notifica a cada destinatario por DOS tipos de notificacion:
  * siempre la INTERNA (bandeja) y, si su canal preferido es otro, tambien por ese canal (Adapter elegido con
  * la Simple Factory). La cancelacion va a las dos partes, cada una por su canal; los demas eventos, a una sola.
- * Cada destinatario se persiste en su propia transaccion; el envio externo ocurre despues de confirmarla.
+ * Cada destinatario se persiste en su propia transaccion, y un fallo con uno no impide avisar al otro; el envio
+ * externo ocurre despues de confirmarla.
  */
 public class NotificadorObserver implements ContratacionObserver {
 
@@ -51,7 +52,12 @@ public class NotificadorObserver implements ContratacionObserver {
     @Override
     public void actualizar(ContratacionEvent evento) {
         for (Long destinatarioId : destinatariosDe(evento)) {
-            notificarA(destinatarioId, evento);
+            // Un fallo con un destinatario (por ejemplo, al guardar su aviso) no debe dejar sin aviso al otro.
+            try {
+                notificarA(destinatarioId, evento);
+            } catch (RuntimeException e) {
+                LOG.log(Level.WARNING, "No se pudo notificar " + evento.getTipo() + " al perfil " + destinatarioId, e);
+            }
         }
     }
 

@@ -14,6 +14,7 @@ import com.uade.skillswap.domain.model.notificacion.CanalNotificacion;
 import com.uade.skillswap.domain.model.notificacion.Notificacion;
 import com.uade.skillswap.infrastructure.notificacion.CanalNotificacionFactoryImpl;
 import com.uade.skillswap.support.AplicacionEnMemoria;
+import com.uade.skillswap.support.InMemoryNotificacionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -243,6 +245,43 @@ class NotificadorObserverTest {
             assertEquals(1, app.pushSdk.enviados().size());
         } finally {
             restaurar(NotificadorObserver.class, nivel);
+        }
+    }
+
+    @Test
+    @DisplayName("si no se puede guardar el aviso de una parte, la otra igual recibe la cancelacion y el error no se propaga")
+    void falloConUnaParteNoImpideAvisarALaOtra() {
+        BandejaQueFallaPara bandeja = new BandejaQueFallaPara(bruno.id()); // el cliente es el primero en recibirla
+        NotificadorObserver conFalla = new NotificadorObserver(bandeja, app.perfiles, canalesReales(), app.transaccion,
+                app.reloj);
+        Level nivel = silenciar(NotificadorObserver.class);
+        try {
+            assertDoesNotThrow(() -> conFalla.actualizar(evento(TipoEventoContratacion.CANCELACION, bruno, "Imprevisto")));
+
+            assertEquals(List.of(CanalNotificacion.INTERNA, CanalNotificacion.EMAIL),
+                    bandeja.todas().stream().map(Notificacion::getCanal).toList());
+            assertTrue(bandeja.todas().stream().allMatch(n -> n.getDestinatarioId().equals(ana.id())));
+            assertEquals(1, app.emailSdk.enviados().size(), "la proveedora recibe el correo");
+            assertTrue(app.pushSdk.enviados().isEmpty(), "el aviso del cliente no se pudo guardar: no se envia");
+        } finally {
+            restaurar(NotificadorObserver.class, nivel);
+        }
+    }
+
+    /** Bandeja que no puede guardar los avisos de un perfil: simula una falla de la base con ese destinatario. */
+    private static final class BandejaQueFallaPara extends InMemoryNotificacionRepository {
+        private final Long perfilId;
+
+        BandejaQueFallaPara(Long perfilId) {
+            this.perfilId = perfilId;
+        }
+
+        @Override
+        public Notificacion guardar(Notificacion notificacion) {
+            if (notificacion.getDestinatarioId().equals(perfilId)) {
+                throw new IllegalStateException("no se pudo guardar el aviso del perfil " + perfilId);
+            }
+            return super.guardar(notificacion);
         }
     }
 
