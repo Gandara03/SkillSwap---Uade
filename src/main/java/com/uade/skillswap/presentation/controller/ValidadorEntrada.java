@@ -41,6 +41,11 @@ final class ValidadorEntrada {
     // del esquema. Sin tope, un monto que no entra en la columna llega a la base y sale como error interno.
     static final int MONTO_MAXIMO = 1_000_000_000;
 
+    // Anios aceptados en franjas, vigencias de promociones y filtros de busqueda. La columna DATETIME no admite
+    // cualquier LocalDateTime (por ejemplo LocalDateTime.MAX): sin este rango, una fecha asi sale como error interno.
+    static final int ANIO_MINIMO = 2000;
+    static final int ANIO_MAXIMO = 2100;
+
     private ValidadorEntrada() { }
 
     // ---------- obligatorios ----------
@@ -145,6 +150,14 @@ final class ValidadorEntrada {
         if (valor != null && !(valor >= minimo && valor <= maximo)) {
             throw new ValidacionException(
                     "Fuera de rango: " + nombre + " debe estar entre " + minimo + " y " + maximo);
+        }
+    }
+
+    /** Fecha opcional: null esta permitido; si viene, tiene que caer entre ANIO_MINIMO y ANIO_MAXIMO (inclusive). */
+    static void exigirFechaEnRango(LocalDateTime fecha, String nombre) {
+        if (fecha != null && (fecha.getYear() < ANIO_MINIMO || fecha.getYear() > ANIO_MAXIMO)) {
+            throw new ValidacionException("Fuera de rango: " + nombre + " debe estar entre el 01/01/" + ANIO_MINIMO
+                    + " y el 31/12/" + ANIO_MAXIMO);
         }
     }
 

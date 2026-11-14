@@ -277,6 +277,38 @@ class PublicacionControllerTest extends ControllerJpaTestBase {
                 "el tope justo es un precio valido");
     }
 
+    @Test
+    @DisplayName("franjas y vigencias fuera de los anios 2000 a 2100 son VALIDACION con un mensaje claro y no guardan nada")
+    void fechasFueraDeRango() {
+        profesional("u-ana", "Ana");
+        PublicacionDto publicada = publicarMentoria("u-ana", 50, 2, 1);
+        Long borrador = borradorDeAna().id();
+        LocalDateTime anio9999 = LocalDateTime.of(9999, 12, 31, 22, 0);
+        LocalDateTime hoy = LocalDateTime.now().withNano(0);
+
+        assertEquals("Fuera de rango: el inicio de la franja debe estar entre el 01/01/2000 y el 31/12/2100",
+                falla(VALIDACION, publicaciones().agregarFranja(borrador, anio9999, anio9999.plusHours(1))));
+        falla(VALIDACION, publicaciones().agregarFranja(borrador, LocalDateTime.MAX.minusHours(1), LocalDateTime.MAX));
+        falla(VALIDACION, publicaciones().agregarFranja(borrador, hoy.plusDays(3), LocalDateTime.of(2101, 1, 1, 0, 0)));
+        falla(VALIDACION, publicaciones().crearBorrador(mentoria("Java", "programacion", 50, 1,
+                TipoPoliticaCancelacion.FLEXIBLE, Set.of(), Set.of(),
+                List.of(new FranjaCommand(LocalDateTime.MAX.minusHours(1), LocalDateTime.MAX)))));
+        assertEquals("Fuera de rango: el fin de la vigencia de la promocion debe estar entre el 01/01/2000 y el 31/12/2100",
+                falla(VALIDACION, publicaciones().agregarPromocion(new CrearPromocionCommand(publicada.id(), "Eterna",
+                        TipoPromocion.PORCENTAJE, BigDecimal.TEN, hoy, LocalDateTime.MAX))));
+        falla(VALIDACION, publicaciones().agregarPromocion(new CrearPromocionCommand(publicada.id(), "Antigua",
+                TipoPromocion.PORCENTAJE, BigDecimal.TEN, LocalDateTime.of(1999, 12, 31, 23, 59), hoy.plusDays(10))));
+
+        assertEquals(2, publicacionVista("u-ana", borrador).franjas().size());
+        assertEquals(2L, ok(publicaciones().misPublicaciones(primeraPagina())).totalElementos());
+        assertEquals(0, new BigDecimal("50").compareTo(publicacionVista("u-ana", publicada.id()).precioFinal()),
+                "ninguna promocion se guardo");
+
+        LocalDateTime ultimoDia = LocalDateTime.of(2100, 12, 31, 22, 0);
+        assertEquals(3, ok(publicaciones().agregarFranja(borrador, ultimoDia, ultimoDia.plusHours(1))).franjas().size(),
+                "una franja en el ultimo dia del rango vale");
+    }
+
     // ---------- permisos ----------
 
     @Test

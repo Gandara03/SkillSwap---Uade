@@ -162,6 +162,20 @@ class ValidadorEntradaTest {
     }
 
     @Test
+    @DisplayName("exigirFechaEnRango acepta null y los anios 2000 a 2100 con sus extremos, y rechaza el resto")
+    void exigirFechaEnRango() {
+        assertDoesNotThrow(() -> ValidadorEntrada.exigirFechaEnRango(null, "el inicio"));
+        assertDoesNotThrow(() -> ValidadorEntrada.exigirFechaEnRango(LocalDateTime.of(2000, 1, 1, 0, 0), "el inicio"));
+        assertDoesNotThrow(() -> ValidadorEntrada.exigirFechaEnRango(LocalDateTime.of(2100, 12, 31, 23, 59, 59,
+                999_999_999), "el inicio"));
+        assertEquals("Fuera de rango: el inicio debe estar entre el 01/01/2000 y el 31/12/2100",
+                rechaza(() -> ValidadorEntrada.exigirFechaEnRango(LocalDateTime.of(1999, 12, 31, 23, 59), "el inicio")));
+        rechaza(() -> ValidadorEntrada.exigirFechaEnRango(LocalDateTime.of(2101, 1, 1, 0, 0), "el inicio"));
+        rechaza(() -> ValidadorEntrada.exigirFechaEnRango(LocalDateTime.MAX, "el inicio"));
+        rechaza(() -> ValidadorEntrada.exigirFechaEnRango(LocalDateTime.MIN, "el inicio"));
+    }
+
+    @Test
     @DisplayName("exigirAnterior (hora del dia) rechaza un bloque invertido")
     void exigirAnteriorHora() {
         LocalTime nueve = LocalTime.of(9, 0);

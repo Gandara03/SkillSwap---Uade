@@ -98,6 +98,21 @@ class BusquedaControllerTest extends ControllerJpaTestBase {
         ok(busqueda().buscar(conReputacionMinima(5.0), primeraPagina()));
     }
 
+    @Test
+    @DisplayName("una disponibilidad fuera de los anios 2000 a 2100 es VALIDACION con un mensaje claro; los extremos valen")
+    void disponibilidadFueraDeRango() {
+        LocalDateTime hoy = LocalDateTime.now().withNano(0);
+
+        assertEquals("Fuera de rango: el fin de la disponibilidad debe estar entre el 01/01/2000 y el 31/12/2100",
+                falla(VALIDACION, busqueda().buscar(disponibleEntre(hoy, LocalDateTime.MAX), primeraPagina())));
+        falla(VALIDACION, busqueda().buscar(disponibleEntre(LocalDateTime.MIN, hoy), primeraPagina()));
+        falla(VALIDACION, busqueda().buscar(disponibleEntre(LocalDateTime.of(1999, 12, 31, 23, 59), hoy), primeraPagina()));
+        falla(VALIDACION, busqueda().buscar(disponibleEntre(LocalDateTime.of(9999, 12, 31, 0, 0), null), primeraPagina()));
+
+        ok(busqueda().buscar(disponibleEntre(LocalDateTime.of(2000, 1, 1, 0, 0), LocalDateTime.of(2100, 12, 31, 23, 59)),
+                primeraPagina()));
+    }
+
     // ---------- permisos y visibilidad ----------
 
     @Test

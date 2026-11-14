@@ -30,6 +30,8 @@ public class BusquedaController {
     private static void validar(FiltroBusqueda filtro) {
         ValidadorEntrada.exigirEntre(filtro.reputacionMinima(), 0, ValidadorEntrada.PUNTAJE_MAXIMO,
                 "la reputacion minima");
+        ValidadorEntrada.exigirFechaEnRango(filtro.disponibleDesde(), "el inicio de la disponibilidad");
+        ValidadorEntrada.exigirFechaEnRango(filtro.disponibleHasta(), "el fin de la disponibilidad");
         ValidadorEntrada.exigirAnterior(filtro.disponibleDesde(), filtro.disponibleHasta(),
                 "el rango de disponibilidad");
     }

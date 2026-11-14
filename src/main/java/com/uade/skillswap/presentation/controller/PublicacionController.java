@@ -172,6 +172,8 @@ public class PublicacionController {
     private static void validarFranja(LocalDateTime inicio, LocalDateTime fin) {
         ValidadorEntrada.exigir(inicio, "el inicio de la franja");
         ValidadorEntrada.exigir(fin, "el fin de la franja");
+        ValidadorEntrada.exigirFechaEnRango(inicio, "el inicio de la franja");
+        ValidadorEntrada.exigirFechaEnRango(fin, "el fin de la franja");
         ValidadorEntrada.exigirAnterior(inicio, fin, "la franja");
     }
 
@@ -186,6 +188,8 @@ public class PublicacionController {
         if (c.tipo() == TipoPromocion.PORCENTAJE) {
             ValidadorEntrada.exigirMaximo(c.valor(), ValidadorEntrada.PORCENTAJE_MAXIMO, "el porcentaje");
         }
+        ValidadorEntrada.exigirFechaEnRango(c.vigenteDesde(), "el inicio de la vigencia de la promocion");
+        ValidadorEntrada.exigirFechaEnRango(c.vigenteHasta(), "el fin de la vigencia de la promocion");
         ValidadorEntrada.exigirAnterior(c.vigenteDesde(), c.vigenteHasta(), "la vigencia de la promocion");
     }
 }
