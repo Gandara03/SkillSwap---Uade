@@ -193,6 +193,7 @@ package "Application" #D6E4F7 {
     -publicacionRepository: PublicacionRepository
     -perfilRepository: PerfilRepository
     -walletRepository: WalletRepository
+    -calificacionRepository: CalificacionRepository
     -observers: List<ContratacionObserver>
     -transaccion: TransaccionPort
     -reloj: RelojPort
@@ -213,6 +214,7 @@ package "Application" #D6E4F7 {
     +listarMias(actorId: Long, pagina: PaginaRequest): Pagina<ContratacionDto>
     -cambio(original: Contratacion, guardada: Contratacion, actorId: Long): Cambio<ContratacionDto>
     -cambio(original: Contratacion, guardada: Contratacion, publicacion: Publicacion, actorId: Long): Cambio<ContratacionDto>
+    -dto(contratacion: Contratacion, publicacion: Publicacion, actorId: Long): ContratacionDto
     -operar(trabajo: Supplier<Cambio<T>>): T
     -despachar(contratacion: Contratacion): void
     -acreditar(perfilId: Long, monto: SkillCoins, tipo: TipoMovimiento, contratacionId: Long, ahora: LocalDateTime): void
@@ -269,6 +271,7 @@ package "Application" #D6E4F7 {
     -{static} destinatarioDe(e: ContratacionEvent): Long
     -{static} contraparteDelActor(e: ContratacionEvent): Long
     -{static} mensajeDe(e: ContratacionEvent): String
+    -{static} recortar(mensaje: String): String
   }
   interface IdentidadPort {
     +usuarioActual(): Optional<UsuarioIdentidad>
@@ -311,6 +314,7 @@ package "Application" #D6E4F7 {
   interface CalificacionRepository {
     +guardar(calificacion: Calificacion): Calificacion
     +existe(contratacionId: Long, autorId: Long): boolean
+    +calificadasPor(autorId: Long, contratacionIds: Collection<Long>): Set<Long>
     +buscarPorDestinatario(destinatarioId: Long): List<Calificacion>
     +paginarPorDestinatario(destinatarioId: Long, pagina: PaginaRequest): Pagina<Calificacion>
   }
@@ -322,6 +326,7 @@ package "Application" #D6E4F7 {
   interface PublicacionRepository {
     +guardar(publicacion: Publicacion): Publicacion
     +buscarPorId(id: Long): Optional<Publicacion>
+    +buscarPorIds(ids: Collection<Long>): List<Publicacion>
     +buscar(filtro: FiltroBusqueda, pagina: PaginaRequest): Pagina<Publicacion>
     +buscarPorAutor(autorId: Long, pagina: PaginaRequest): Pagina<Publicacion>
     +buscarPublicadas(limite: int): List<Publicacion>
@@ -379,6 +384,7 @@ package "Domain" #D5F0D5 {
     +{static} solicitar(publicacionId: Long, clienteId: Long, proveedorId: Long, franjaId: Long, mensaje: String, objetivo: String, precioFinal: SkillCoins, ahora: LocalDateTime): Contratacion
     +aceptar(actorId: Long, ahora: LocalDateTime): void
     +rechazar(actorId: Long, motivo: String, ahora: LocalDateTime): void
+    +exigirPagoPermitido(): void
     +pagar(actorId: Long, ahora: LocalDateTime): void
     +iniciar(actorId: Long, ahora: LocalDateTime): void
     +completar(actorId: Long, ahora: LocalDateTime): void
@@ -389,7 +395,7 @@ package "Domain" #D5F0D5 {
     +consultarComprobante(): Comprobante
     +cambiarEstado(nuevo: EstadoContratacion, t: ContextoTransicion): void
     -registrarNota(nota: String, actorId: Long, ahora: LocalDateTime): void
-    +accionesDisponiblesPara(actorId: Long): List<AccionContratacion>
+    +accionesDisponiblesPara(actorId: Long, yaCalifico: boolean): List<AccionContratacion>
     -exigirParte(parte: ParteContratacion, actorId: Long): void
     -esParte(parte: ParteContratacion, actorId: Long): boolean
     +esParticipante(perfilId: Long): boolean
@@ -633,6 +639,7 @@ package "Infrastructure" #FAE0D0 {
   class JpaCalificacionRepository {
     +guardar(calificacion: Calificacion): Calificacion
     +existe(contratacionId: Long, autorId: Long): boolean
+    +calificadasPor(autorId: Long, contratacionIds: Collection<Long>): Set<Long>
     +buscarPorDestinatario(destinatarioId: Long): List<Calificacion>
     +paginarPorDestinatario(destinatarioId: Long, pagina: PaginaRequest): Pagina<Calificacion>
     -{static} aDominio(filas: List<CalificacionJpaEntity>): List<Calificacion>
@@ -645,6 +652,7 @@ package "Infrastructure" #FAE0D0 {
   class JpaPublicacionRepository {
     +guardar(publicacion: Publicacion): Publicacion
     +buscarPorId(id: Long): Optional<Publicacion>
+    +buscarPorIds(ids: Collection<Long>): List<Publicacion>
     +buscar(filtro: FiltroBusqueda, pagina: PaginaRequest): Pagina<Publicacion>
     +buscarPorAutor(autorId: Long, pagina: PaginaRequest): Pagina<Publicacion>
     +buscarPublicadas(limite: int): List<Publicacion>
