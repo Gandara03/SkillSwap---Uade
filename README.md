@@ -5,7 +5,7 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 ## Estado
 
-`mvnw verify` pasa completo: **708 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+`mvnw verify` pasa completo: **723 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
@@ -64,7 +64,7 @@ skillswap/
                                  · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 218 clases de producción, 101 clases de test (708 tests), ~12.7 mil líneas de código y ~15.0 mil de tests.
+Números: 218 clases de producción, 101 clases de test (723 tests), ~12.7 mil líneas de código y ~15.0 mil de tests.
 
 ---
 
@@ -253,7 +253,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 9 | Controllers delgados que validan la entrada, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `ValidadorEntrada`, `Resultado`; tests en `presentation/controller/**` (ver nota de nombres abajo) |
 | 10 | Mock UI Kit conectado por interfaces | ✅ | `SkillSwapView` → `UiControllers` (contrato del kit) ← `UiControllersAdapter` → los 8 controllers; `Main --ui`; `UiControllersAdapterTest`, `DependenciasUiTest` (sección 8, punto 11) |
 | 11 | Entregas incrementales | ⬜ | — |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 708 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 723 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (PlantUML, sección 3) |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
