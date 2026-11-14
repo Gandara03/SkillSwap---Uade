@@ -1,5 +1,6 @@
 package com.uade.skillswap.acceptance.memoria;
 
+import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.NotificacionDto;
 import com.uade.skillswap.application.dto.PerfilDto;
 import com.uade.skillswap.application.dto.PublicacionDto;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Caso de aceptacion 8: enviar dos tipos de notificacion ante un mismo evento mediante adaptadores mock.
  * El evento es SOLICITUD_RECIBIDA (Observer sobre Contratacion). Por cada destinatario se guarda siempre la
  * notificacion INTERNA y, ademas, se envia por el canal preferido a traves del Adapter del SDK mock.
+ * La cancelacion se avisa a las dos partes: con canales distintos, el mismo evento sale por los dos adapters.
  */
 @DisplayName("Caso 8 (memoria): dos tipos de notificacion ante un mismo evento con adaptadores mock")
 class Caso08DosNotificacionesPorEventoTest {
@@ -106,5 +108,36 @@ class Caso08DosNotificacionesPorEventoTest {
         assertEquals(1, e.app.pushSdk.enviados().size());
         assertEquals("dispositivo-u-bruno", e.app.pushSdk.enviados().get(0).dispositivo());
         assertTrue(e.app.pushSdk.enviados().get(0).texto().contains("aceptada"), e.app.pushSdk.enviados().get(0).texto());
+    }
+
+    @Test
+    @DisplayName("Caso 8: ante la misma cancelacion, la proveedora (EMAIL) recibe un correo y el cliente (PUSH) un push")
+    void caso08_clienteYProveedorConCanalesDistintosAnteLaMismaCancelacion() {
+        EscenarioMemoria e = new EscenarioMemoria();
+        PerfilDto ana = e.profesional("u-ana", "Ana", CanalNotificacion.EMAIL);
+        PerfilDto bruno = e.profesional("u-bruno", "Bruno", CanalNotificacion.PUSH);
+        ContratacionDto pagada = e.contratarYPagar(ana.id(), bruno.id(), e.publicarMentoria(ana.id(), 40, 1, 1), 0);
+        int correosAntes = e.app.emailSdk.enviados().size();
+        int pushesAntes = e.app.pushSdk.enviados().size();
+
+        e.app.contratacionUseCase.cancelar(bruno.id(), pagada.id(), "Surgio un imprevisto"); // un solo evento
+
+        List<EmailSdkMock.Correo> correos = e.app.emailSdk.enviados().subList(correosAntes, e.app.emailSdk.enviados().size());
+        List<PushSdkMock.Push> pushes = e.app.pushSdk.enviados().subList(pushesAntes, e.app.pushSdk.enviados().size());
+        assertEquals(1, correos.size());
+        assertEquals("u-ana@test.local", correos.get(0).destino());
+        assertTrue(correos.get(0).asunto().contains("CANCELACION"), correos.get(0).asunto());
+        assertEquals(1, pushes.size());
+        assertEquals("dispositivo-u-bruno", pushes.get(0).dispositivo());
+        assertEquals(correos.get(0).cuerpo(), pushes.get(0).texto(), "el mismo aviso sale por los dos adapters");
+        assertTrue(pushes.get(0).texto().contains("#" + pagada.id()), pushes.get(0).texto());
+
+        assertEquals(Set.of(CanalNotificacion.INTERNA, CanalNotificacion.EMAIL), canales(cancelaciones(e, ana)));
+        assertEquals(Set.of(CanalNotificacion.INTERNA, CanalNotificacion.PUSH), canales(cancelaciones(e, bruno)));
+    }
+
+    private static List<NotificacionDto> cancelaciones(EscenarioMemoria e, PerfilDto perfil) {
+        return e.app.notificacionUseCase.listar(perfil.id(), false, e.primeraPagina()).contenido().stream()
+                .filter(n -> n.tipoEvento() == TipoEventoContratacion.CANCELACION).toList();
     }
 }

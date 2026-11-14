@@ -189,7 +189,7 @@ Cómo abrirlo:
   java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg uml/00-aplicacion-completa.puml
   ```
 
-- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. El `.png` (6431 × 4924 px) sirve para insertarlo en un documento.
+- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. El `.png` (6535 × 5030 px) sirve para insertarlo en un documento.
 
 ---
 
@@ -284,7 +284,7 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 | 5 | Rechazar un pago con saldo insuficiente sin modificar saldos ni estado | `Caso05SaldoInsuficienteTest` |
 | 6 | Cancelar y calcular el reintegro con dos políticas | `Caso06CancelacionConDosPoliticasTest` (60 h, precio 80: flexible 80, estricta 40) |
 | 7 | Cambiar la estrategia de recomendación sin tocar el caso de uso consumidor | `Caso07CambiarEstrategiaRecomendacionTest` |
-| 8 | Dos tipos de notificación ante un mismo evento (adapters mock) | `Caso08DosNotificacionesPorEventoTest` |
+| 8 | Dos tipos de notificación ante un mismo evento (adapters mock) | `Caso08DosNotificacionesPorEventoTest` (interna + canal preferido; la cancelación llega a las dos partes: un correo a la proveedora y un push al cliente) |
 | 9 | Promociones acumulables sin precio negativo | `Caso09PromocionesAcumulablesTest` |
 | 10 | Completar, calificar una sola vez y recalcular reputación | `Caso10CompletarCalificarYReputacionTest` |
 

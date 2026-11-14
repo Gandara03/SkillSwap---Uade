@@ -267,8 +267,9 @@ package "Application" #D6E4F7 {
     -transaccion: TransaccionPort
     -reloj: RelojPort
     +actualizar(evento: ContratacionEvent): void
+    -notificarA(destinatarioId: Long, evento: ContratacionEvent): void
     -{static} canalesPara(destinatario: Perfil): Set<CanalNotificacion>
-    -{static} destinatarioDe(e: ContratacionEvent): Long
+    -{static} destinatariosDe(e: ContratacionEvent): List<Long>
     -{static} contraparteDelActor(e: ContratacionEvent): Long
     -{static} mensajeDe(e: ContratacionEvent): String
     -{static} recortar(mensaje: String): String

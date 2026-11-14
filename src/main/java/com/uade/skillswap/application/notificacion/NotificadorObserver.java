@@ -20,9 +20,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Observer concreto de Contratacion. Ante cada evento notifica al destinatario por DOS tipos de notificacion:
+ * Observer concreto de Contratacion. Ante cada evento notifica a cada destinatario por DOS tipos de notificacion:
  * siempre la INTERNA (bandeja) y, si su canal preferido es otro, tambien por ese canal (Adapter elegido con
- * la Simple Factory). Persiste en su propia transaccion; el envio externo ocurre despues de confirmarla.
+ * la Simple Factory). La cancelacion va a las dos partes, cada una por su canal; los demas eventos, a una sola.
+ * Cada destinatario se persiste en su propia transaccion; el envio externo ocurre despues de confirmarla.
  */
 public class NotificadorObserver implements ContratacionObserver {
 
@@ -49,7 +50,12 @@ public class NotificadorObserver implements ContratacionObserver {
 
     @Override
     public void actualizar(ContratacionEvent evento) {
-        Long destinatarioId = destinatarioDe(evento);
+        for (Long destinatarioId : destinatariosDe(evento)) {
+            notificarA(destinatarioId, evento);
+        }
+    }
+
+    private void notificarA(Long destinatarioId, ContratacionEvent evento) {
         Perfil destinatario = perfilRepository.buscarPorId(destinatarioId).orElse(null);
         if (destinatario == null) {
             LOG.warning("Se omite la notificacion " + evento.getTipo() + ": no existe el perfil " + destinatarioId);
@@ -88,12 +94,14 @@ public class NotificadorObserver implements ContratacionObserver {
         return canales;
     }
 
-    private static Long destinatarioDe(ContratacionEvent e) {
+    /** La cancelacion se avisa a las dos partes (quien cancela recibe la constancia); el resto, a quien le toca. */
+    private static List<Long> destinatariosDe(ContratacionEvent e) {
         return switch (e.getTipo()) {
-            case SOLICITUD_RECIBIDA, PAGO_CONFIRMADO -> e.getProveedorId();
-            case SOLICITUD_ACEPTADA, SOLICITUD_RECHAZADA -> e.getClienteId();
-            case REPROGRAMACION_PROPUESTA, REPROGRAMACION_ACEPTADA, REPROGRAMACION_RECHAZADA, CANCELACION,
-                    SESION_COMPLETADA -> contraparteDelActor(e);
+            case SOLICITUD_RECIBIDA, PAGO_CONFIRMADO -> List.of(e.getProveedorId());
+            case SOLICITUD_ACEPTADA, SOLICITUD_RECHAZADA -> List.of(e.getClienteId());
+            case REPROGRAMACION_PROPUESTA, REPROGRAMACION_ACEPTADA, REPROGRAMACION_RECHAZADA,
+                    SESION_COMPLETADA -> List.of(contraparteDelActor(e));
+            case CANCELACION -> List.of(e.getClienteId(), e.getProveedorId());
         };
     }
 

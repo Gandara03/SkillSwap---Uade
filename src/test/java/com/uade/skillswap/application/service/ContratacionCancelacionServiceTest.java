@@ -211,17 +211,17 @@ class ContratacionCancelacionServiceTest {
     }
 
     @Test
-    @DisplayName("cancelar notifica a la contraparte de quien cancela (CANCELACION) y no a quien cancela")
-    void cancelarNotificaALaContraparte() {
+    @DisplayName("cancelar notifica a las dos partes (CANCELACION), cancele quien cancele")
+    void cancelarNotificaALasDosPartes() {
         Caso delCliente = new Caso(TipoPoliticaCancelacion.FLEXIBLE);
         delCliente.cancelarCliente(1);
         assertTrue(eventos(delCliente, delCliente.proveedor).contains(TipoEventoContratacion.CANCELACION));
-        assertFalse(eventos(delCliente, delCliente.cliente).contains(TipoEventoContratacion.CANCELACION));
+        assertTrue(eventos(delCliente, delCliente.cliente).contains(TipoEventoContratacion.CANCELACION));
 
         Caso delProveedor = new Caso(TipoPoliticaCancelacion.FLEXIBLE);
         delProveedor.cancelarProveedor(1);
         assertTrue(eventos(delProveedor, delProveedor.cliente).contains(TipoEventoContratacion.CANCELACION));
-        assertFalse(eventos(delProveedor, delProveedor.proveedor).contains(TipoEventoContratacion.CANCELACION));
+        assertTrue(eventos(delProveedor, delProveedor.proveedor).contains(TipoEventoContratacion.CANCELACION));
     }
 
     @Test

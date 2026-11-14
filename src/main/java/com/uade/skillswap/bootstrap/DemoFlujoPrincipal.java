@@ -20,6 +20,8 @@ import com.uade.skillswap.domain.query.CriterioOrden;
 import com.uade.skillswap.domain.query.FiltroBusqueda;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.infrastructure.identidad.IdentidadMockAdapter;
+import com.uade.skillswap.infrastructure.notificacion.sdk.EmailSdkMock;
+import com.uade.skillswap.infrastructure.notificacion.sdk.PushSdkMock;
 import com.uade.skillswap.presentation.Resultado;
 import com.uade.skillswap.presentation.ui.Formato;
 
@@ -39,7 +41,8 @@ import java.util.function.Supplier;
 /**
  * Recorrido de punta a punta, solo a traves de los controllers (como lo haria la UI):
  * publicar, solicitar, aceptar, pagar, iniciar, completar y calificar; mas una cancelacion con reintegro
- * parcial y un pago con saldo insuficiente, que se muestra como error controlado.
+ * parcial (avisada a las dos partes, cada una por su canal) y un pago con saldo insuficiente, que se muestra como
+ * error controlado.
  * Cada paso imprime el actor, el resultado, el estado y los saldos.
  */
 public final class DemoFlujoPrincipal {
@@ -182,10 +185,14 @@ public final class DemoFlujoPrincipal {
         Long id = nueva.id();
         paso(ana, "(proveedora) acepta", () -> contrataciones.aceptar(id), this::detalleContratacion);
         paso(bruno, "(cliente) paga", () -> contrataciones.pagar(id), this::detalleContratacion);
+        int correosAntes = app.getEmailSdk().enviados().size();
+        int pushesAntes = app.getPushSdk().enviados().size();
         paso(bruno, "cancela: surgió un imprevisto", () -> contrataciones.cancelar(id, "Surgió un imprevisto laboral"),
                 r -> "%s | política %s | reintegro al cliente %s | compensación a la proveedora %s".formatted(
                         Formato.contratacion(r.contratacion()), r.politica(), Formato.monto(r.reintegroCliente()),
                         Formato.monto(r.compensacionProveedor())));
+        mostrarEnviosExternos("la cancelación se avisa a las dos partes, cada una por su canal", correosAntes,
+                pushesAntes);
     }
 
     private void pagoConSaldoInsuficiente() {
@@ -303,6 +310,19 @@ public final class DemoFlujoPrincipal {
         out.println(linea);
         if (volverA != null) {
             actuarComo(volverA);
+        }
+    }
+
+    /** Lo que salio por los SDK simulados desde las cantidades indicadas, con el adapter que lo envio. */
+    private void mostrarEnviosExternos(String titulo, int correosAntes, int pushesAntes) {
+        out.println("    " + titulo + ":");
+        List<EmailSdkMock.Correo> correos = app.getEmailSdk().enviados();
+        for (EmailSdkMock.Correo correo : correos.subList(correosAntes, correos.size())) {
+            out.println("       email (EmailCanalAdapter) -> %s | %s".formatted(correo.destino(), correo.cuerpo()));
+        }
+        List<PushSdkMock.Push> pushes = app.getPushSdk().enviados();
+        for (PushSdkMock.Push push : pushes.subList(pushesAntes, pushes.size())) {
+            out.println("       push  (PushCanalAdapter)  -> %s | %s".formatted(push.dispositivo(), push.texto()));
         }
     }
 

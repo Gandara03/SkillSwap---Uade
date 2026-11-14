@@ -89,13 +89,37 @@ class NotificadorObserverTest {
     }
 
     @Test
-    @DisplayName("REPROGRAMACION_*, CANCELACION y SESION_COMPLETADA van a la CONTRAPARTE de quien origino el evento")
+    @DisplayName("REPROGRAMACION_* y SESION_COMPLETADA van a la CONTRAPARTE de quien origino el evento")
     void destinatariosSegunActor() {
         for (TipoEventoContratacion tipo : List.of(TipoEventoContratacion.REPROGRAMACION_PROPUESTA,
                 TipoEventoContratacion.REPROGRAMACION_ACEPTADA, TipoEventoContratacion.REPROGRAMACION_RECHAZADA,
-                TipoEventoContratacion.CANCELACION, TipoEventoContratacion.SESION_COMPLETADA)) {
+                TipoEventoContratacion.SESION_COMPLETADA)) {
             assertEquals(ana.id(), unico(evento(tipo, bruno, "x")), tipo + " originado por el cliente -> proveedor");
             assertEquals(bruno.id(), unico(evento(tipo, ana, "x")), tipo + " originado por el proveedor -> cliente");
+        }
+    }
+
+    @Test
+    @DisplayName("CANCELACION va a las DOS partes, cada una por la INTERNA y su canal: un correo y un push del mismo evento")
+    void cancelacionALasDosPartes() {
+        for (PerfilDto quienCancela : List.of(bruno, ana)) {
+            int correos = app.emailSdk.enviados().size();
+            int pushes = app.pushSdk.enviados().size();
+
+            List<Notificacion> nuevas = nuevasTras(() -> observer.actualizar(
+                    evento(TipoEventoContratacion.CANCELACION, quienCancela, "Imprevisto")));
+
+            assertEquals(List.of(bruno.id(), bruno.id(), ana.id(), ana.id()),
+                    nuevas.stream().map(Notificacion::getDestinatarioId).toList(), "cancela " + quienCancela.nombreVisible());
+            assertEquals(List.of(CanalNotificacion.INTERNA, CanalNotificacion.PUSH, CanalNotificacion.INTERNA,
+                    CanalNotificacion.EMAIL), nuevas.stream().map(Notificacion::getCanal).toList());
+            assertEquals(correos + 1, app.emailSdk.enviados().size());
+            assertEquals(pushes + 1, app.pushSdk.enviados().size());
+            var correo = app.emailSdk.enviados().get(correos);
+            var push = app.pushSdk.enviados().get(pushes);
+            assertEquals("u-ana@test.local", correo.destino());
+            assertEquals("dispositivo-u-bruno", push.dispositivo());
+            assertEquals(correo.cuerpo(), push.texto(), "el mismo aviso sale por los dos adapters");
         }
     }
 
@@ -205,6 +229,24 @@ class NotificadorObserverTest {
     }
 
     @Test
+    @DisplayName("si una de las partes ya no existe, la otra igual recibe la cancelacion")
+    void cancelacionConUnaParteInexistente() {
+        ContratacionEvent sinProveedor = new ContratacionEvent(TipoEventoContratacion.CANCELACION, 1L, 5L, bruno.id(),
+                9999L, bruno.id(), "x", app.reloj.ahora());
+        Level nivel = silenciar(NotificadorObserver.class);
+        try {
+            List<Notificacion> nuevas = nuevasTras(() -> observer.actualizar(sinProveedor));
+
+            assertEquals(List.of(CanalNotificacion.INTERNA, CanalNotificacion.PUSH),
+                    nuevas.stream().map(Notificacion::getCanal).toList());
+            assertTrue(nuevas.stream().allMatch(n -> n.getDestinatarioId().equals(bruno.id())));
+            assertEquals(1, app.pushSdk.enviados().size());
+        } finally {
+            restaurar(NotificadorObserver.class, nivel);
+        }
+    }
+
+    @Test
     @DisplayName("si el canal EMAIL falla, la notificacion INTERNA queda registrada y el error no se propaga")
     void canalExternoCaidoNoImpideLaInterna() {
         CanalNotificacionFactory emailCaido = canal -> {
@@ -296,7 +338,7 @@ class NotificadorObserverTest {
     }
 
     @Test
-    @DisplayName("cancelar y reprogramar notifican a la contraparte, por ambos canales si los tiene")
+    @DisplayName("reprogramar notifica a la contraparte y cancelar a las dos partes, por ambos canales si los tienen")
     void cancelacionYReprogramacion() {
         PublicacionDto publicada = e.publicada(ana, e.oferta().cupo(2));
         ContratacionDto aceptada = e.aceptada(bruno, ana, publicada, 0);
@@ -311,6 +353,8 @@ class NotificadorObserverTest {
         assertTrue(deBruno.stream().anyMatch(n -> n.tipoEvento() == TipoEventoContratacion.CANCELACION && n.canal() == CanalNotificacion.INTERNA));
         List<NotificacionDto> deAna = e.bandeja(ana);
         assertTrue(deAna.stream().anyMatch(n -> n.tipoEvento() == TipoEventoContratacion.REPROGRAMACION_PROPUESTA));
-        assertTrue(deAna.stream().noneMatch(n -> n.tipoEvento() == TipoEventoContratacion.CANCELACION), "quien cancela no se auto-notifica");
+        assertTrue(deAna.stream().anyMatch(n -> n.tipoEvento() == TipoEventoContratacion.CANCELACION && n.canal() == CanalNotificacion.EMAIL),
+                "quien cancela tambien recibe el aviso, por su canal");
+        assertTrue(deAna.stream().anyMatch(n -> n.tipoEvento() == TipoEventoContratacion.CANCELACION && n.canal() == CanalNotificacion.INTERNA));
     }
 }
