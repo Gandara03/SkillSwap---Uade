@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -65,6 +66,24 @@ class PerfilControllerTest extends ControllerJpaTestBase {
         assertEquals(Set.of("arquitectura"), actual.intereses());
         assertEquals(List.of(LUNES_MANANA), actual.disponibilidad());
         assertEquals(CanalNotificacion.EMAIL, actual.canalPreferido());
+    }
+
+    @Test
+    @DisplayName("intereses y habilidades que solo difieren en mayusculas o acentos se guardan una vez, al registrar y al actualizar")
+    void interesesYHabilidadesRepetidosSeGuardanUnaVez() {
+        como("u-ana");
+        PerfilDto registrado = ok(perfiles().registrar(new RegistrarPerfilCommand("u-ana", "Ana",
+                TipoPerfil.PROFESIONAL, "UTC", null, new LinkedHashSet<>(List.of("Diseño", "diseno")),
+                new LinkedHashSet<>(List.of("Java", "java")), List.of(), CanalNotificacion.INTERNA)));
+        assertEquals(Set.of("diseño"), registrado.habilidades());
+        assertEquals(Set.of("Java"), registrado.intereses());
+
+        ok(perfiles().actualizar(new ActualizarPerfilCommand("Ana", null, "UTC", Set.of("java"),
+                new LinkedHashSet<>(List.of("Programación", "programacion", "PROGRAMACION")), List.of(), null)));
+
+        PerfilDto actual = ok(perfiles().miPerfil());
+        assertEquals(Set.of("Programación"), actual.intereses());
+        assertEquals(Set.of("java"), actual.habilidades());
     }
 
     @Test

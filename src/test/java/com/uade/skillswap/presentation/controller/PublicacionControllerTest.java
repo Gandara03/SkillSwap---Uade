@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -84,6 +85,24 @@ class PublicacionControllerTest extends ControllerJpaTestBase {
         Pagina<PublicacionResumenDto> mias = ok(publicaciones().misPublicaciones(primeraPagina()));
         assertEquals(1L, mias.totalElementos());
         assertEquals("BORRADOR", mias.contenido().get(0).estado());
+    }
+
+    @Test
+    @DisplayName("etiquetas y habilidades que solo difieren en mayusculas o acentos se guardan una vez, al crear y al editar")
+    void etiquetasYHabilidadesRepetidasSeGuardanUnaVez() {
+        profesional("u-ana", "Ana");
+        como("u-ana");
+
+        PublicacionDto borrador = ok(publicaciones().crearBorrador(mentoria("Java", "programacion", 50, 1,
+                TipoPoliticaCancelacion.FLEXIBLE, new LinkedHashSet<>(List.of("Java", "java")),
+                new LinkedHashSet<>(List.of("Diseño", "diseno")), List.of())));
+        assertEquals(Set.of("Java"), publicacionVista("u-ana", borrador.id()).etiquetas());
+        assertEquals(Set.of("diseño"), publicacionVista("u-ana", borrador.id()).habilidades());
+
+        ok(publicaciones().editar(borrador.id(), new EditarPublicacionCommand("Java", "Descripcion", "programacion",
+                Modalidad.REMOTA, 60, 1, BigDecimal.TEN, new LinkedHashSet<>(List.of("Programación", "PROGRAMACION")),
+                Set.of(), TipoPoliticaCancelacion.FLEXIBLE)));
+        assertEquals(Set.of("Programación"), publicacionVista("u-ana", borrador.id()).etiquetas());
     }
 
     @Test

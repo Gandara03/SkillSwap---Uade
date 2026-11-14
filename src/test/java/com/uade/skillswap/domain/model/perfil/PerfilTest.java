@@ -83,6 +83,17 @@ class PerfilTest {
     }
 
     @Test
+    @DisplayName("actualizarDatos no repite intereses ni habilidades que solo difieren en mayusculas o acentos: queda el primero")
+    void actualizarDatosSinRepetidos() {
+        Perfil p = nuevo();
+        p.actualizarDatos("Ana", null, null, List.of(Habilidad.de("Diseño"), Habilidad.de("diseno")),
+                List.of("Java", "java", "Programación", "PROGRAMACION"), null, null);
+
+        assertEquals(List.of(Habilidad.de("diseño")), List.copyOf(p.getHabilidades()));
+        assertEquals(List.of("Java", "Programación"), List.copyOf(p.getIntereses()));
+    }
+
+    @Test
     @DisplayName("actualizarDatos exige nombre visible")
     void actualizarSinNombre() {
         Perfil p = nuevo();

@@ -113,6 +113,23 @@ class PublicacionTest {
     }
 
     @Test
+    @DisplayName("etiquetas y habilidades que solo difieren en mayusculas o acentos se guardan una vez: queda la primera")
+    void etiquetasYHabilidadesSinRepetidos() {
+        Publicacion p = Publicacion.crearBorrador(TipoPublicacion.MENTORIA, PROVEEDOR, TipoPerfil.PROFESIONAL,
+                new DatosPublicacion("t", "d", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(10),
+                        List.of("Java", "java", "JAVA", "Diseño", "diseno"),
+                        List.of(Habilidad.de("Programación"), Habilidad.de("programacion")), null), AHORA);
+
+        assertEquals(List.of("Java", "Diseño"), List.copyOf(p.getEtiquetas()));
+        assertEquals(List.of(Habilidad.de("programación")), List.copyOf(p.getHabilidades()));
+
+        p.editar(new DatosPublicacion("t", "d", "c", Modalidad.REMOTA, 60, 1, SkillCoins.de(10),
+                List.of("ux", "UX", "Úx"), List.of(Habilidad.de("Figma"), Habilidad.de("FIGMA")), null));
+        assertEquals(List.of("ux"), List.copyOf(p.getEtiquetas()));
+        assertEquals(List.of(Habilidad.de("figma")), List.copyOf(p.getHabilidades()));
+    }
+
+    @Test
     @DisplayName("editar con politica nula conserva la politica actual")
     void editarPoliticaNula() {
         Publicacion p = Datos.borradorCompleto(PROVEEDOR, 1);

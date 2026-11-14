@@ -12,6 +12,7 @@ import com.uade.skillswap.domain.model.publicacion.estado.EstadoPublicacion;
 import com.uade.skillswap.domain.model.publicacion.estado.EstadoPublicacionFactory;
 import com.uade.skillswap.domain.model.vo.Habilidad;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
+import com.uade.skillswap.domain.model.vo.Textos;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -119,7 +120,10 @@ public class Publicacion {
         cargarDatos(datos);
     }
 
-    /** Copia los datos editables. Etiquetas y habilidades se reemplazan; la politica solo cambia si viene. */
+    /**
+     * Copia los datos editables. Etiquetas y habilidades se reemplazan, sin repetidos que solo difieran en mayusculas
+     * o acentos; la politica solo cambia si viene.
+     */
     private void cargarDatos(DatosPublicacion datos) {
         if (datos == null) {
             throw new ReglaDeNegocioException("Los datos de la publicacion son obligatorios");
@@ -135,13 +139,9 @@ public class Publicacion {
             this.politicaCancelacion = datos.politicaCancelacion();
         }
         this.etiquetas.clear();
-        if (datos.etiquetas() != null) {
-            this.etiquetas.addAll(datos.etiquetas());
-        }
+        this.etiquetas.addAll(Textos.sinRepetir(datos.etiquetas()));
         this.habilidades.clear();
-        if (datos.habilidades() != null) {
-            this.habilidades.addAll(datos.habilidades());
-        }
+        this.habilidades.addAll(Habilidad.sinRepetir(datos.habilidades()));
     }
 
     /** Agrega una franja futura de disponibilidad (no permitido en estados terminales). */

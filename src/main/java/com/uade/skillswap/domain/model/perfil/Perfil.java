@@ -5,6 +5,7 @@ import com.uade.skillswap.domain.model.calificacion.Calificacion;
 import com.uade.skillswap.domain.model.notificacion.CanalNotificacion;
 import com.uade.skillswap.domain.model.vo.BloqueDisponibilidad;
 import com.uade.skillswap.domain.model.vo.Habilidad;
+import com.uade.skillswap.domain.model.vo.Textos;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -88,8 +89,8 @@ public class Perfil {
         if (zonaHoraria != null) {
             this.zonaHoraria = zonaHoraria;
         }
-        reemplazar(this.habilidades, habilidades);
-        reemplazar(this.intereses, intereses);
+        reemplazar(this.habilidades, Habilidad.sinRepetir(habilidades));
+        reemplazar(this.intereses, Textos.sinRepetir(intereses));
         reemplazar(this.disponibilidad, disponibilidad);
         if (canalPreferido != null) {
             this.canalPreferido = canalPreferido;

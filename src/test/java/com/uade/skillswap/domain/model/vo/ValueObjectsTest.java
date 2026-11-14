@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,6 +22,14 @@ class ValueObjectsTest {
         assertEquals(Habilidad.de("Java"), Habilidad.de(" java"));
         assertEquals(Habilidad.de("Java").hashCode(), Habilidad.de("JAVA").hashCode());
         assertEquals("java", Habilidad.de("Java").toString());
+    }
+
+    @Test
+    @DisplayName("Habilidad.sinRepetir descarta las que solo difieren en acentos y deja la primera; null da vacio")
+    void habilidadSinRepetir() {
+        assertEquals(List.of(Habilidad.de("diseño"), Habilidad.de("java")), List.copyOf(Habilidad.sinRepetir(
+                List.of(Habilidad.de("Diseño"), Habilidad.de("JAVA"), Habilidad.de("diseno"), Habilidad.de("java")))));
+        assertTrue(Habilidad.sinRepetir(null).isEmpty());
     }
 
     @Test
