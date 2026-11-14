@@ -5,32 +5,32 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 ## Estado
 
-`mvnw verify` pasa completo: **723 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+`mvnw verify` pasa completo: **737 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
-| Dominio | `domain/**` | 214 |
-| Aplicación | `application/**` | 220 |
-| Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 47 |
-| Persistencia JPA | `infrastructure/persistence/jpa/**` | 85 |
-| Controllers: integración sobre JPA/H2 y `ValidadorEntrada` | `presentation/controller/**` | 68 |
+| Dominio | `domain/**` | 224 |
+| Aplicación | `application/**` | 222 |
+| Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 48 |
+| Persistencia JPA | `infrastructure/persistence/jpa/**` | 88 |
+| Controllers: integración sobre JPA/H2 y `ValidadorEntrada` | `presentation/controller/**` | 79 |
 | Pantalla: adaptador sobre JPA/H2 y dependencias de la vista | `presentation/{adaptador,ui}/**` | 18 |
-| Aceptación en memoria | `acceptance/memoria/**` | 34 |
-| Aceptación sobre JPA/H2 | `acceptance/jpa/**` | 22 |
+| Aceptación en memoria | `acceptance/memoria/**` | 35 |
+| Aceptación sobre JPA/H2 | `acceptance/jpa/**` | 23 |
 
 Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación), medida con `mvnw clean verify`:
 
 | Capa | Líneas | Ramas |
 |---|---|---|
-| `domain` | 99,4 % | 96,2 % |
-| `application` | 99,4 % | 91,4 % |
-| `infrastructure` | 93,2 % | 87,2 % |
-| `presentation` | 38,2 % | 43,4 % |
-| ↳ `presentation.controller` | 100,0 % | 97,4 % |
+| `domain` | 99,4 % | 96,4 % |
+| `application` | 99,4 % | 91,9 % |
+| `infrastructure` | 93,3 % | 87,8 % |
+| `presentation` | 41,6 % | 51,3 % |
+| ↳ `presentation.controller` | 100,0 % | 97,6 % |
 | ↳ `presentation.adaptador` | 91,8 % | 70,1 % |
 | ↳ `presentation.ui.swing` | 3,9 % | 0,0 % |
-| `bootstrap` y `Main` | 15,3 % | 0,0 % |
-| **Total** | **72,7 %** | **73,4 %** |
+| `bootstrap` y `Main` | 15,0 % | 0,0 % |
+| **Total** | **74,6 %** | **77,6 %** |
 
 Sin `clean`, JaCoCo suma los datos de corridas anteriores que siguen en `target\jacoco.exec` (por ejemplo, las del perfil `mysql`) y los porcentajes pueden salir más altos.
 
@@ -64,7 +64,7 @@ skillswap/
                                  · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 218 clases de producción, 101 clases de test (723 tests), ~12.7 mil líneas de código y ~15.0 mil de tests.
+Números: 219 clases de producción, 102 clases de test (737 tests), ~12.9 mil líneas de código y ~15.6 mil de tests.
 
 ---
 
@@ -253,7 +253,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 9 | Controllers delgados que validan la entrada, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `ValidadorEntrada`, `Resultado`; tests en `presentation/controller/**` (ver nota de nombres abajo) |
 | 10 | Mock UI Kit conectado por interfaces | ✅ | `SkillSwapView` → `UiControllers` (contrato del kit) ← `UiControllersAdapter` → los 8 controllers; `Main --ui`; `UiControllersAdapterTest`, `DependenciasUiTest` (sección 8, punto 11) |
 | 11 | Entregas incrementales | ⬜ | — |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 723 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 737 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (PlantUML, sección 3) |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
