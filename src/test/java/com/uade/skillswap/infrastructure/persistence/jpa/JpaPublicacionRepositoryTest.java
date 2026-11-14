@@ -114,8 +114,8 @@ class JpaPublicacionRepositoryTest extends JpaTestBase {
 
         List<Publicacion> leidas = publicaciones.buscarPorIds(List.of(otra.getId(), una.getId(), una.getId(), 9999L));
 
-        assertEquals(Set.of(una.getId(), otra.getId()),
-                Set.copyOf(leidas.stream().map(Publicacion::getId).toList()));
+        assertEquals(List.of(otra.getId(), una.getId()), leidas.stream().map(Publicacion::getId).toList(),
+                "cada una una sola vez, en el orden pedido");
         assertEquals(2, leidas.stream().filter(p -> p.getId().equals(una.getId())).findFirst().orElseThrow()
                 .getFranjas().size());
         assertTrue(publicaciones.buscarPorIds(List.of()).isEmpty());

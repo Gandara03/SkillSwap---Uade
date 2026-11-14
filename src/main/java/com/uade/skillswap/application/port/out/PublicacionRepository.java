@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface PublicacionRepository {
     Publicacion guardar(Publicacion publicacion);
     Optional<Publicacion> buscarPorId(Long id);
-    /** Varias publicaciones con una sola carga, para listados; las que no existen no aparecen. */
+    /** Varias publicaciones con una sola carga, para listados: sin repetidos y las que no existen no aparecen. */
     List<Publicacion> buscarPorIds(Collection<Long> ids);
     Pagina<Publicacion> buscar(FiltroBusqueda filtro, PaginaRequest pagina);
     Pagina<Publicacion> buscarPorAutor(Long autorId, PaginaRequest pagina);

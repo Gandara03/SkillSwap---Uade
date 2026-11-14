@@ -17,6 +17,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -69,7 +70,8 @@ public class JpaPublicacionRepository extends SimpleJpaRepository
         if (ids.isEmpty()) {
             return List.of();
         }
-        return leer(em -> cargar(em, List.copyOf(ids)));
+        // Sin repetidos: cargarEnOrden devuelve una entrada por cada id que recibe.
+        return leer(em -> cargar(em, List.copyOf(new LinkedHashSet<>(ids))));
     }
 
     // ---------- busqueda ----------
