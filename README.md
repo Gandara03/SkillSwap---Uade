@@ -5,7 +5,7 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 ## Estado
 
-`mvnw verify` pasa completo: **738 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+`mvnw verify` pasa completo: **740 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
@@ -25,16 +25,16 @@ Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación
 | `domain` | 99,4 % | 96,4 % |
 | `application` | 99,4 % | 91,9 % |
 | `infrastructure` | 93,3 % | 87,8 % |
-| `presentation` | 41,6 % | 51,3 % |
+| `presentation` | 42,8 % | 54,5 % |
 | ↳ `presentation.controller` | 100,0 % | 97,6 % |
 | ↳ `presentation.adaptador` | 91,8 % | 70,1 % |
 | ↳ `presentation.ui.swing` | 3,9 % | 0,0 % |
-| `bootstrap` y `Main` | 15,0 % | 0,0 % |
-| **Total** | **74,6 %** | **77,6 %** |
+| `bootstrap` y `Main` | 83,2 % | 40,3 % |
+| **Total** | **80,4 %** | **80,4 %** |
 
 Sin `clean`, JaCoCo suma los datos de corridas anteriores que siguen en `target\jacoco.exec` (por ejemplo, las del perfil `mysql`) y los porcentajes pueden salir más altos.
 
-Los controllers y el adaptador de la pantalla tienen tests de integración contra H2 (`presentation/controller/**`, `presentation/adaptador/**`). El resto de `presentation` (formato y la pantalla Swing) y `bootstrap` se ejercitan con la demo y con `--ui` (sección 2); la pantalla no tiene tests automáticos y por eso baja el total. El camino contra MySQL real no forma parte de `verify`: se prueba aparte con `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
+Los controllers y el adaptador de la pantalla tienen tests de integración contra H2 (`presentation/controller/**`, `presentation/adaptador/**`). `DemoFlujoPrincipalTest` corre la demo de consola completa sobre H2 (`bootstrap`, más el formato de `presentation.ui`); `Main` solo se ejercita a mano (sección 2). La pantalla Swing no tiene tests automáticos (se prueba con `--ui`) y por eso baja el total. El camino contra MySQL real no forma parte de `verify`: se prueba aparte con `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
 
 ---
 
@@ -64,7 +64,7 @@ skillswap/
                                  · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 219 clases de producción, 102 clases de test (738 tests), ~12.9 mil líneas de código y ~15.6 mil de tests.
+Números: 219 clases de producción, 103 clases de test (740 tests), ~12.9 mil líneas de código y ~15.6 mil de tests.
 
 ---
 
@@ -257,7 +257,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 9 | Controllers delgados que validan la entrada, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `ValidadorEntrada`, `Resultado`; tests en `presentation/controller/**` (ver nota de nombres abajo) |
 | 10 | Mock UI Kit conectado por interfaces | ✅ | `SkillSwapView` → `UiControllers` (contrato del kit) ← `UiControllersAdapter` → los 8 controllers; `Main --ui`; `UiControllersAdapterTest`, `DependenciasUiTest` (sección 8, punto 11) |
 | 11 | Entregas incrementales | ⬜ | — |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 738 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 740 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (todas las capas) y `uml/01-patrones-aplicados.puml` (los 7 patrones con sus roles); PlantUML, sección 3 |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
