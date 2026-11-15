@@ -5,7 +5,6 @@ import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.PerfilDto;
 import com.uade.skillswap.application.dto.PublicacionDto;
 import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
-import com.uade.skillswap.domain.exception.TransicionInvalidaException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -90,10 +89,8 @@ class Caso10CompletarCalificarYReputacionTest {
         PublicacionDto mentoria = e.publicarMentoria(ana.id(), 40, 1, 1);
         ContratacionDto pagada = e.contratarYPagar(ana.id(), bruno.id(), mentoria, 0);
 
-        Throwable error = assertThrows(RuntimeException.class,
+        assertThrows(ReglaDeNegocioException.class,
                 () -> e.app.calificacionUseCase.calificar(bruno.id(), e.calificacion(pagada.id(), 5)));
-        assertEquals(true, error instanceof ReglaDeNegocioException || error instanceof TransicionInvalidaException,
-                error.getClass().getName());
         assertEquals(0.0, e.app.perfilUseCase.obtener(ana.id()).reputacion(), 0.0001);
     }
 }

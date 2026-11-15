@@ -3,7 +3,6 @@ package com.uade.skillswap.acceptance.memoria;
 import com.uade.skillswap.application.command.CrearPublicacionCommand;
 import com.uade.skillswap.application.dto.PerfilDto;
 import com.uade.skillswap.application.dto.PublicacionDto;
-import com.uade.skillswap.application.exception.ValidacionException;
 import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
 import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
@@ -91,13 +90,10 @@ class Caso02OfertaIncompletaTest {
                 "desc", "programacion", Modalidad.REMOTA, 60, 1, new BigDecimal("-5"), Set.of(), Set.of(), null,
                 e.franjasDiarias(1));
 
-        // segun donde lo valide el sistema (VO de precio o regla de publicacion) el error es de dominio o de entrada
-        Throwable error = assertThrows(RuntimeException.class, () -> {
-            PublicacionDto borrador = e.app.publicacionUseCase.crearBorrador(ana.id(), conPrecioNegativo);
-            e.app.publicacionUseCase.publicar(ana.id(), borrador.id());
-        });
-        assertTrue(error instanceof ReglaDeNegocioException || error instanceof ValidacionException
-                        || error instanceof IllegalArgumentException, error.getClass().getName());
+        PublicacionDto borrador = e.app.publicacionUseCase.crearBorrador(ana.id(), conPrecioNegativo);
+        ReglaDeNegocioException error = assertThrows(ReglaDeNegocioException.class,
+                () -> e.app.publicacionUseCase.publicar(ana.id(), borrador.id()));
+        assertTrue(error.getMessage().contains("precio"), error.getMessage());
         assertEquals(0L, e.app.busquedaUseCase.buscar(FiltroBusqueda.vacio(), e.primeraPagina()).totalElementos());
     }
 }
