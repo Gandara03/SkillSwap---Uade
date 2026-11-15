@@ -72,6 +72,14 @@ class SkillCoinsTest {
     }
 
     @Test
+    @DisplayName("porcentaje redondea a 2 decimales con la mitad hacia arriba")
+    void porcentajeRedondeaMitadHaciaArriba() {
+        assertEquals(SkillCoins.de("0.01"), SkillCoins.de("0.01").porcentaje(50));
+        assertEquals(SkillCoins.de("0.01"), SkillCoins.de("0.05").porcentaje(10));
+        assertEquals(SkillCoins.CERO, SkillCoins.de("0.01").porcentaje(40));
+    }
+
+    @Test
     @DisplayName("comparaciones: mayor, menor, cero y negativo")
     void comparaciones() {
         SkillCoins diez = SkillCoins.de(10);
