@@ -216,7 +216,7 @@ Descartados a propósito (justificar en el informe): **Composite** (no hay jerar
 ## 5. Persistencia, transacciones y concurrencia
 
 - **Esquema:** `db/migration/V1__esquema.sql` (16 tablas, portable MySQL 8 / H2 en modo MySQL). Únicos: `perfil.user_id`, `calificacion(contratacion_id, autor_id)`. Índices: `publicacion(estado, categoria, precio_base)`, historiales, `notificacion(destinatario_id, leida)`. Sin `ddl-auto=create`.
-- **Mapeo:** estado como `String`; el objeto State se reconstruye con `EstadoXFactory.desdeNombre` (equivale al `@Transient + @PostLoad` del ejemplo del curso). Historial **append-only** (se insertan solo entradas nuevas). Colecciones con `@ElementCollection` / entidades hijas.
+- **Mapeo:** estado como `String`; el objeto State se reconstruye con `EstadoXFactory.desdeNombre`. Historial **append-only** (se insertan solo entradas nuevas). Colecciones con `@ElementCollection` / entidades hijas.
 - **Transacciones:** `TransaccionPort.ejecutar(...)` implementado por `JpaTransaccionAdapter` (reentrante, un `EntityManager` por unidad de trabajo vía `JpaContexto`). Cada operación mutante de un servicio corre en **una** transacción: aceptar (estado + franja/cupo), pagar (débito + estado), completar (acreditación + estado), cancelar (estado + franja + reintegro + compensación). Las notificaciones salen después del commit y en su propia transacción; si un canal falla no se deshace la operación.
 - **Concurrencia:** `@Version` en Perfil, Publicacion, Contratacion y Wallet, más un chequeo de versión previo al guardado; los conflictos se traducen a `ConflictoConcurrenciaException`. Al reprogramar una reserva sube `publicacion.revision` para que el `@Version` detecte el cambio de franjas. Una clave duplicada también se traduce a `ConflictoConcurrenciaException` en `ErroresJpa` (SQLState `23505` en H2, código `1062` en MySQL): es lo que pasa cuando dos pedidos simultáneos insertan lo mismo, por ejemplo dos registros del mismo usuario o dos calificaciones del mismo autor, y el segundo choca con el `UNIQUE`. Las demás violaciones (clave foránea, `NOT NULL`) siguen siendo `ERROR_INTERNO`.
 - **Sin N+1 / paginación:** todos los listados son paginados (`PaginaRequest`, tamaño máximo 100). La búsqueda hace `count` + ids paginados + una consulta `JOIN FETCH` por colección (nunca `JOIN FETCH` con `setMaxResults`; `hibernate.query.fail_on_pagination_over_collection_fetch=true` lo hace fallar fuerte si alguien lo reintroduce). Autores y promociones se cargan **por lote** (`buscarPorIds`, `buscarActivasPorPublicaciones`); en "mis contrataciones", también las publicaciones de la página (`PublicacionRepository.buscarPorIds`) y cuáles ya calificó quien consulta (`CalificacionRepository.calificadasPor`). Lo verifican tres tests: `BusquedaServiceTest.sinNMasUno` (una sola consulta de autores y una de promociones por página, sobre los fakes) y dos que cuentan las sentencias SQL reales con las estadísticas de Hibernate y exigen la misma cantidad con 2 y con 6 publicaciones: `ContratacionControllerTest.misContratacionesSinNMasUno` y `PublicacionControllerTest.misPublicacionesSinNMasUno`.
@@ -245,7 +245,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 4.4 | Calificación por cada parte, nadie se califica a sí mismo | ✅ | `Calificacion.registrar`, caso 10 |
 | 4.5 | Tabla de estados de contratación | ✅ | `contratacion/estado/*` |
 | 4.6 | Notificar los 6 eventos; email/push/interna por usuario; proveedores simulados detrás de interfaces | ✅ | `NotificadorObserver`, adapters, factory |
-| 5 | Reglas mínimas (autor no solicita lo propio, publicación no publicada no admite solicitudes, franja/cupo, débito+crédito atómico, reintegro 100/50/0, promociones sin total negativo, calificar una vez, historial inmutable, baja lógica, permisos) | ✅ | tests por regla en `domain/**` y `application/**` |
+| 5 | Reglas mínimas (autor no solicita lo propio, publicación no publicada no admite solicitudes, franja/cupo, débito+crédito atómico, reintegro 100/50/0, promociones sin total negativo, calificar una vez, historial inmutable, baja lógica, permisos) | ✅ (débito+crédito con escrow, ver sección 8, punto 1) | tests por regla en `domain/**` y `application/**` |
 | 6 | Clean Architecture con la separación pedida | ✅ | sección 3 |
 | 7 | ≥ 4 patrones, justificados y con pruebas | ✅ | sección 4 |
 | 8 | Persistir todas las entidades pedidas, unicidad e índices | ✅ | `V1__esquema.sql`, entidades; `hbm2ddl=validate` pasa en cada test JPA |
@@ -301,20 +301,19 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 | Módulo | Carpeta(s) | Estado | Próximas tareas |
 |---|---|---|---|
 | **A — Servicios** | `application/service`, `application/notificacion`, `application/mapper` | ✅ | Decidir los huecos de la sección 8 (publicación cancelada con contrataciones activas, retiro de solicitud pendiente) |
-| **B — Persistencia** | `infrastructure/persistence/**`, `persistence.xml`, `db/migration` | ✅ | Probar el camino contra MySQL real |
+| **B — Persistencia** | `infrastructure/persistence/**`, `persistence.xml`, `db/migration` | ✅ | Correr `.\mvnw.cmd test -Pmysql` después de cada cambio de persistencia y antes de cada entrega |
 | **C — Presentación y demo** | `presentation/**`, `bootstrap/**`, `Main`, tests en `src/test/.../presentation` | ✅ | Probar a mano la pantalla (`--ui`) con H2 y con MySQL |
 | **D — Adapters y soporte de tests** | `infrastructure/{identidad,notificacion,time}`, `src/test/.../support` | ✅ | Opcional: rollback simulado en `TransaccionSimulada` para que los fakes reflejen JPA |
 | **E — Tests de aplicación** | `src/test/.../application` | ✅ | Mantener la cobertura al agregar casos (hoy 99,4 % de líneas en `application`) |
 | **F — Aceptación** | `src/test/.../acceptance` | ✅ | Mantener alineados los juegos en memoria y sobre JPA |
 | **G — UML** | `uml/` | ✅ | Mantener los dos diagramas (`00-aplicacion-completa` y `01-patrones-aplicados`) al día con el código y volver a exportarlos |
 | **H — Informe PDF** | `Informe_SkillSwap.pdf` | 🟡 | Revisar que cada decisión tenga problema, alternativa, consecuencias y evidencia (código/tests) |
-| **I — Defensa** | — | ⬜ | Cada integrante elige una parte (p. ej. State, persistencia, Observer, Decorator, controllers) y practica modificarla en vivo |
 
 ---
 
 ## 8. Decisiones abiertas y límites conocidos
 
-Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos a mencionar (o cerrar) antes de la defensa:
+Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos conocidos:
 
 1. **Escrow vs transferencia directa.** Se eligió escrow (el monto queda retenido hasta completar). Alternativa: acreditar al proveedor al pagar. Al cancelar, `Contratacion.repartirRetenido` decide el reintegro y la compensación.
 2. **Reserva sin entidad propia.** Vive dentro de `Contratacion`. Si la cátedra espera una tabla `reserva`, se extrae.
