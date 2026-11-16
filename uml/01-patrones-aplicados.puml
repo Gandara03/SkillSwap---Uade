@@ -324,9 +324,11 @@ package "Domain" #D5F0D5 {
       +getUmbrales(): UmbralesCancelacion
     }
     class PoliticaFlexible {
+      +{static} UMBRALES_POR_DEFECTO: UmbralesCancelacion
       +getTipo(): TipoPoliticaCancelacion
     }
     class PoliticaEstricta {
+      +{static} UMBRALES_POR_DEFECTO: UmbralesCancelacion
       +getTipo(): TipoPoliticaCancelacion
     }
   }
@@ -466,7 +468,7 @@ PrecioPublicacion "1" --o "0..1" PromocionDecorator : +envuelve
 PerfilPublicoFacade "1" --> "1" PerfilUseCase : +usa
 PerfilPublicoFacade "1" --> "1" CalificacionUseCase : +usa
 PerfilPublicoFacade "1" --> "1" PublicacionUseCase : +usa
-NotificadorObserver "1" -right-> "1" CanalNotificacionFactory : +usa
+NotificadorObserver "1" -right-> "1" CanalNotificacionFactory : +usa\n
 ContratacionService "1" --> "1" PoliticaCancelacionFactory : +usa
 PerfilController "1" --> "1" PerfilPublicoUseCase : +usa
 SkillSwapView "1" --> "1" UiControllers : +usa
@@ -479,14 +481,14 @@ PoliticaCancelacionFactory ..> PoliticaCancelacion : +crea
 PrecioPublicacionFactory ..> PrecioPublicacion : +crea
 EstrategiaRecomendacionFactory ..> EstrategiaRecomendacion : +crea
 CanalNotificacionFactory .right.> CanalNotificacionPort : +crea
-Contratacion ..> EstadoContratacionFactory
-Publicacion ..> EstadoPublicacionFactory
-Contratacion ..> PoliticaCancelacion
-ContratacionService .....> Contratacion
-RecomendacionService ..> EstrategiaRecomendacionFactory
-RecomendacionService ..> EstrategiaRecomendacion
-ContratacionSubject ..> ContratacionEvent
-ContratacionObserver ..> ContratacionEvent
+Contratacion ..> EstadoContratacionFactory : +reconstruye estado con
+Publicacion ..> EstadoPublicacionFactory : +reconstruye estado con
+Contratacion ..> PoliticaCancelacion : +reparte segun
+ContratacionService .....> Contratacion : +despacha eventos de
+RecomendacionService ..> EstrategiaRecomendacionFactory : +pide estrategia a
+RecomendacionService ..> EstrategiaRecomendacion : +recomienda con
+ContratacionSubject ..> ContratacionEvent : +notifica
+ContratacionObserver ..> ContratacionEvent : +recibe
 
 ' --- ordenamiento (no son relaciones) ---
 EstadoEnCurso -[hidden]down- EstadoPublicacion

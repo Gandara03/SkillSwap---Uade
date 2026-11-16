@@ -575,6 +575,19 @@ package "Domain" #D5F0D5 {
     +calcular(): SkillCoins
     +detalle(): List<String>
   }
+  class SkillCoins {
+    +{static} CERO: SkillCoins
+    -monto: BigDecimal
+    +{static} de(monto: BigDecimal): SkillCoins
+    +sumar(otro: SkillCoins): SkillCoins
+    +restar(otro: SkillCoins): SkillCoins
+    +porcentaje(porcentaje: BigDecimal): SkillCoins
+    +noNegativo(): SkillCoins
+    +esNegativo(): boolean
+    +esCero(): boolean
+    +esMayorQue(otro: SkillCoins): boolean
+    +esMenorQue(otro: SkillCoins): boolean
+  }
 }
 
 package "Infrastructure" #FAE0D0 {
@@ -766,19 +779,26 @@ Publicacion "0..*" --> "1" Perfil : +autor
 Promocion "0..*" --> "1" Publicacion : +aplica a
 Notificacion "0..*" --> "1" Perfil : +destinatario
 Wallet "1" --> "1" Perfil : +pertenece a
+Wallet "0..*" --> "1" SkillCoins : +saldo
+Contratacion "0..*" -> "1" SkillCoins : +precio final\n
+SkillCoins "0..1" <-- "0..*" Publicacion : +precio base
 
 ' --- dependencia ---
-NotificacionRepository ..> Notificacion
-WalletRepository ..> Wallet
-WalletRepository ..> MovimientoCredito
-PerfilRepository ..> Perfil
-CalificacionRepository ..> Calificacion
-ContratacionRepository ..> Contratacion
-PublicacionRepository ..> Publicacion
-PromocionRepository ..> Promocion
+NotificacionRepository ..> Notificacion : +persiste
+WalletRepository ..> Wallet : +persiste
+WalletRepository ..> MovimientoCredito : +lista
+PerfilRepository ..> Perfil : +persiste
+CalificacionRepository ..> Calificacion : +persiste
+ContratacionRepository ..> Contratacion : +persiste
+PublicacionRepository ..> Publicacion : +persiste
+PromocionRepository ..> Promocion : +persiste
 CanalNotificacionFactory .right.> CanalNotificacionPort : +crea
-RecomendacionService ..> EstrategiaRecomendacion
-Contratacion ..> PoliticaCancelacion
+RecomendacionService ..> EstrategiaRecomendacion : +recomienda con
+Contratacion ..> PoliticaCancelacion : +reparte segun
+ContratacionService ..> PrecioPublicacion : +calcula precio con
+PublicacionService ..> PrecioPublicacion : +calcula precio con
+PrecioPublicacion ..> SkillCoins : +calcula
+SkillCoins <.. PoliticaCancelacion : +calcula reintegro en
 
 ' --- ordenamiento (no son relaciones) ---
 NotificacionService -[hidden]down- NotificadorObserver
@@ -788,5 +808,6 @@ Wallet -[hidden]down- Promocion
 IdentidadMockAdapter -[hidden]down- JpaNotificacionRepository
 Franja -[hidden]down- HistorialEstado
 Wallet -[hidden]right- IdentidadMockAdapter
+Calificacion -[hidden]right- Wallet
 
 @enduml
