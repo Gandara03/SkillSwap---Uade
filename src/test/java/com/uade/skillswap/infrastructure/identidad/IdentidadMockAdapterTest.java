@@ -89,10 +89,8 @@ class IdentidadMockAdapterTest {
     }
 
     @Test
-    @DisplayName("el SDK externo tiene API propia: uid, email y tokens de sesion")
+    @DisplayName("el SDK externo tiene API propia: uid y tokens de sesion")
     void apiDelSdk() {
-        assertEquals("ana@skillswap.test", servicio.emailDe("u-ana"));
-        assertNull(servicio.emailDe("u-nadie"));
         assertNull(servicio.obtenerPorId("u-nadie"));
         String token = servicio.abrirSesion("u-ana");
         assertEquals("u-ana", servicio.uidDeSesion(token));

@@ -23,11 +23,6 @@ public class ServicioIdentidadExterno {
         return uid == null ? null : usuarios.get(uid);
     }
 
-    public String emailDe(String uid) {
-        UsuarioExterno u = obtenerPorId(uid);
-        return u == null ? null : u.correoElectronico();
-    }
-
     public void suspenderCuenta(String uid) {
         UsuarioExterno u = obtenerPorId(uid);
         if (u != null) {

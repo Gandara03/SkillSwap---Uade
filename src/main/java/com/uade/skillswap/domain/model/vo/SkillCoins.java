@@ -31,10 +31,6 @@ public final class SkillCoins implements Comparable<SkillCoins> {
         return new SkillCoins(BigDecimal.valueOf(monto));
     }
 
-    public static SkillCoins de(double monto) {
-        return new SkillCoins(BigDecimal.valueOf(monto));
-    }
-
     public static SkillCoins de(String monto) {
         return new SkillCoins(new BigDecimal(monto));
     }
