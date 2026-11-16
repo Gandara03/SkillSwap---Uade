@@ -7,8 +7,11 @@ import com.uade.skillswap.application.command.FranjaCommand;
 import com.uade.skillswap.application.command.SolicitarContratacionCommand;
 import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.FranjaDto;
+import com.uade.skillswap.application.dto.HistorialDto;
+import com.uade.skillswap.application.dto.MovimientoDto;
 import com.uade.skillswap.application.dto.NotificacionDto;
 import com.uade.skillswap.application.dto.PublicacionDto;
+import com.uade.skillswap.application.dto.PublicacionResumenDto;
 import com.uade.skillswap.application.dto.WalletDto;
 import com.uade.skillswap.application.exception.ErrorCode;
 import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
@@ -23,11 +26,11 @@ import com.uade.skillswap.infrastructure.identidad.IdentidadMockAdapter;
 import com.uade.skillswap.infrastructure.notificacion.sdk.EmailSdkMock;
 import com.uade.skillswap.infrastructure.notificacion.sdk.PushSdkMock;
 import com.uade.skillswap.presentation.Resultado;
-import com.uade.skillswap.presentation.ui.Formato;
 
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -57,6 +60,7 @@ public final class DemoFlujoPrincipal {
     }
 
     private static final PaginaRequest PAGINA = PaginaRequest.de(0, 20);
+    private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
     private final Composicion app;
     private final IdentidadMockAdapter identidad;
@@ -105,11 +109,11 @@ public final class DemoFlujoPrincipal {
         paso(bruno, "busca publicaciones con el texto 'java', ordenadas por reputación", false,
                 () -> app.getBusquedaController().buscar(new FiltroBusqueda("java", null, null, null, null, null,
                         null, null, null, null, CriterioOrden.REPUTACION), PAGINA),
-                pagina -> listar(pagina.contenido(), Formato::publicacion, pagina.totalElementos() + " resultado(s)"));
+                pagina -> listar(pagina.contenido(), DemoFlujoPrincipal::publicacion, pagina.totalElementos() + " resultado(s)"));
         for (TipoEstrategiaRecomendacion estrategia : TipoEstrategiaRecomendacion.values()) {
             paso(bruno, "pide recomendaciones por " + estrategia, false,
                     () -> app.getRecomendacionController().recomendar(estrategia, PaginaRequest.de(0, 3)),
-                    pagina -> listar(pagina.contenido(), Formato::publicacion,
+                    pagina -> listar(pagina.contenido(), DemoFlujoPrincipal::publicacion,
                             pagina.totalElementos() + " recomendación(es), se muestran hasta 3"));
         }
     }
@@ -135,8 +139,8 @@ public final class DemoFlujoPrincipal {
         PublicacionDto publicada = paso(ana, "agrega una promoción del 25 % por tiempo limitado",
                 () -> publicaciones.agregarPromocion(new CrearPromocionCommand(borrador.id(), "Promo 25 %",
                         TipoPromocion.PORCENTAJE, BigDecimal.valueOf(25), ahora.minusDays(1), ahora.plusDays(30))),
-                p -> "Precio base %s -> precio final %s | %s".formatted(Formato.monto(p.precioBase()),
-                        Formato.monto(p.precioFinal()), p.detallePrecio()));
+                p -> "Precio base %s -> precio final %s | %s".formatted(monto(p.precioBase()),
+                        monto(p.precioFinal()), p.detallePrecio()));
         List<FranjaDto> franjas = franjasOrdenadas(publicada);
         franjaCancelacion = franjas.get(0).id();
         Long franjaFlujo = franjas.get(1).id();
@@ -145,7 +149,7 @@ public final class DemoFlujoPrincipal {
         paso(bruno, "busca 'patrones' y encuentra la mentoría nueva", false,
                 () -> app.getBusquedaController().buscar(new FiltroBusqueda("patrones", null, null, null, null, null,
                         null, null, null, null, CriterioOrden.RECIENTES), PAGINA),
-                pagina -> listar(pagina.contenido(), Formato::publicacion, pagina.totalElementos() + " resultado(s)"));
+                pagina -> listar(pagina.contenido(), DemoFlujoPrincipal::publicacion, pagina.totalElementos() + " resultado(s)"));
 
         ContratacionDto solicitada = paso(bruno, "solicita la mentoría en la franja de dentro de 3 días",
                 () -> contrataciones.solicitar(new SolicitarContratacionCommand(borrador.id(), franjaFlujo,
@@ -159,8 +163,8 @@ public final class DemoFlujoPrincipal {
         paso(ana, "completa la sesión: se acredita lo retenido a Ana", () -> contrataciones.completar(id),
                 this::detalleContratacion);
         paso(bruno, "consulta el comprobante", false, () -> contrataciones.comprobante(id),
-                c -> "%s | monto %s | pagado %s | completado %s".formatted(c.numero(), Formato.monto(c.monto()),
-                        Formato.fecha(c.pagadoEn()), Formato.fecha(c.completadoEn())));
+                c -> "%s | monto %s | pagado %s | completado %s".formatted(c.numero(), monto(c.monto()),
+                        fecha(c.pagadoEn()), fecha(c.completadoEn())));
         paso(bruno, "califica a Ana con 5 estrellas", false,
                 () -> app.getCalificacionController().calificar(new CalificarCommand(id, 5, "Excelente mentoría, muy clara.")),
                 c -> "Puntaje %d: '%s'".formatted(c.puntaje(), c.comentario()));
@@ -189,8 +193,8 @@ public final class DemoFlujoPrincipal {
         int pushesAntes = app.getPushSdk().enviados().size();
         paso(bruno, "cancela: surgió un imprevisto", () -> contrataciones.cancelar(id, "Surgió un imprevisto laboral"),
                 r -> "%s | política %s | reintegro al cliente %s | compensación a la proveedora %s".formatted(
-                        Formato.contratacion(r.contratacion()), r.politica(), Formato.monto(r.reintegroCliente()),
-                        Formato.monto(r.compensacionProveedor())));
+                        contratacion(r.contratacion()), r.politica(), monto(r.reintegroCliente()),
+                        monto(r.compensacionProveedor())));
         mostrarEnviosExternos("la cancelación se avisa a las dos partes, cada una por su canal", correosAntes,
                 pushesAntes);
     }
@@ -200,7 +204,7 @@ public final class DemoFlujoPrincipal {
         var contrataciones = app.getContratacionController();
         PublicacionDto auditoria = paso(bruno, "mira la 'Auditoría de UX completa' de Cecilia", false,
                 () -> app.getPublicacionController().obtener(semilla.auditoriaCeciliaId()),
-                p -> "#%d '%s' | precio %s | política %s".formatted(p.id(), p.titulo(), Formato.monto(p.precioFinal()),
+                p -> "#%d '%s' | precio %s | política %s".formatted(p.id(), p.titulo(), monto(p.precioFinal()),
                         p.politicaCancelacion()));
         Long franjaLibre = franjasOrdenadas(auditoria).stream()
                 .filter(f -> !f.ocupada() && f.inicio().isAfter(LocalDateTime.now())).findFirst()
@@ -217,8 +221,8 @@ public final class DemoFlujoPrincipal {
         paso(bruno, "consulta la contratación: sigue ACEPTADA y sin cobrar nada", false,
                 () -> contrataciones.obtener(id), this::detalleContratacion);
         paso(bruno, "la cancela (no había pago: no hay reintegro)", () -> contrataciones.cancelar(id, "Sin saldo suficiente"),
-                r -> "%s | reintegro %s | compensación %s".formatted(Formato.contratacion(r.contratacion()),
-                        Formato.monto(r.reintegroCliente()), Formato.monto(r.compensacionProveedor())));
+                r -> "%s | reintegro %s | compensación %s".formatted(contratacion(r.contratacion()),
+                        monto(r.reintegroCliente()), monto(r.compensacionProveedor())));
     }
 
     private void resumenFinal(Long contratacionPrincipal) {
@@ -226,17 +230,17 @@ public final class DemoFlujoPrincipal {
         mostrarSaldos();
         paso(bruno, "revisa los movimientos de su wallet", false,
                 () -> app.getWalletController().movimientos(PAGINA),
-                m -> listar(m.contenido(), Formato::movimiento, m.totalElementos() + " movimiento(s)"));
+                m -> listar(m.contenido(), DemoFlujoPrincipal::movimiento, m.totalElementos() + " movimiento(s)"));
         paso(ana, "revisa los movimientos de su wallet", false,
                 () -> app.getWalletController().movimientos(PAGINA),
-                m -> listar(m.contenido(), Formato::movimiento, m.totalElementos() + " movimiento(s)"));
+                m -> listar(m.contenido(), DemoFlujoPrincipal::movimiento, m.totalElementos() + " movimiento(s)"));
         paso(ana, "consulta su reputación", false, () -> app.getPerfilController().miPerfil(),
                 p -> "reputación %.1f (%d calificación(es))".formatted(p.reputacion(), p.cantidadCalificaciones()));
         paso(bruno, "consulta su reputación", false, () -> app.getPerfilController().miPerfil(),
                 p -> "reputación %.1f (%d calificación(es))".formatted(p.reputacion(), p.cantidadCalificaciones()));
         paso(bruno, "revisa el historial de estados de la contratación #" + contratacionPrincipal, false,
                 () -> app.getContratacionController().historial(contratacionPrincipal, PAGINA),
-                h -> listar(h.contenido(), Formato::historial, h.totalElementos() + " transición(es)"));
+                h -> listar(h.contenido(), DemoFlujoPrincipal::historial, h.totalElementos() + " transición(es)"));
         for (Actor actor : List.of(ana, bruno)) {
             paso(actor, "revisa su bandeja de notificaciones", false,
                     () -> app.getNotificacionController().listar(false, PaginaRequest.de(0, 50)),
@@ -304,7 +308,7 @@ public final class DemoFlujoPrincipal {
             actuarComo(actor);
             Resultado<WalletDto> w = app.getWalletController().consultar();
             linea.append(separador).append(actor.nombre()).append(' ')
-                    .append(w.esOk() ? Formato.monto(w.valor().saldo()) : "(sin dato: " + w.mensaje() + ")");
+                    .append(w.esOk() ? monto(w.valor().saldo()) : "(sin dato: " + w.mensaje() + ")");
             separador = " | ";
         }
         out.println(linea);
@@ -327,7 +331,7 @@ public final class DemoFlujoPrincipal {
     }
 
     private String detalleContratacion(ContratacionDto c) {
-        return "Contratación " + Formato.contratacion(c);
+        return "Contratación " + contratacion(c);
     }
 
     private <T> String listar(List<T> items, Function<T, String> formato, String titulo) {
@@ -342,8 +346,45 @@ public final class DemoFlujoPrincipal {
     private String resumenNotificaciones(List<NotificacionDto> notificaciones, long total) {
         Map<String, Integer> porCanal = new TreeMap<>();
         notificaciones.forEach(n -> porCanal.merge(n.canal().name(), 1, Integer::sum));
-        String ultimas = listar(notificaciones.stream().limit(3).toList(), Formato::notificacion, "últimas 3");
+        String ultimas = listar(notificaciones.stream().limit(3).toList(), DemoFlujoPrincipal::notificacion, "últimas 3");
         return "%d notificación(es) por canal %s | %s".formatted(total, porCanal, ultimas);
+    }
+
+    // ---------- formato de los DTO ----------
+
+    private static String monto(BigDecimal monto) {
+        return monto == null ? "-" : monto.toPlainString() + " SC";
+    }
+
+    private static String fecha(LocalDateTime fecha) {
+        return fecha == null ? "-" : FECHA_HORA.format(fecha);
+    }
+
+    private static String publicacion(PublicacionResumenDto p) {
+        String precio = p.precioFinal() != null && p.precioBase() != null && p.precioFinal().compareTo(p.precioBase()) != 0
+                ? monto(p.precioBase()) + " -> " + monto(p.precioFinal())
+                : monto(p.precioFinal());
+        return "#%d [%s] %s | %s | %s (rep. %.1f) | cupo %d".formatted(p.id(), p.tipo(), p.titulo(), precio,
+                p.autorNombre(), p.autorReputacion(), p.cupoDisponible());
+    }
+
+    private static String contratacion(ContratacionDto c) {
+        return "#%d '%s' | %s | %s".formatted(c.id(), c.publicacionTitulo(), c.estado(), monto(c.precioFinal()));
+    }
+
+    private static String movimiento(MovimientoDto m) {
+        return "%s %-12s %s | saldo %s".formatted(fecha(m.fecha()), m.tipo(), monto(m.monto()), monto(m.saldoResultante()));
+    }
+
+    private static String notificacion(NotificacionDto n) {
+        return "%s [%s]%s %s: %s".formatted(fecha(n.fecha()), n.canal(), n.leida() ? "" : " (nueva)", n.tipoEvento(),
+                n.mensaje());
+    }
+
+    private static String historial(HistorialDto h) {
+        String anterior = h.estadoAnterior() == null ? "(inicio)" : h.estadoAnterior();
+        return "%s %s -> %s | %s".formatted(fecha(h.fecha()), anterior, h.estadoNuevo(),
+                h.motivo() == null ? "" : h.motivo());
     }
 
     // ---------- helpers de datos ----------
