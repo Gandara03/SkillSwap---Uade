@@ -22,19 +22,19 @@ Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación
 
 | Capa | Líneas | Ramas |
 |---|---|---|
-| `domain` | 99,4 % | 96,4 % |
+| `domain` | 99,5 % | 96,4 % |
 | `application` | 99,4 % | 91,9 % |
-| `infrastructure` | 93,3 % | 87,8 % |
-| `presentation` | 42,8 % | 54,5 % |
+| `infrastructure` | 93,3 % | 87,7 % |
+| `presentation` | 42,1 % | 54,1 % |
 | ↳ `presentation.controller` | 100,0 % | 97,6 % |
 | ↳ `presentation.adaptador` | 91,8 % | 70,1 % |
 | ↳ `presentation.ui.swing` | 3,9 % | 0,0 % |
-| `bootstrap` y `Main` | 83,2 % | 40,3 % |
+| `bootstrap` y `Main` | 83,8 % | 44,9 % |
 | **Total** | **80,4 %** | **80,4 %** |
 
 Sin `clean`, JaCoCo suma los datos de corridas anteriores que siguen en `target\jacoco.exec` (por ejemplo, las del perfil `mysql`) y los porcentajes pueden salir más altos.
 
-Los controllers y el adaptador de la pantalla tienen tests de integración contra H2 (`presentation/controller/**`, `presentation/adaptador/**`). `DemoFlujoPrincipalTest` corre la demo de consola completa sobre H2 (`bootstrap`, más el formato de `presentation.ui`); `Main` solo se ejercita a mano (sección 2). La pantalla Swing no tiene tests automáticos (se prueba con `--ui`) y por eso baja el total. El camino contra MySQL real no forma parte de `verify`: se prueba aparte con `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
+Los controllers y el adaptador de la pantalla tienen tests de integración contra H2 (`presentation/controller/**`, `presentation/adaptador/**`). `DemoFlujoPrincipalTest` corre la demo de consola completa sobre H2 (`bootstrap`); `Main` solo se ejercita a mano (sección 2). La pantalla Swing no tiene tests automáticos (se prueba con `--ui`) y por eso baja el total. El camino contra MySQL real no forma parte de `verify`: se prueba aparte con `--mysql` y con `.\mvnw.cmd test -Pmysql` (sección 2).
 
 ---
 
@@ -64,7 +64,7 @@ skillswap/
                                  · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 219 clases de producción, 103 clases de test (740 tests), ~12.9 mil líneas de código y ~15.6 mil de tests.
+Números: 218 clases de producción, 103 clases de test (740 tests), ~12.9 mil líneas de código y ~15.6 mil de tests.
 
 ---
 
@@ -172,18 +172,18 @@ Reglas que se respetan (verificables con un `grep` de imports): `domain` no impo
 
 `uml/` tiene dos diagramas, cada uno en tres archivos: el fuente PlantUML (`.puml`) y sus exportaciones `.svg` y `.png`.
 
-**`00-aplicacion-completa`** muestra las clases de la aplicación en las 4 capas, cada una en su paquete:
+**`00-aplicacion-completa`** muestra 74 clases de la aplicación en las 4 capas, cada una en su paquete:
 
 - **Presentation**: los 8 controllers.
 - **Application**: los 10 casos de uso (`port/in`), los servicios que los implementan, `PerfilPublicoFacade`, `NotificadorObserver` y los puertos de salida y repositorios (`port/out`).
-- **Domain**: las entidades del dominio y las interfaces de State, Strategy, Observer y Decorator.
+- **Domain**: las entidades del dominio, el value object `SkillCoins` y las interfaces de State, Strategy, Observer y Decorator.
 - **Infrastructure**: las clases que implementan los puertos: los 7 repositorios JPA (con su base `SimpleJpaRepository`) y los adapters de identidad, transacción, canales de notificación y reloj.
 
 Cada clase lleva sus campos y métodos con visibilidad y tipos.
 
-**`01-patrones-aplicados`** muestra los 7 patrones con todos sus roles, agrupados por capa y por patrón: las interfaces y clases base de State con los 12 estados concretos; las políticas de cancelación y las estrategias de recomendación (Strategy); `PrecioBase` y los decoradores de promoción (Decorator); `Contratacion` como Subject, `ContratacionEvent` y `NotificadorObserver` (Observer); los 5 Adapters, incluido `UiControllersAdapter` entre `SkillSwapView` y los controllers; las fábricas (Simple Factory) y `PerfilPublicoFacade` con su cliente `PerfilController` (Facade). De cada clase muestra los miembros que hacen al patrón.
+**`01-patrones-aplicados`** muestra en 59 clases los 7 patrones con todos sus roles, agrupados por capa y por patrón: las interfaces y clases base de State con los 12 estados concretos; las políticas de cancelación y las estrategias de recomendación (Strategy); `PrecioBase` y los decoradores de promoción (Decorator); `Contratacion` como Subject, `ContratacionEvent` y `NotificadorObserver` (Observer); los 5 Adapters, incluido `UiControllersAdapter` entre `SkillSwapView` y los controllers; las fábricas (Simple Factory) y `PerfilPublicoFacade` con su cliente `PerfilController` (Facade). De cada clase muestra los miembros que hacen al patrón.
 
-En los dos, las relaciones distinguen herencia, realización, composición, agregación, asociación (con multiplicidades) y dependencia.
+En los dos, las relaciones (93 en el `00` y 60 en el `01`) distinguen herencia, realización, composición, agregación, asociación y dependencia. Las composiciones, agregaciones y asociaciones llevan multiplicidades y una etiqueta que nombra la relación (`+precio final`, `+accede a`); las dependencias llevan solo la etiqueta (`+persiste`, `+crea`). La herencia y la realización van sin etiqueta.
 
 Cómo abrirlos:
 
@@ -193,7 +193,7 @@ Cómo abrirlos:
   java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg uml/00-aplicacion-completa.puml uml/01-patrones-aplicados.puml
   ```
 
-- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. Los `.png` (6535 × 5030 px el 00 y 6568 × 4761 px el 01) sirven para insertarlos en un documento.
+- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. Los `.png` (6429 × 5030 px el 00 y 6696 × 4761 px el 01) sirven para insertarlos en un documento.
 
 ---
 
