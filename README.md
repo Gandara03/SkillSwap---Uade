@@ -9,7 +9,7 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
-| Dominio | `domain/**` | 224 |
+| Dominio | `domain/**` | 225 |
 | Aplicación | `application/**` | 223 |
 | Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 48 |
 | Persistencia JPA | `infrastructure/persistence/jpa/**` | 88 |
@@ -17,6 +17,7 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 | Pantalla: adaptador sobre JPA/H2 y dependencias de la vista | `presentation/{adaptador,ui}/**` | 18 |
 | Aceptación en memoria | `acceptance/memoria/**` | 35 |
 | Aceptación sobre JPA/H2 | `acceptance/jpa/**` | 23 |
+| Demo de consola completa sobre H2 | `bootstrap/**` | 1 |
 
 Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación), medida con `mvnw clean verify`:
 
