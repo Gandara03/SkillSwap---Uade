@@ -15,8 +15,11 @@ import com.uade.skillswap.domain.model.perfil.TipoPerfil;
 import com.uade.skillswap.domain.model.politica.TipoPoliticaCancelacion;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
 import com.uade.skillswap.domain.model.publicacion.TipoPublicacion;
+import com.uade.skillswap.domain.model.vo.RangoPrecio;
+import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.domain.model.wallet.TipoMovimiento;
 import com.uade.skillswap.domain.query.CriterioOrden;
+import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models;
 
 import java.math.BigDecimal;
@@ -24,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Conversiones entre los DTO y commands de la aplicacion y los modelos de la pantalla. Sin estado y sin reglas:
@@ -56,6 +60,22 @@ final class MapeadorUi {
             case MENOR_PRECIO -> CriterioOrden.PRECIO_ASC;
             case MAS_RECIENTES -> CriterioOrden.RECIENTES;
         };
+    }
+
+    // ---------- busqueda y paginas ----------
+
+    /** null si no se cargo ningun extremo. */
+    static RangoPrecio rangoPrecio(BigDecimal minimo, BigDecimal maximo) {
+        if (minimo == null && maximo == null) {
+            return null;
+        }
+        return new RangoPrecio(minimo == null ? null : SkillCoins.de(minimo),
+                maximo == null ? null : SkillCoins.de(maximo));
+    }
+
+    static <T, R> Models.Pagina<R> pagina(Pagina<T> pagina, Function<T, R> convertir) {
+        return new Models.Pagina<>(pagina.contenido().stream().map(convertir).toList(), pagina.pagina(),
+                pagina.totalPaginas(), pagina.totalElementos());
     }
 
     // ---------- publicaciones ----------

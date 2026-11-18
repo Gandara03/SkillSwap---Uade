@@ -86,5 +86,15 @@ public final class Models {
     public record Notificacion(String id, String titulo, String detalle,
                                LocalDateTime fecha, boolean leida, String tipo) {}
 
-    public record FiltrosBusqueda(String texto, String categoria, Modalidad modalidad, OrdenBusqueda orden) {}
+    /** Todos opcionales: null (o texto vacio) no filtra. */
+    public record FiltrosBusqueda(String texto, String categoria, Modalidad modalidad, BigDecimal precioMinimo,
+                                  BigDecimal precioMaximo, String habilidad, Double reputacionMinima,
+                                  OrdenBusqueda orden) {}
+
+    /** Una pagina de un listado; {@code numero} empieza en 0. */
+    public record Pagina<T>(List<T> elementos, int numero, int totalPaginas, long totalElementos) {
+        public boolean hayAnterior() { return numero > 0; }
+
+        public boolean haySiguiente() { return numero + 1 < totalPaginas; }
+    }
 }

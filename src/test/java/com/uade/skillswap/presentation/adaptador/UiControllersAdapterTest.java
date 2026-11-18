@@ -66,8 +66,8 @@ class UiControllersAdapterTest extends AceptacionJpaBase {
         assertEquals(Models.EstadoPublicacion.PUBLICADA, publicada.estado());
         assertEquals(List.of(PAUSAR, CERRAR, Models.AccionPublicacion.CANCELAR), publicada.accionesDelAutor());
 
-        Models.Publicacion encontrada = ui.busqueda().buscar(new Models.FiltrosBusqueda("java",
-                UiControllers.BusquedaController.TODAS_LAS_CATEGORIAS, null, Models.OrdenBusqueda.RELEVANCIA)).get(0);
+        Models.Publicacion encontrada = buscar(filtros("java", UiControllers.BusquedaController.TODAS_LAS_CATEGORIAS,
+                null, Models.OrdenBusqueda.RELEVANCIA)).get(0);
         assertEquals(publicada.id(), encontrada.id());
         assertEquals("Sesion practica de Mentoria de Java", encontrada.descripcion());
         assertEquals(60, encontrada.duracionMinutos());
@@ -114,7 +114,7 @@ class UiControllersAdapterTest extends AceptacionJpaBase {
     void movimientosConSigno() {
         Models.Contratacion pagada = contratadaYPagada();
 
-        List<Models.Movimiento> movimientos = ui.wallet().listarMovimientos(BRUNO);
+        List<Models.Movimiento> movimientos = ui.wallet().listarMovimientos(BRUNO, 0).elementos();
 
         Models.Movimiento pago = movimientos.get(0);
         assertTrue(pago.concepto().startsWith("Pago"), pago.concepto());
@@ -146,7 +146,7 @@ class UiControllersAdapterTest extends AceptacionJpaBase {
         solicitar(BRUNO, publicada);
         solicitar(BRUNO, publicada);
 
-        List<Models.Notificacion> deAna = ui.notificaciones().listarNotificaciones(ANA);
+        List<Models.Notificacion> deAna = ui.notificaciones().listarNotificaciones(ANA, 0).elementos();
         assertEquals(2, deAna.size());
         assertEquals("Nueva solicitud", deAna.get(0).titulo());
         assertFalse(deAna.get(0).leida());
@@ -178,15 +178,68 @@ class UiControllersAdapterTest extends AceptacionJpaBase {
         Models.Publicacion diseno = ui.publicaciones().crearBorrador(ANA, oferta("Taller de UX", "Diseno", 30));
         ui.publicaciones().cambiarEstado(ANA, diseno.id(), PUBLICAR, null);
 
-        List<Models.Publicacion> todas = ui.busqueda().buscar(new Models.FiltrosBusqueda(" ",
-                UiControllers.BusquedaController.TODAS_LAS_CATEGORIAS, null, Models.OrdenBusqueda.MENOR_PRECIO));
+        List<Models.Publicacion> todas = buscar(filtros(" ", UiControllers.BusquedaController.TODAS_LAS_CATEGORIAS,
+                null, Models.OrdenBusqueda.MENOR_PRECIO));
         assertEquals(List.of("Taller de UX", "Mentoria de Java"), todas.stream().map(Models.Publicacion::titulo).toList());
 
-        List<Models.Publicacion> soloDiseno = ui.busqueda().buscar(new Models.FiltrosBusqueda(null, "Diseno",
-                Models.Modalidad.REMOTA, Models.OrdenBusqueda.MAS_RECIENTES));
+        List<Models.Publicacion> soloDiseno = buscar(filtros(null, "Diseno", Models.Modalidad.REMOTA,
+                Models.OrdenBusqueda.MAS_RECIENTES));
         assertEquals(List.of("Taller de UX"), soloDiseno.stream().map(Models.Publicacion::titulo).toList());
 
-        assertEquals(2, ui.busqueda().buscar(null).size(), "sin filtros = todas las publicadas");
+        assertEquals(2, buscar(null).size(), "sin filtros = todas las publicadas");
+        assertTrue(buscar(filtros(null, null, Models.Modalidad.PRESENCIAL, null)).isEmpty());
+    }
+
+    @Test
+    @DisplayName("buscar por rango de precio, habilidad y reputacion minima; un rango invertido o una reputacion de mas es VALIDACION")
+    void filtrosDePrecioHabilidadYReputacion() {
+        Models.Contratacion pagada = contratadaYPagada(); // "Mentoria de Java" de Ana, 40 SC, habilidad java
+        ui.contrataciones().iniciar(ANA, pagada.id());
+        ui.contrataciones().completar(ANA, pagada.id());
+        ui.calificaciones().calificar(BRUNO, pagada.id(), 5, "Excelente"); // Ana queda con reputacion 5
+        Models.Publicacion ux = ui.publicaciones().crearBorrador(BRUNO, new Models.NuevaPublicacion(
+                Models.TipoPublicacion.MENTORIA, "Taller de UX", "Prototipos", "Diseno", Models.Modalidad.REMOTA, 60, 2,
+                BigDecimal.valueOf(30), Models.PoliticaCancelacion.FLEXIBLE, List.of(), List.of("figma"), INICIO_FRANJA,
+                60));
+        ui.publicaciones().cambiarEstado(BRUNO, ux.id(), PUBLICAR, null);
+
+        assertEquals(List.of("Mentoria de Java"), titulos(conPrecio(35, null)));
+        assertEquals(List.of("Taller de UX"), titulos(conPrecio(null, 35)));
+        assertEquals(List.of("Taller de UX", "Mentoria de Java"), titulos(conPrecio(30, 40)), "los extremos entran");
+        assertEquals(List.of("Taller de UX"), titulos(new Models.FiltrosBusqueda(null, null, null, null, null, "Figma",
+                null, Models.OrdenBusqueda.MENOR_PRECIO)));
+        assertEquals(List.of("Mentoria de Java"), titulos(new Models.FiltrosBusqueda(null, null, null, null, null, null,
+                4.0, Models.OrdenBusqueda.MENOR_PRECIO)));
+
+        falla("VALIDACION", () -> ui.busqueda().buscar(conPrecio(50, 20), 0));
+        falla("VALIDACION", () -> ui.busqueda().buscar(new Models.FiltrosBusqueda(null, null, null, null, null, null,
+                6.0, null), 0));
+    }
+
+    @Test
+    @DisplayName("los listados vienen de a 9: la segunda pagina trae el resto y una pagina negativa es VALIDACION")
+    void listadosPaginados() {
+        for (int i = 1; i <= 10; i++) {
+            publicar("Mentoria " + i, 10 + i);
+        }
+
+        Models.Pagina<Models.Publicacion> primera = ui.busqueda().buscar(null, 0);
+        Models.Pagina<Models.Publicacion> segunda = ui.busqueda().buscar(null, 1);
+        assertEquals(9, primera.elementos().size());
+        assertEquals(10, primera.totalElementos());
+        assertEquals(2, primera.totalPaginas());
+        assertFalse(primera.hayAnterior());
+        assertTrue(primera.haySiguiente());
+        assertEquals(1, segunda.elementos().size());
+        assertTrue(segunda.hayAnterior());
+        assertFalse(segunda.haySiguiente());
+
+        Models.Pagina<Models.Publicacion> propias = ui.publicaciones().listarPropias(ANA, 1);
+        assertEquals(1, propias.elementos().size());
+        assertEquals(10, propias.totalElementos());
+
+        falla("VALIDACION", () -> ui.busqueda().buscar(null, -1));
+        falla("VALIDACION", () -> ui.contrataciones().listarContrataciones(ANA, -1));
     }
 
     @Test
@@ -195,7 +248,7 @@ class UiControllersAdapterTest extends AceptacionJpaBase {
         Models.Publicacion publicada = publicar("Mentoria de Java", 40);
         promocionar(ANA, Long.valueOf(publicada.id()), TipoPromocion.PORCENTAJE, 20);
 
-        Models.Publicacion encontrada = ui.busqueda().buscar(null).get(0);
+        Models.Publicacion encontrada = buscar(null).get(0);
 
         assertTrue(encontrada.destacada());
         assertMonto(32, encontrada.precio());
@@ -299,6 +352,26 @@ class UiControllersAdapterTest extends AceptacionJpaBase {
 
     // ---------- soporte ----------
 
+    private List<Models.Publicacion> buscar(Models.FiltrosBusqueda filtros) {
+        return ui.busqueda().buscar(filtros, 0).elementos();
+    }
+
+    private List<String> titulos(Models.FiltrosBusqueda filtros) {
+        return buscar(filtros).stream().map(Models.Publicacion::titulo).toList();
+    }
+
+    /** Solo texto, categoria, modalidad y orden: los demas filtros quedan vacios. */
+    private static Models.FiltrosBusqueda filtros(String texto, String categoria, Models.Modalidad modalidad,
+                                                  Models.OrdenBusqueda orden) {
+        return new Models.FiltrosBusqueda(texto, categoria, modalidad, null, null, null, null, orden);
+    }
+
+    /** Solo el rango de precios (null = sin ese extremo), de menor a mayor precio. */
+    private static Models.FiltrosBusqueda conPrecio(Integer minimo, Integer maximo) {
+        return new Models.FiltrosBusqueda(null, null, null, minimo == null ? null : BigDecimal.valueOf(minimo),
+                maximo == null ? null : BigDecimal.valueOf(maximo), null, null, Models.OrdenBusqueda.MENOR_PRECIO);
+    }
+
     private Models.Publicacion publicar(String titulo, long precio) {
         Models.Publicacion borrador = ui.publicaciones().crearBorrador(ANA, mentoria(titulo, precio));
         return ui.publicaciones().cambiarEstado(ANA, borrador.id(), PUBLICAR, null);
@@ -329,14 +402,17 @@ class UiControllersAdapterTest extends AceptacionJpaBase {
     }
 
     private Models.Contratacion contratacionDe(String userId, String contratacionId) {
-        return ui.contrataciones().listarContrataciones(userId).stream()
+        return ui.contrataciones().listarContrataciones(userId, 0).elementos().stream()
                 .filter(c -> c.id().equals(contratacionId))
                 .findFirst()
                 .orElseThrow();
     }
 
     private long noLeidas(String userId) {
-        return ui.notificaciones().listarNotificaciones(userId).stream().filter(n -> !n.leida()).count();
+        long contadas = ui.notificaciones().listarNotificaciones(userId, 0).elementos().stream()
+                .filter(n -> !n.leida()).count();
+        assertEquals(contadas, ui.notificaciones().contarNoLeidas(userId), "el contador coincide con la bandeja");
+        return contadas;
     }
 
     /** Exige que la operacion falle con ese codigo y devuelve el mensaje que veria el usuario. */

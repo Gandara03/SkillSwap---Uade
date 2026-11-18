@@ -12,6 +12,7 @@ import com.uade.skillswap.application.dto.ResultadoCancelacionDto;
 import com.uade.skillswap.application.exception.ErrorCode;
 import com.uade.skillswap.domain.model.publicacion.AccionPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
+import com.uade.skillswap.domain.model.vo.RangoPrecio;
 import com.uade.skillswap.domain.query.FiltroBusqueda;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
@@ -39,8 +40,8 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
         UiControllers.CalificacionController, UiControllers.WalletController,
         UiControllers.NotificacionController, UiControllers.PerfilController {
 
-    // La pantalla muestra listas sin paginar: se pide la primera pagina.
-    private static final PaginaRequest PAGINA = PaginaRequest.de(0, 50);
+    // Tres filas de tres tarjetas en Explorar; el mismo tamano para los demas listados.
+    private static final int TAMANO_PAGINA = 9;
     private static final PaginaRequest RECOMENDACIONES = PaginaRequest.de(0, 6);
     private static final PaginaRequest MAXIMA = PaginaRequest.de(0, PaginaRequest.TAMANO_MAXIMO);
 
@@ -113,12 +114,29 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
     // ---------- busqueda ----------
 
     @Override
-    public List<Models.Publicacion> buscar(Models.FiltrosBusqueda filtros) {
-        FiltroBusqueda filtro = filtros == null ? FiltroBusqueda.vacio()
-                : new FiltroBusqueda(vacioComoNulo(filtros.texto()), categoria(filtros.categoria()), null,
-                        MapeadorUi.convertir(filtros.modalidad(), Modalidad.class), null, null, null, null, null, null,
-                        MapeadorUi.criterio(filtros.orden()));
-        return valor(busquedas.buscar(filtro, PAGINA)).contenido().stream().map(MapeadorUi::publicacion).toList();
+    public Models.Pagina<Models.Publicacion> buscar(Models.FiltrosBusqueda filtros, int pagina) {
+        return MapeadorUi.pagina(valor(busquedas.buscar(filtro(filtros), pedido(pagina))), MapeadorUi::publicacion);
+    }
+
+    private static FiltroBusqueda filtro(Models.FiltrosBusqueda f) {
+        if (f == null) {
+            return FiltroBusqueda.vacio();
+        }
+        return new FiltroBusqueda(vacioComoNulo(f.texto()), categoria(f.categoria()), null,
+                MapeadorUi.convertir(f.modalidad(), Modalidad.class), rangoPrecio(f.precioMinimo(), f.precioMaximo()),
+                vacioComoNulo(f.habilidad()), null, f.reputacionMinima(), null, null, MapeadorUi.criterio(f.orden()));
+    }
+
+    /**
+     * El rango de precios se arma aca, antes de llegar al controller, y no admite un minimo mayor que el maximo:
+     * se avisa como error de validacion en lugar de dejar que falle al construirlo.
+     */
+    private static RangoPrecio rangoPrecio(BigDecimal minimo, BigDecimal maximo) {
+        if (minimo != null && maximo != null && minimo.compareTo(maximo) > 0) {
+            throw new OperacionFallidaException(ErrorCode.VALIDACION.name(),
+                    "El precio minimo no puede superar al maximo");
+        }
+        return MapeadorUi.rangoPrecio(minimo, maximo);
     }
 
     @Override
@@ -146,10 +164,9 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
     // ---------- publicaciones ----------
 
     @Override
-    public List<Models.Publicacion> listarPropias(String userId) {
+    public Models.Pagina<Models.Publicacion> listarPropias(String userId, int pagina) {
         iniciarSesion(userId);
-        return valor(publicaciones.misPublicaciones(PAGINA)).contenido().stream()
-                .map(MapeadorUi::publicacion).toList();
+        return MapeadorUi.pagina(valor(publicaciones.misPublicaciones(pedido(pagina))), MapeadorUi::publicacion);
     }
 
     @Override
@@ -180,13 +197,11 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
     // ---------- contrataciones ----------
 
     @Override
-    public List<Models.Contratacion> listarContrataciones(String userId) {
+    public Models.Pagina<Models.Contratacion> listarContrataciones(String userId, int pagina) {
         iniciarSesion(userId);
         Long yo = valor(perfiles.miPerfil()).id();
         Map<Long, String> nombres = new HashMap<>(); // un pedido por contraparte distinta
-        return valor(contrataciones.misContrataciones(PAGINA)).contenido().stream()
-                .map(c -> vista(c, yo, nombres))
-                .toList();
+        return MapeadorUi.pagina(valor(contrataciones.misContrataciones(pedido(pagina))), c -> vista(c, yo, nombres));
     }
 
     @Override
@@ -270,18 +285,24 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
     }
 
     @Override
-    public List<Models.Movimiento> listarMovimientos(String userId) {
+    public Models.Pagina<Models.Movimiento> listarMovimientos(String userId, int pagina) {
         iniciarSesion(userId);
-        return valor(wallet.movimientos(PAGINA)).contenido().stream().map(MapeadorUi::movimiento).toList();
+        return MapeadorUi.pagina(valor(wallet.movimientos(pedido(pagina))), MapeadorUi::movimiento);
     }
 
     // ---------- notificaciones ----------
 
     @Override
-    public List<Models.Notificacion> listarNotificaciones(String userId) {
+    public Models.Pagina<Models.Notificacion> listarNotificaciones(String userId, int pagina) {
         iniciarSesion(userId);
-        return valor(notificaciones.listar(false, PAGINA)).contenido().stream()
-                .map(MapeadorUi::notificacion).toList();
+        return MapeadorUi.pagina(valor(notificaciones.listar(false, pedido(pagina))), MapeadorUi::notificacion);
+    }
+
+    /** El total de la pagina de no leidas: no hace falta traerlas todas. */
+    @Override
+    public long contarNoLeidas(String userId) {
+        iniciarSesion(userId);
+        return valor(notificaciones.listar(true, PaginaRequest.de(0, 1))).totalElementos();
     }
 
     @Override
@@ -345,6 +366,14 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
             throw new OperacionFallidaException(ErrorCode.VALIDACION.name(),
                     "Formato invalido: " + nombre + " debe ser un id numerico");
         }
+    }
+
+    /** La pagina que pide la pantalla, con el tamano fijo de los listados. */
+    private static PaginaRequest pedido(int pagina) {
+        if (pagina < 0) {
+            throw new OperacionFallidaException(ErrorCode.VALIDACION.name(), "La pagina no puede ser negativa");
+        }
+        return PaginaRequest.de(pagina, TAMANO_PAGINA);
     }
 
     private static String vacioComoNulo(String texto) {

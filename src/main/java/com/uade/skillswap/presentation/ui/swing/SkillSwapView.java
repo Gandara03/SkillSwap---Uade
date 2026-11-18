@@ -12,6 +12,7 @@ import com.uade.skillswap.presentation.ui.swing.contrato.Models.Movimiento;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Notificacion;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.NuevaPublicacion;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.OrdenBusqueda;
+import com.uade.skillswap.presentation.ui.swing.contrato.Models.Pagina;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Perfil;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.PoliticaCancelacion;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Publicacion;
@@ -52,6 +53,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntConsumer;
 
 import static com.uade.skillswap.presentation.ui.swing.Theme.BG;
 import static com.uade.skillswap.presentation.ui.swing.Theme.BODY;
@@ -79,6 +81,7 @@ import static com.uade.skillswap.presentation.ui.swing.Theme.label;
 public final class SkillSwapView extends JPanel {
 
     private static final String AYUDA_BUSQUEDA = "Buscar mentorías, servicios o habilidades...";
+    private static final String TODAS_LAS_MODALIDADES = "Todas las modalidades";
 
     private final UiControllers controllers;
     private final List<String> usuarios;
@@ -104,7 +107,7 @@ public final class SkillSwapView extends JPanel {
         setLayout(new BorderLayout());
         setBackground(BG);
         // Una sola vez: shell() se vuelve a armar en cada cambio de usuario y sumaria otro listener al mismo boton
-        coins.addActionListener(e -> intentar(this::showWallet));
+        coins.addActionListener(e -> intentar(() -> showWallet(0)));
         armar();
     }
 
@@ -133,10 +136,10 @@ public final class SkillSwapView extends JPanel {
         side.add(Box.createVerticalStrut(28));
         side.add(nav("⌂  Inicio", this::showHome));
         side.add(nav("⌕  Explorar", this::showExplore));
-        side.add(nav("▣  Mis publicaciones", this::showListings));
-        side.add(nav("✓  Contrataciones", this::showContracts));
-        side.add(nav("◈  SkillCoins", this::showWallet));
-        side.add(nav("●  Notificaciones", this::showNotifications));
+        side.add(nav("▣  Mis publicaciones", () -> showListings(0)));
+        side.add(nav("✓  Contrataciones", () -> showContracts(0)));
+        side.add(nav("◈  SkillCoins", () -> showWallet(0)));
+        side.add(nav("●  Notificaciones", () -> showNotifications(0)));
         side.add(nav("♙  Mi perfil", this::showProfile));
         side.add(Box.createVerticalGlue());
         JPanel user = new JPanel(new BorderLayout(10, 0));
@@ -210,9 +213,7 @@ public final class SkillSwapView extends JPanel {
 
     private void page(String title, JComponent view) {
         pageTitle.setText(title);
-        long unread = controllers.notificaciones().listarNotificaciones(usuarioActivo).stream()
-                .filter(n -> !n.leida()).count();
-        badge.setText(unread + " NUEVAS");
+        badge.setText(controllers.notificaciones().contarNoLeidas(usuarioActivo) + " NUEVAS");
         coins.setText("◈  " + controllers.wallet().consultarSaldo(usuarioActivo) + " SkillCoins");
         content.removeAll();
         JScrollPane sp = new JScrollPane(view);
@@ -317,19 +318,40 @@ public final class SkillSwapView extends JPanel {
 
     private void showExploreWith(String initial, String category) {
         JPanel p = base();
-        JPanel filters = card(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel filters = card(new GridLayout(2, 1, 0, 8));
         filters.setAlignmentX(LEFT_ALIGNMENT);
         JTextField q = new JTextField(initial, 24);
         q.setToolTipText(AYUDA_BUSQUEDA);
         q.setBorder(new CompoundBorder(new LineBorder(BORDER), new EmptyBorder(10, 12, 10, 12)));
         JComboBox<String> cat = new JComboBox<>(controllers.busqueda().categorias().toArray(String[]::new));
         cat.setSelectedItem(category);
+        JComboBox<String> modalidad = new JComboBox<>(new String[]{TODAS_LAS_MODALIDADES,
+                Modalidad.REMOTA.name(), Modalidad.PRESENCIAL.name()});
         JComboBox<OrdenBusqueda> order = new JComboBox<>(OrdenBusqueda.values());
+        JTextField precioMinimo = new JTextField(5);
+        JTextField precioMaximo = new JTextField(5);
+        JTextField habilidad = new JTextField(10);
+        JTextField reputacionMinima = new JTextField(4);
         JButton go = button("Buscar", true);
-        filters.add(q);
-        filters.add(cat);
-        filters.add(order);
-        filters.add(go);
+        JPanel fila1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        fila1.setOpaque(false);
+        fila1.add(q);
+        fila1.add(cat);
+        fila1.add(modalidad);
+        fila1.add(order);
+        fila1.add(go);
+        JPanel fila2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        fila2.setOpaque(false);
+        fila2.add(label("Precio desde", SMALL, MUTED));
+        fila2.add(precioMinimo);
+        fila2.add(label("hasta", SMALL, MUTED));
+        fila2.add(precioMaximo);
+        fila2.add(label("Habilidad", SMALL, MUTED));
+        fila2.add(habilidad);
+        fila2.add(label("Reputación mínima (0 a 5)", SMALL, MUTED));
+        fila2.add(reputacionMinima);
+        filters.add(fila1);
+        filters.add(fila2);
         // Sin tope de alto, con pocos resultados la tarjeta se queda con el alto que sobra en la pagina
         filters.setMaximumSize(new Dimension(Integer.MAX_VALUE, filters.getPreferredSize().height));
         p.add(filters);
@@ -338,19 +360,57 @@ public final class SkillSwapView extends JPanel {
         results.setOpaque(false);
         results.setLayout(new BoxLayout(results, BoxLayout.Y_AXIS));
         Runnable refresh = () -> {
-            results.removeAll();
-            List<Publicacion> list = controllers.busqueda().buscar(new FiltrosBusqueda(q.getText(),
-                    (String) cat.getSelectedItem(), null, (OrdenBusqueda) order.getSelectedItem()));
-            addSection(results, list.size() + " resultados", "Mentorías y servicios disponibles");
-            results.add(cardGrid(list));
-            results.revalidate();
-            results.repaint();
+            FiltrosBusqueda filtros;
+            try {
+                String elegida = (String) modalidad.getSelectedItem();
+                filtros = new FiltrosBusqueda(q.getText(), (String) cat.getSelectedItem(),
+                        TODAS_LAS_MODALIDADES.equals(elegida) ? null : Modalidad.valueOf(elegida),
+                        decimalOpcional(precioMinimo), decimalOpcional(precioMaximo), habilidad.getText(),
+                        reputacionOpcional(reputacionMinima), (OrdenBusqueda) order.getSelectedItem());
+            } catch (NumberFormatException e) {
+                error("Los precios y la reputación mínima tienen que ser números (o quedar vacíos).");
+                return;
+            }
+            mostrarResultados(results, filtros, 0);
         };
         go.addActionListener(e -> intentar(refresh));
         q.addActionListener(e -> intentar(refresh));
         p.add(results);
         refresh.run();
         page("Explorar", p);
+    }
+
+    /** Una pagina de resultados; anterior y siguiente vuelven a buscar con los mismos filtros. */
+    private void mostrarResultados(JPanel results, FiltrosBusqueda filtros, int numero) {
+        Pagina<Publicacion> pagina = controllers.busqueda().buscar(filtros, numero);
+        results.removeAll();
+        addSection(results, pagina.totalElementos() + " resultados", "Mentorías y servicios disponibles");
+        results.add(cardGrid(pagina.elementos()));
+        agregarPaginador(results, pagina, n -> mostrarResultados(results, filtros, n));
+        results.revalidate();
+        results.repaint();
+    }
+
+    /** Anterior / siguiente al pie de un listado; si entra en una sola pagina no se muestra. */
+    private void agregarPaginador(JPanel destino, Pagina<?> pagina, IntConsumer irA) {
+        if (pagina.totalPaginas() <= 1) {
+            return;
+        }
+        JPanel barra = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
+        barra.setOpaque(false);
+        barra.setAlignmentX(LEFT_ALIGNMENT);
+        JButton anterior = button("← Anterior", false);
+        anterior.setEnabled(pagina.hayAnterior());
+        anterior.addActionListener(e -> intentar(() -> irA.accept(pagina.numero() - 1)));
+        JButton siguiente = button("Siguiente →", false);
+        siguiente.setEnabled(pagina.haySiguiente());
+        siguiente.addActionListener(e -> intentar(() -> irA.accept(pagina.numero() + 1)));
+        barra.add(anterior);
+        barra.add(label("Página " + (pagina.numero() + 1) + " de " + pagina.totalPaginas(), BODY, MUTED));
+        barra.add(siguiente);
+        barra.setMaximumSize(new Dimension(Integer.MAX_VALUE, barra.getPreferredSize().height));
+        destino.add(Box.createVerticalStrut(14));
+        destino.add(barra);
     }
 
     private JPanel cardGrid(List<Publicacion> list) {
@@ -460,7 +520,7 @@ public final class SkillSwapView extends JPanel {
         controllers.contrataciones().solicitar(usuarioActivo, x.id(), franjas.get(franja.getSelectedIndex()).id(),
                 mensaje.getText(), objetivo.getText());
         message("¡Solicitud enviada!", "Podés seguir su estado desde Contrataciones.");
-        showContracts();
+        showContracts(0);
     }
 
     private static String textoFranja(Franja franja) {
@@ -468,7 +528,7 @@ public final class SkillSwapView extends JPanel {
                 + franja.fin().format(DateTimeFormatter.ofPattern("HH:mm"));
     }
 
-    private void showListings() {
+    private void showListings(int numero) {
         JPanel p = base();
         JPanel title = new JPanel(new BorderLayout());
         title.setOpaque(false);
@@ -480,12 +540,12 @@ public final class SkillSwapView extends JPanel {
         title.setAlignmentX(LEFT_ALIGNMENT);
         p.add(title);
         p.add(Box.createVerticalStrut(15));
-        List<Publicacion> own = controllers.publicaciones().listarPropias(usuarioActivo);
-        if (own.isEmpty()) {
+        Pagina<Publicacion> own = controllers.publicaciones().listarPropias(usuarioActivo, numero);
+        if (own.totalElementos() == 0) {
             p.add(empty("Todavía no publicaste servicios",
                     "Creá tu primera propuesta para comenzar a compartir tu talento."));
         } else {
-            for (Publicacion x : own) {
+            for (Publicacion x : own.elementos()) {
                 JPanel row = card(new BorderLayout(12, 0));
                 row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
                 row.setAlignmentX(LEFT_ALIGNMENT);
@@ -502,19 +562,20 @@ public final class SkillSwapView extends JPanel {
                 acciones.setOpaque(false);
                 for (AccionPublicacion a : x.accionesDelAutor()) {
                     JButton b = button(a.etiqueta(), a != AccionPublicacion.CERRAR && a != AccionPublicacion.CANCELAR);
-                    b.addActionListener(e -> intentar(() -> cambiarEstado(x, a)));
+                    b.addActionListener(e -> intentar(() -> cambiarEstado(x, a, numero)));
                     acciones.add(b);
                 }
                 row.add(acciones, BorderLayout.EAST);
                 p.add(row);
                 p.add(Box.createVerticalStrut(10));
             }
+            agregarPaginador(p, own, this::showListings);
         }
         page("Mis publicaciones", p);
     }
 
     /** Cancelar pide el motivo antes; si el usuario cierra ese dialogo, no se llama al sistema. */
-    private void cambiarEstado(Publicacion x, AccionPublicacion accion) {
+    private void cambiarEstado(Publicacion x, AccionPublicacion accion, int numero) {
         String motivo = null;
         if (accion == AccionPublicacion.CANCELAR) {
             motivo = pedirMotivo("Cancelar la publicación");
@@ -523,7 +584,7 @@ public final class SkillSwapView extends JPanel {
             }
         }
         controllers.publicaciones().cambiarEstado(usuarioActivo, x.id(), accion, motivo);
-        showListings();
+        showListings(numero);
     }
 
     /**
@@ -583,7 +644,7 @@ public final class SkillSwapView extends JPanel {
         }
         controllers.publicaciones().crearBorrador(usuarioActivo, datos);
         message("Borrador creado", "La publicación quedó en borrador. Publicala desde Mis publicaciones.");
-        showListings();
+        showListings(0);
     }
 
     private static void campo(JPanel form, String etiqueta, JComponent componente) {
@@ -601,6 +662,17 @@ public final class SkillSwapView extends JPanel {
     }
 
     /** null si el campo esta vacio. */
+    private static BigDecimal decimalOpcional(JTextField campo) {
+        return campo.getText().isBlank() ? null : decimal(campo);
+    }
+
+    /** null si el campo esta vacio. */
+    private static Double reputacionOpcional(JTextField campo) {
+        BigDecimal valor = decimalOpcional(campo);
+        return valor == null ? null : valor.doubleValue();
+    }
+
+    /** null si el campo esta vacio. */
     private static LocalDateTime fechaHora(JTextField campo) {
         String texto = campo.getText().trim();
         return texto.isEmpty() ? null : LocalDateTime.parse(texto, DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
@@ -611,10 +683,11 @@ public final class SkillSwapView extends JPanel {
         return Arrays.stream(campo.getText().split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
     }
 
-    private void showContracts() {
+    private void showContracts(int numero) {
         JPanel p = base();
         addSection(p, "Tus contrataciones", "Solicitudes que hiciste y que recibiste");
-        for (Contratacion x : controllers.contrataciones().listarContrataciones(usuarioActivo)) {
+        Pagina<Contratacion> pagina = controllers.contrataciones().listarContrataciones(usuarioActivo, numero);
+        for (Contratacion x : pagina.elementos()) {
             JPanel row = card(new BorderLayout(16, 0));
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 105));
             row.setAlignmentX(LEFT_ALIGNMENT);
@@ -632,13 +705,14 @@ public final class SkillSwapView extends JPanel {
             actions.setOpaque(false);
             for (AccionContratacion a : x.acciones()) {
                 JButton b = button(a.etiqueta(), a != AccionContratacion.CANCELAR && a != AccionContratacion.RECHAZAR);
-                b.addActionListener(e -> intentar(() -> ejecutar(x, a)));
+                b.addActionListener(e -> intentar(() -> ejecutar(x, a, numero)));
                 actions.add(b);
             }
             row.add(actions, BorderLayout.EAST);
             p.add(row);
             p.add(Box.createVerticalStrut(11));
         }
+        agregarPaginador(p, pagina, this::showContracts);
         page("Contrataciones", p);
     }
 
@@ -646,7 +720,7 @@ public final class SkillSwapView extends JPanel {
      * Ejecuta la accion del boton y refresca la lista. Rechazar, cancelar y calificar piden datos antes; si el usuario
      * cierra ese dialogo sin confirmar, no se llama al sistema.
      */
-    private void ejecutar(Contratacion x, AccionContratacion accion) {
+    private void ejecutar(Contratacion x, AccionContratacion accion, int numero) {
         switch (accion) {
             case ACEPTAR -> controllers.contrataciones().aceptar(usuarioActivo, x.id());
             case RECHAZAR -> {
@@ -674,7 +748,7 @@ public final class SkillSwapView extends JPanel {
                 controllers.calificaciones().calificar(usuarioActivo, x.id(), datos.puntaje(), datos.comentario());
             }
         }
-        showContracts();
+        showContracts(numero);
     }
 
     /**
@@ -714,7 +788,7 @@ public final class SkillSwapView extends JPanel {
         return JOptionPane.showInputDialog(this, "Motivo", titulo, JOptionPane.QUESTION_MESSAGE);
     }
 
-    private void showWallet() {
+    private void showWallet(int numero) {
         JPanel p = base();
         JPanel balance = new Theme.RoundedPanel(22, NAVY_2);
         balance.setLayout(new BorderLayout());
@@ -731,7 +805,8 @@ public final class SkillSwapView extends JPanel {
         p.add(balance);
         p.add(Box.createVerticalStrut(24));
         addSection(p, "Movimientos recientes", null);
-        for (Movimiento m : controllers.wallet().listarMovimientos(usuarioActivo)) {
+        Pagina<Movimiento> movimientos = controllers.wallet().listarMovimientos(usuarioActivo, numero);
+        for (Movimiento m : movimientos.elementos()) {
             JPanel row = card(new BorderLayout());
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
             row.setAlignmentX(LEFT_ALIGNMENT);
@@ -746,10 +821,11 @@ public final class SkillSwapView extends JPanel {
             p.add(row);
             p.add(Box.createVerticalStrut(8));
         }
+        agregarPaginador(p, movimientos, this::showWallet);
         page("SkillCoins", p);
     }
 
-    private void showNotifications() {
+    private void showNotifications(int numero) {
         JPanel p = base();
         JPanel head = new JPanel(new BorderLayout());
         head.setOpaque(false);
@@ -757,14 +833,15 @@ public final class SkillSwapView extends JPanel {
         JButton all = button("Marcar todas como leídas", false);
         all.addActionListener(e -> intentar(() -> {
             controllers.notificaciones().marcarTodasLeidas(usuarioActivo);
-            showNotifications();
+            showNotifications(numero);
         }));
         head.add(all, BorderLayout.EAST);
         head.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         head.setAlignmentX(LEFT_ALIGNMENT);
         p.add(head);
         p.add(Box.createVerticalStrut(15));
-        for (Notificacion n : controllers.notificaciones().listarNotificaciones(usuarioActivo)) {
+        Pagina<Notificacion> notificaciones = controllers.notificaciones().listarNotificaciones(usuarioActivo, numero);
+        for (Notificacion n : notificaciones.elementos()) {
             JPanel row = card(new BorderLayout(14, 0));
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
             row.setAlignmentX(LEFT_ALIGNMENT);
@@ -781,13 +858,14 @@ public final class SkillSwapView extends JPanel {
                 JButton read = button("Marcar leída", false);
                 read.addActionListener(e -> intentar(() -> {
                     controllers.notificaciones().marcarLeida(usuarioActivo, n.id());
-                    showNotifications();
+                    showNotifications(numero);
                 }));
                 row.add(read, BorderLayout.EAST);
             }
             p.add(row);
             p.add(Box.createVerticalStrut(9));
         }
+        agregarPaginador(p, notificaciones, this::showNotifications);
         page("Notificaciones", p);
     }
 

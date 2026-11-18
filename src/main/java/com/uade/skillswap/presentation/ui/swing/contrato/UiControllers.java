@@ -8,19 +8,20 @@ import java.util.List;
 /**
  * Lo unico que la pantalla conoce del sistema. Cada operacion recibe el userId del usuario activo (login simulado).
  * Si la operacion no se puede completar, se lanza {@link OperacionFallidaException} con el mensaje para el usuario.
+ * Los listados se piden de a una pagina (la primera es la 0).
  */
 public interface UiControllers {
     interface BusquedaController {
         /** Categoria que la pantalla usa para "sin filtrar". */
         String TODAS_LAS_CATEGORIAS = "Todas";
 
-        List<Publicacion> buscar(FiltrosBusqueda filtros);
+        Pagina<Publicacion> buscar(FiltrosBusqueda filtros, int pagina);
         List<Publicacion> recomendar(String userId);
         List<String> categorias();
     }
 
     interface PublicacionController {
-        List<Publicacion> listarPropias(String userId);
+        Pagina<Publicacion> listarPropias(String userId, int pagina);
         Publicacion crearBorrador(String userId, NuevaPublicacion datos);
         /** El motivo solo se usa para CANCELAR. */
         Publicacion cambiarEstado(String userId, String publicacionId, AccionPublicacion accion, String motivo);
@@ -28,7 +29,7 @@ public interface UiControllers {
     }
 
     interface ContratacionController {
-        List<Contratacion> listarContrataciones(String userId);
+        Pagina<Contratacion> listarContrataciones(String userId, int pagina);
         Contratacion solicitar(String userId, String publicacionId, String franjaId, String mensaje, String objetivo);
         Contratacion aceptar(String userId, String contratacionId);
         Contratacion rechazar(String userId, String contratacionId, String motivo);
@@ -44,11 +45,12 @@ public interface UiControllers {
 
     interface WalletController {
         BigDecimal consultarSaldo(String userId);
-        List<Movimiento> listarMovimientos(String userId);
+        Pagina<Movimiento> listarMovimientos(String userId, int pagina);
     }
 
     interface NotificacionController {
-        List<Notificacion> listarNotificaciones(String userId);
+        Pagina<Notificacion> listarNotificaciones(String userId, int pagina);
+        long contarNoLeidas(String userId);
         void marcarLeida(String userId, String notificacionId);
         void marcarTodasLeidas(String userId);
     }
