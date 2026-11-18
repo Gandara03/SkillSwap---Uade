@@ -173,18 +173,18 @@ Reglas que se respetan (verificables con un `grep` de imports): `domain` no impo
 
 `uml/` tiene dos diagramas, cada uno en tres archivos: el fuente PlantUML (`.puml`) y sus exportaciones `.svg` y `.png`.
 
-**`00-aplicacion-completa`** muestra 74 clases de la aplicación en las 4 capas, cada una en su paquete:
+**`00-aplicacion-completa`** muestra 75 clases de la aplicación en las 4 capas, cada una en su paquete:
 
 - **Presentation**: los 8 controllers.
-- **Application**: los 10 casos de uso (`port/in`), los servicios que los implementan, `PerfilPublicoFacade`, `NotificadorObserver` y los puertos de salida y repositorios (`port/out`).
+- **Application**: los 10 casos de uso (`port/in`), los servicios que los implementan, `PerfilPublicoFacade`, `NotificadorObserver`, los parámetros de `SkillSwapConfig` y los puertos de salida y repositorios (`port/out`).
 - **Domain**: las entidades del dominio, el value object `SkillCoins` y las interfaces de State, Strategy, Observer y Decorator.
 - **Infrastructure**: las clases que implementan los puertos: los 7 repositorios JPA (con su base `SimpleJpaRepository`) y los adapters de identidad, transacción, canales de notificación y reloj.
 
 Cada clase lleva sus campos y métodos con visibilidad y tipos.
 
-**`01-patrones-aplicados`** muestra en 59 clases los 7 patrones con todos sus roles, agrupados por capa y por patrón: las interfaces y clases base de State con los 12 estados concretos; las políticas de cancelación y las estrategias de recomendación (Strategy); `PrecioBase` y los decoradores de promoción (Decorator); `Contratacion` como Subject, `ContratacionEvent` y `NotificadorObserver` (Observer); los 5 Adapters, incluido `UiControllersAdapter` entre `SkillSwapView` y los controllers; las fábricas (Simple Factory) y `PerfilPublicoFacade` con su cliente `PerfilController` (Facade). De cada clase muestra los miembros que hacen al patrón.
+**`01-patrones-aplicados`** muestra en 63 clases los 7 patrones con todos sus roles, agrupados por capa y por patrón: las interfaces y clases base de State con los 12 estados concretos; las políticas de cancelación y las estrategias de recomendación con los datos que reciben, `DatosRecomendacion` (Strategy); `PrecioBase` y los decoradores de promoción (Decorator); `Contratacion` como Subject, `ContratacionEvent` y `NotificadorObserver` (Observer); los 5 Adapters, incluido `UiControllersAdapter` entre `SkillSwapView` y los controllers; las fábricas (Simple Factory) y `PerfilPublicoFacade` con su cliente `PerfilController`, los cuatro casos de uso que coordina y el `PerfilPublicoDto` que arma (Facade). De cada clase muestra los miembros que hacen al patrón.
 
-En los dos, las relaciones (93 en el `00` y 60 en el `01`) distinguen herencia, realización, composición, agregación, asociación y dependencia. Las composiciones, agregaciones y asociaciones llevan multiplicidades y una etiqueta que nombra la relación (`+precio final`, `+accede a`); las dependencias llevan solo la etiqueta (`+persiste`, `+crea`). La herencia y la realización van sin etiqueta.
+En los dos, las relaciones (98 en el `00` y 66 en el `01`) distinguen herencia, realización, composición, agregación, asociación y dependencia. Las composiciones, agregaciones y asociaciones llevan multiplicidades y una etiqueta que nombra la relación (`+precio final`, `+accede a`); las dependencias llevan solo la etiqueta (`+persiste`, `+crea`). La herencia y la realización van sin etiqueta.
 
 Cómo abrirlos:
 
@@ -194,7 +194,7 @@ Cómo abrirlos:
   java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg uml/00-aplicacion-completa.puml uml/01-patrones-aplicados.puml
   ```
 
-- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. Los `.png` (6429 × 5030 px el 00 y 6696 × 4761 px el 01) sirven para insertarlos en un documento.
+- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. Los `.png` (6503 × 5159 px el 00 y 7916 × 5357 px el 01) sirven para insertarlos en un documento.
 
 ---
 

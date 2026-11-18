@@ -121,6 +121,7 @@ package "Application" #D6E4F7 {
     +comprobante(actorId: Long, contratacionId: Long): ComprobanteDto
     +historial(actorId: Long, contratacionId: Long, pagina: PaginaRequest): Pagina<HistorialDto>
     +listarMias(actorId: Long, pagina: PaginaRequest): Pagina<ContratacionDto>
+    +listarCompletadasComoProveedor(proveedorId: Long, pagina: PaginaRequest): Pagina<ContratacionCompletadaDto>
   }
   interface PublicacionUseCase {
     +crearBorrador(actorId: Long, comando: CrearPublicacionCommand): PublicacionDto
@@ -175,6 +176,7 @@ package "Application" #D6E4F7 {
     -perfiles: PerfilUseCase
     -calificaciones: CalificacionUseCase
     -publicaciones: PublicacionUseCase
+    -contrataciones: ContratacionUseCase
     -config: SkillSwapConfig
     +verPerfilPublico(perfilId: Long): PerfilPublicoDto
     -{static} tamano(solicitado: int): int
@@ -212,6 +214,7 @@ package "Application" #D6E4F7 {
     +comprobante(actorId: Long, contratacionId: Long): ComprobanteDto
     +historial(actorId: Long, contratacionId: Long, pagina: PaginaRequest): Pagina<HistorialDto>
     +listarMias(actorId: Long, pagina: PaginaRequest): Pagina<ContratacionDto>
+    +listarCompletadasComoProveedor(proveedorId: Long, pagina: PaginaRequest): Pagina<ContratacionCompletadaDto>
     -cambio(original: Contratacion, guardada: Contratacion, actorId: Long): Cambio<ContratacionDto>
     -cambio(original: Contratacion, guardada: Contratacion, publicacion: Publicacion, actorId: Long): Cambio<ContratacionDto>
     -dto(contratacion: Contratacion, publicacion: Publicacion, actorId: Long): ContratacionDto
@@ -256,6 +259,8 @@ package "Application" #D6E4F7 {
   class RecomendacionService {
     -publicacionRepository: PublicacionRepository
     -perfilRepository: PerfilRepository
+    -contratacionRepository: ContratacionRepository
+    -reloj: RelojPort
     -config: SkillSwapConfig
     -armador: ArmadorResumenes
     +recomendar(actorId: Long, tipoEstrategia: TipoEstrategiaRecomendacion, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
@@ -288,6 +293,18 @@ package "Application" #D6E4F7 {
   interface EstrategiaRecomendacion {
     +getTipo(): TipoEstrategiaRecomendacion
     +recomendar(datos: DatosRecomendacion, candidatas: List<Publicacion>, limite: int): List<Publicacion>
+  }
+  class SkillSwapConfig {
+    -bonoInicial: SkillCoins
+    -candidatasRecomendacion: int
+    -limiteRecomendaciones: int
+    -diasPopularidadReciente: int
+    -ultimasCalificacionesPerfilPublico: int
+    -ultimasPublicacionesPerfilPublico: int
+    -ultimasCompletadasPerfilPublico: int
+    -cancelacionFlexible: UmbralesCancelacion
+    -cancelacionEstricta: UmbralesCancelacion
+    +{static} porDefecto(): SkillSwapConfig
   }
   interface RelojPort {
     +ahora(): LocalDateTime
@@ -323,6 +340,8 @@ package "Application" #D6E4F7 {
     +guardar(contratacion: Contratacion): Contratacion
     +buscarPorId(id: Long): Optional<Contratacion>
     +buscarPorParticipante(perfilId: Long, pagina: PaginaRequest): Pagina<Contratacion>
+    +buscarCompletadasPorProveedor(proveedorId: Long, pagina: PaginaRequest): Pagina<Contratacion>
+    +contarPagadasDesde(publicacionIds: Collection<Long>, desde: LocalDateTime): Map<Long, Long>
   }
   interface PublicacionRepository {
     +guardar(publicacion: Publicacion): Publicacion
@@ -662,6 +681,9 @@ package "Infrastructure" #FAE0D0 {
     +guardar(contratacion: Contratacion): Contratacion
     +buscarPorId(id: Long): Optional<Contratacion>
     +buscarPorParticipante(perfilId: Long, pagina: PaginaRequest): Pagina<Contratacion>
+    +buscarCompletadasPorProveedor(proveedorId: Long, pagina: PaginaRequest): Pagina<Contratacion>
+    +contarPagadasDesde(publicacionIds: Collection<Long>, desde: LocalDateTime): Map<Long, Long>
+    -paginar(desde: String, orden: String, parametros: Map<String, Object>, pagina: PaginaRequest): Pagina<Contratacion>
   }
   class JpaPublicacionRepository {
     +guardar(publicacion: Publicacion): Publicacion
@@ -757,6 +779,7 @@ RecomendacionController "1" --> "1" RecomendacionUseCase : +usa
 PerfilUseCase "1" <--- "1" PerfilPublicoFacade : +usa
 CalificacionUseCase "1" <--- "1" PerfilPublicoFacade : +usa
 PublicacionUseCase "1" <--- "1" PerfilPublicoFacade : +usa
+ContratacionUseCase "1" <--- "1" PerfilPublicoFacade : +usa
 SesionService "1" --> "1" IdentidadPort : +usa
 NotificadorObserver "1" -right-> "1" CanalNotificacionFactory : +usa
 NotificacionService "1" ---> "1" NotificacionRepository : +accede a
@@ -769,6 +792,10 @@ PublicacionService "1" ---> "1" PublicacionRepository : +accede a
 PublicacionService "1" ---> "1" PromocionRepository : +accede a
 BusquedaService "1" ---> "1" PublicacionRepository : +accede a
 RecomendacionService "1" ---> "1" PublicacionRepository : +accede a
+RecomendacionService "1" ---> "1" ContratacionRepository : +cuenta pagadas en
+PerfilService "1" --> "1" SkillSwapConfig : +se configura con
+PerfilPublicoFacade "1" --> "1" SkillSwapConfig : +se configura con
+RecomendacionService "1" --> "1" SkillSwapConfig : +se configura con
 NotificadorObserver "1" --> "1" NotificacionRepository : +accede a
 Calificacion "0..2" --> "1" Contratacion : +califica
 Calificacion "0..*" --> "2" Perfil : +autor y +destinatario

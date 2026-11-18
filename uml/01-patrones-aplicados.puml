@@ -52,6 +52,7 @@ package "Presentation" #FADBD8 {
       +notificaciones(): UiControllers.NotificacionController
       +perfiles(): UiControllers.PerfilController
       +verPerfil(userId: String): Models.Perfil
+      +verPerfilPublico(userId: String, perfilId: String): Models.PerfilPublico
       -iniciarSesion(userId: String): void
       -{static} valor(resultado: Resultado<T>): T
     }
@@ -89,6 +90,7 @@ package "Application" #D6E4F7 {
       -perfiles: PerfilUseCase
       -calificaciones: CalificacionUseCase
       -publicaciones: PublicacionUseCase
+      -contrataciones: ContratacionUseCase
       -config: SkillSwapConfig
       +verPerfilPublico(perfilId: Long): PerfilPublicoDto
       -{static} tamano(solicitado: int): int
@@ -102,11 +104,37 @@ package "Application" #D6E4F7 {
     interface PublicacionUseCase {
       +listarPublicadasDe(autorId: Long, limite: int): List<PublicacionResumenDto>
     }
+    interface ContratacionUseCase {
+      +listarCompletadasComoProveedor(proveedorId: Long, pagina: PaginaRequest): Pagina<ContratacionCompletadaDto>
+    }
+    class PerfilPublicoDto {
+      -id: Long
+      -nombreVisible: String
+      -biografia: String
+      -habilidades: Set<String>
+      -reputacion: double
+      -cantidadCalificaciones: int
+      -ultimasCalificaciones: List<CalificacionDto>
+      -publicacionesActivas: List<PublicacionResumenDto>
+      -contratacionesCompletadas: int
+      -ultimasCompletadas: List<ContratacionCompletadaDto>
+    }
+    class ContratacionCompletadaDto {
+      -tituloPublicacion: String
+      -completadaEn: LocalDateTime
+    }
   }
   class RecomendacionService {
     +recomendar(actorId: Long, tipoEstrategia: TipoEstrategiaRecomendacion, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
   }
   package "Strategy" as AppStrategy #D6E4F7 {
+    class DatosRecomendacion {
+      -perfil: Perfil
+      -reputacionAutores: Map<Long, Double>
+      -pagadasRecientes: Map<Long, Long>
+      +reputacionDe(autorId: Long): double
+      +pagadasRecientesDe(publicacionId: Long): long
+    }
     interface EstrategiaRecomendacion {
       +getTipo(): TipoEstrategiaRecomendacion
       +recomendar(datos: DatosRecomendacion, candidatas: List<Publicacion>, limite: int): List<Publicacion>
@@ -447,6 +475,7 @@ NotificadorObserver ..|> ContratacionObserver
 EstrategiaRecomendacion <|.. RecomendacionPorAfinidad
 EstrategiaRecomendacion <|.. RecomendacionPorPopularidad
 PerfilPublicoUseCase <|.. PerfilPublicoFacade
+ContratacionUseCase <|.. ContratacionService
 IdentidadPort <|.. IdentidadMockAdapter
 CanalNotificacionPort <|.. EmailCanalAdapter
 CanalNotificacionPort <|.. PushCanalAdapter
@@ -468,6 +497,8 @@ PrecioPublicacion "1" --o "0..1" PromocionDecorator : +envuelve
 PerfilPublicoFacade "1" --> "1" PerfilUseCase : +usa
 PerfilPublicoFacade "1" --> "1" CalificacionUseCase : +usa
 PerfilPublicoFacade "1" --> "1" PublicacionUseCase : +usa
+PerfilPublicoFacade "1" --> "1" ContratacionUseCase : +usa
+PerfilPublicoDto "1" --> "0..*" ContratacionCompletadaDto : +resume
 NotificadorObserver "1" -right-> "1" CanalNotificacionFactory : +usa\n
 ContratacionService "1" --> "1" PoliticaCancelacionFactory : +usa
 PerfilController "1" --> "1" PerfilPublicoUseCase : +usa
@@ -487,6 +518,9 @@ Contratacion ..> PoliticaCancelacion : +reparte segun
 ContratacionService .....> Contratacion : +despacha eventos de
 RecomendacionService ..> EstrategiaRecomendacionFactory : +pide estrategia a
 RecomendacionService ..> EstrategiaRecomendacion : +recomienda con
+RecomendacionService ..> DatosRecomendacion : +arma
+EstrategiaRecomendacion ..> DatosRecomendacion : +recibe
+PerfilPublicoFacade ..> PerfilPublicoDto : +arma
 ContratacionSubject ..> ContratacionEvent : +notifica
 ContratacionObserver ..> ContratacionEvent : +recibe
 
