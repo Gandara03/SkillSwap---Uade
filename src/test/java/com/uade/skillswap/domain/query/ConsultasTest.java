@@ -1,8 +1,12 @@
 package com.uade.skillswap.domain.query;
 
+import com.uade.skillswap.domain.exception.ReglaDeNegocioException;
+import com.uade.skillswap.domain.model.vo.RangoPrecio;
+import com.uade.skillswap.domain.model.vo.SkillCoins;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -80,5 +84,29 @@ class ConsultasTest {
         assertEquals(CriterioOrden.RECIENTES, f.ordenEfectivo());
         FiltroBusqueda sinOrden = new FiltroBusqueda(null, null, null, null, null, null, null, null, null, null, null);
         assertEquals(CriterioOrden.RECIENTES, sinOrden.ordenEfectivo());
+    }
+
+    @Test
+    @DisplayName("FiltroBusqueda.rangoEntre arma el rango con montos sueltos: extremos opcionales y sin filtro si faltan los dos")
+    void rangoEntre() {
+        assertNull(FiltroBusqueda.rangoEntre(null, null));
+
+        RangoPrecio ambos = FiltroBusqueda.rangoEntre(new BigDecimal("10"), new BigDecimal("50"));
+        assertEquals(SkillCoins.de(10), ambos.getMinimo());
+        assertEquals(SkillCoins.de(50), ambos.getMaximo());
+        assertTrue(ambos.incluye(SkillCoins.de(10)));
+        assertFalse(ambos.incluye(SkillCoins.de(51)));
+
+        RangoPrecio soloMinimo = FiltroBusqueda.rangoEntre(new BigDecimal("20"), null);
+        assertNull(soloMinimo.getMaximo());
+        assertTrue(soloMinimo.incluye(SkillCoins.de(1000)));
+        assertFalse(soloMinimo.incluye(SkillCoins.de(19)));
+
+        RangoPrecio soloMaximo = FiltroBusqueda.rangoEntre(null, new BigDecimal("30"));
+        assertNull(soloMaximo.getMinimo());
+        assertTrue(soloMaximo.incluye(SkillCoins.de(0)));
+
+        assertThrows(ReglaDeNegocioException.class,
+                () -> FiltroBusqueda.rangoEntre(new BigDecimal("60"), new BigDecimal("50")));
     }
 }

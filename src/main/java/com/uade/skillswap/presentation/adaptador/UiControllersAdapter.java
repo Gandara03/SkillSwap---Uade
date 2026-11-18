@@ -12,7 +12,6 @@ import com.uade.skillswap.application.dto.ResultadoCancelacionDto;
 import com.uade.skillswap.application.exception.ErrorCode;
 import com.uade.skillswap.domain.model.publicacion.AccionPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
-import com.uade.skillswap.domain.model.vo.RangoPrecio;
 import com.uade.skillswap.domain.query.FiltroBusqueda;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
@@ -122,8 +121,10 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
         if (f == null) {
             return FiltroBusqueda.vacio();
         }
+        exigirRangoOrdenado(f.precioMinimo(), f.precioMaximo());
         return new FiltroBusqueda(vacioComoNulo(f.texto()), categoria(f.categoria()), null,
-                MapeadorUi.convertir(f.modalidad(), Modalidad.class), rangoPrecio(f.precioMinimo(), f.precioMaximo()),
+                MapeadorUi.convertir(f.modalidad(), Modalidad.class),
+                FiltroBusqueda.rangoEntre(f.precioMinimo(), f.precioMaximo()),
                 vacioComoNulo(f.habilidad()), null, f.reputacionMinima(), null, null, MapeadorUi.criterio(f.orden()));
     }
 
@@ -131,12 +132,11 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
      * El rango de precios se arma aca, antes de llegar al controller, y no admite un minimo mayor que el maximo:
      * se avisa como error de validacion en lugar de dejar que falle al construirlo.
      */
-    private static RangoPrecio rangoPrecio(BigDecimal minimo, BigDecimal maximo) {
+    private static void exigirRangoOrdenado(BigDecimal minimo, BigDecimal maximo) {
         if (minimo != null && maximo != null && minimo.compareTo(maximo) > 0) {
             throw new OperacionFallidaException(ErrorCode.VALIDACION.name(),
                     "El precio minimo no puede superar al maximo");
         }
-        return MapeadorUi.rangoPrecio(minimo, maximo);
     }
 
     @Override
