@@ -63,7 +63,7 @@ class PerfilPublicoFacadeTest {
     @Test
     @DisplayName("el perfil publico limita calificaciones y publicaciones segun la configuracion y lista primero las mas recientes")
     void perfilPublicoRespetaLimites() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 10, 2, 1,
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 10, 30, 2, 1,
                 PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario otro = new Escenario(AplicacionEnMemoria.crear(config));
         PerfilDto ana = otro.profesional("u-ana", "Ana");

@@ -1,6 +1,5 @@
 package com.uade.skillswap.acceptance.memoria;
 
-import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.PerfilDto;
 import com.uade.skillswap.application.dto.PublicacionDto;
 import com.uade.skillswap.application.dto.PublicacionResumenDto;
@@ -27,7 +26,7 @@ class Caso07CambiarEstrategiaRecomendacionTest {
 
     /**
      * Escenario: Ana publica "Java a fondo" (afinidad alta con los intereses de Dario, sin contrataciones) y
-     * "Charla de backend" (afinidad baja, pero ya contratada por Cecilia, o sea mas popular).
+     * "Charla de backend" (afinidad baja, pero Cecilia ya la contrato y la pago hace poco, o sea mas popular).
      */
     private record Escenario(EscenarioMemoria e, PerfilDto dario, PublicacionDto javaAFondo, PublicacionDto backend) { }
 
@@ -43,9 +42,8 @@ class Caso07CambiarEstrategiaRecomendacionTest {
         // afinidad con el interes "java": solo la etiqueta (1 punto)
         PublicacionDto backend = e.publicar(ana.id(), e.mentoria("Charla de backend", "arquitectura", 50, 5,
                 TipoPoliticaCancelacion.FLEXIBLE, Set.of("java"), Set.of("diseno"), e.franjasDiarias(2)));
-        // Cecilia contrata (y se le acepta) la charla: cupo ocupado = 1 -> mas popular
-        ContratacionDto contratacion = e.solicitar(cecilia.id(), backend, 0);
-        e.app.contratacionUseCase.aceptar(ana.id(), contratacion.id());
+        // Cecilia contrata y paga la charla: una contratacion pagada en la ventana reciente -> mas popular
+        e.contratarYPagar(ana.id(), cecilia.id(), backend, 0);
         return new Escenario(e, dario, javaAFondo, backend);
     }
 

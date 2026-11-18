@@ -11,12 +11,16 @@ import com.uade.skillswap.domain.model.publicacion.Publicacion;
 import com.uade.skillswap.domain.model.vo.SkillCoins;
 import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -238,6 +242,38 @@ class JpaContratacionRepositoryTest extends JpaTestBase {
         assertTrue(contrataciones.buscarPorId(9999L).isEmpty());
         assertTrue(contrataciones.buscarPorId(null).isEmpty());
         assertFalse(contrataciones.buscarPorId(solicitud(publicacion, cliente).getId()).isEmpty());
+    }
+
+    @Test
+    @DisplayName("contarPagadasDesde: una sola sentencia agrupada; cuenta por publicacion desde la fecha, inclusive")
+    void contarPagadasDesde() {
+        Publicacion otra = publicacion(proveedor).guardar();
+        Publicacion sinPedir = publicacion(proveedor).guardar();
+        contrataciones.guardar(pagadaEn(publicacion, AHORA.plusDays(1)));
+        contrataciones.guardar(pagadaEn(publicacion, AHORA));                  // justo en el limite: cuenta
+        contrataciones.guardar(pagadaEn(publicacion, AHORA.minusMinutes(1)));  // antes del limite: no cuenta
+        contrataciones.guardar(pagadaEn(otra, AHORA.plusHours(2)));
+        contrataciones.guardar(pagadaEn(sinPedir, AHORA.plusHours(3)));        // no se pidio
+        solicitud(otra, cliente);                                               // sin pagar: no cuenta
+
+        Statistics estadisticas = ctx.emf().unwrap(SessionFactory.class).getStatistics();
+        estadisticas.setStatisticsEnabled(true);
+        long antes = estadisticas.getPrepareStatementCount();
+        Map<Long, Long> cantidades = contrataciones.contarPagadasDesde(
+                List.of(publicacion.getId(), otra.getId(), 9999L), AHORA);
+
+        assertEquals(1, estadisticas.getPrepareStatementCount() - antes, "una sola sentencia para todas");
+        assertEquals(Map.of(publicacion.getId(), 2L, otra.getId(), 1L), cantidades);
+        assertTrue(contrataciones.contarPagadasDesde(List.of(), AHORA).isEmpty());
+    }
+
+    /** Contratacion del cliente del escenario sobre {@code p}, aceptada y pagada en {@code pagadaEn}. */
+    private Contratacion pagadaEn(Publicacion p, LocalDateTime pagadaEn) {
+        Contratacion c = Contratacion.solicitar(p.getId(), cliente.getId(), p.getAutorId(),
+                p.getFranjas().get(0).getId(), "Mensaje", "Objetivo", SkillCoins.de(100), pagadaEn.minusDays(1));
+        c.aceptar(p.getAutorId(), pagadaEn.minusDays(1));
+        c.pagar(cliente.getId(), pagadaEn);
+        return c;
     }
 
     /** Solicitud de {@code solicitante} a la publicacion del escenario, creada {@code minutos} despues de AHORA. */

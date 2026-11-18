@@ -63,7 +63,7 @@ class WalletServiceTest {
     @Test
     @DisplayName("sin bono configurado (0 SC) la wallet arranca vacia y sin movimientos")
     void sinBono() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.CERO, 200, 10, 5, 5,
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.CERO, 200, 10, 30, 5, 5,
                 PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario otro = new Escenario(AplicacionEnMemoria.crear(config));
         PerfilDto carla = otro.profesional("u-carla", "Carla");

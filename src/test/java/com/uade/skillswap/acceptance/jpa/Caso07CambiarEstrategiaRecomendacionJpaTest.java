@@ -1,6 +1,5 @@
 package com.uade.skillswap.acceptance.jpa;
 
-import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.PublicacionDto;
 import com.uade.skillswap.application.dto.PublicacionResumenDto;
 import com.uade.skillswap.domain.model.notificacion.CanalNotificacion;
@@ -21,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  * El controller y el caso de uso son los mismos; solo cambia el TipoEstrategiaRecomendacion (Strategy).
  *
  * <p>Escenario: Ana publica "Java a fondo" (afinidad alta con los intereses de Bruno, sin contrataciones) y
- * "Charla de backend" (afinidad baja, pero ya contratada por Cecilia, o sea mas popular). Bruno es quien recibe
+ * "Charla de backend" (afinidad baja, pero Cecilia ya la contrato y la pago, o sea mas popular). Bruno es quien recibe
  * las recomendaciones.
  */
 @DisplayName("Caso 7 (JPA/H2): cambiar la estrategia de recomendacion sin modificar el caso de uso")
@@ -40,9 +39,8 @@ class Caso07CambiarEstrategiaRecomendacionJpaTest extends AceptacionJpaBase {
         // afinidad con "java": solo la etiqueta (1)
         backend = publicar("u-ana", mentoria("Charla de backend", "arquitectura", 50, 5,
                 TipoPoliticaCancelacion.FLEXIBLE, Set.of("java"), Set.of("diseno"), franjasDiarias(2)));
-        // Cecilia contrata (y Ana acepta) la charla: cupo ocupado = 1 -> mas popular
-        ContratacionDto contratacion = solicitar("u-cecilia", backend, 0);
-        aceptar("u-ana", contratacion.id());
+        // Cecilia contrata y paga la charla: una contratacion pagada en la ventana reciente -> mas popular
+        contratarYPagar("u-ana", "u-cecilia", backend, 0);
     }
 
     private List<Long> recomendar(TipoEstrategiaRecomendacion estrategia) {

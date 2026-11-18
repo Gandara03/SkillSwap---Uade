@@ -19,7 +19,9 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.uade.skillswap.support.Datos.AHORA;
@@ -60,6 +62,31 @@ class RepositoriosEnMemoriaTest {
         assertEquals(2, p.contenido().size());
         assertEquals(3L, (long) p.contenido().get(0).getId());
         assertEquals(1L, repo.buscarPorParticipante(Datos.PROVEEDOR, PaginaRequest.de(0, 10)).totalElementos() - 2);
+    }
+
+    @Test
+    @DisplayName("contrataciones: cuenta las pagadas desde una fecha (inclusive), por publicacion y solo de las pedidas")
+    void contrataciones_contarPagadasDesde() {
+        InMemoryContratacionRepository repo = new InMemoryContratacionRepository();
+        repo.guardar(pagada(10L, AHORA.plusDays(1)));
+        repo.guardar(pagada(10L, AHORA));                   // justo en el limite: cuenta
+        repo.guardar(pagada(10L, AHORA.minusMinutes(1)));   // antes del limite: no cuenta
+        repo.guardar(pagada(11L, AHORA.plusHours(2)));
+        repo.guardar(pagada(12L, AHORA.plusHours(3)));      // no se pidio
+        repo.guardar(Contratacion.solicitar(11L, Datos.CLIENTE, Datos.PROVEEDOR, 1L, "m", "o", SkillCoins.de(1),
+                AHORA.plusHours(1)));                         // sin pagar: no cuenta
+
+        assertEquals(Map.of(10L, 2L, 11L, 1L), repo.contarPagadasDesde(List.of(10L, 11L, 13L), AHORA));
+        assertTrue(repo.contarPagadasDesde(List.of(), AHORA).isEmpty());
+    }
+
+    /** Contratacion aceptada y pagada en {@code pagadaEn}. */
+    private static Contratacion pagada(Long publicacionId, LocalDateTime pagadaEn) {
+        Contratacion c = Contratacion.solicitar(publicacionId, Datos.CLIENTE, Datos.PROVEEDOR, 1L, "m", "o",
+                SkillCoins.de(1), pagadaEn.minusDays(1));
+        c.aceptar(Datos.PROVEEDOR, pagadaEn.minusDays(1));
+        c.pagar(Datos.CLIENTE, pagadaEn);
+        return c;
     }
 
     @Test

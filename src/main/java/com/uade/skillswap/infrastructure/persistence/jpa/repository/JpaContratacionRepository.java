@@ -9,7 +9,9 @@ import com.uade.skillswap.infrastructure.persistence.jpa.entity.ContratacionJpaE
 import com.uade.skillswap.infrastructure.persistence.jpa.mapper.ContratacionMapper;
 import jakarta.persistence.EntityNotFoundException;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +79,27 @@ public class JpaContratacionRepository extends SimpleJpaRepository
                 resultado.add(ContratacionMapper.aDominio(e));
             }
             return new Pagina<>(resultado, pagina.pagina(), pagina.tamano(), total);
+        });
+    }
+
+    /** Un {@code count} agrupado por publicacion: una sola sentencia para todas las candidatas. */
+    @Override
+    public Map<Long, Long> contarPagadasDesde(Collection<Long> publicacionIds, LocalDateTime desde) {
+        if (publicacionIds == null || publicacionIds.isEmpty()) {
+            return Map.of();
+        }
+        return leer(em -> {
+            Map<String, Object> parametros = new HashMap<>();
+            parametros.put("ids", publicacionIds);
+            parametros.put("desde", desde);
+            List<Object[]> filas = listar(em, "select c.publicacionId, count(c) from ContratacionJpaEntity c"
+                    + " where c.publicacionId in :ids and c.pagadaEn >= :desde group by c.publicacionId",
+                    Object[].class, parametros);
+            Map<Long, Long> cantidades = new HashMap<>();
+            for (Object[] fila : filas) {
+                cantidades.put((Long) fila[0], (Long) fila[1]);
+            }
+            return cantidades;
         });
     }
 }

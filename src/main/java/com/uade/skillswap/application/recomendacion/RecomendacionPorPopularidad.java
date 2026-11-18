@@ -7,7 +7,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Prioriza publicaciones mas contratadas (cupo ocupado) y de autores con mejor reputacion. */
+/**
+ * Prioriza las publicaciones con mas contrataciones pagadas en la ventana reciente y, a igual cantidad, las de
+ * autores con mejor reputacion.
+ */
 public class RecomendacionPorPopularidad implements EstrategiaRecomendacion {
 
     @Override
@@ -20,7 +23,7 @@ public class RecomendacionPorPopularidad implements EstrategiaRecomendacion {
         Perfil perfil = datos.perfil();
         return candidatas.stream()
                 .filter(p -> p.esVisiblePara(perfil.getId()) && !p.esAutor(perfil.getId()))
-                .sorted(Comparator.<Publicacion>comparingInt(p -> -p.getCupoOcupado())
+                .sorted(Comparator.<Publicacion>comparingLong(p -> -datos.pagadasRecientesDe(p.getId()))
                         .thenComparing(p -> -datos.reputacionDe(p.getAutorId()))
                         .thenComparing(Publicacion::getId, Comparator.nullsLast(Comparator.naturalOrder())))
                 .limit(Math.max(limite, 0))

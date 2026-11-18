@@ -42,10 +42,11 @@ class RecomendacionServiceTest {
     private PerfilDto bruno;
     private PerfilDto dario;
     private PerfilDto elena;
+    private PublicacionDto kotlin;
 
     /**
-     * Catalogo: "Java" (ana, afin a Cecilia, sin reservas), "SQL" (bruno, no afin, la mas contratada: 2 reservas),
-     * "Kotlin" (bruno, no afin, sin reservas) y "Mi propia mentoria" (de Cecilia, nunca se le recomienda).
+     * Catalogo: "Java" (ana, afin a Cecilia, sin contrataciones), "SQL" (bruno, no afin, la mas contratada: 2 pagadas
+     * ahora), "Kotlin" (bruno, no afin, sin contrataciones) y "Mi propia mentoria" (de Cecilia, nunca se le recomienda).
      */
     @BeforeEach
     void preparar() {
@@ -59,10 +60,10 @@ class RecomendacionServiceTest {
 
         e.publicada(ana, e.oferta().titulo("Java").categoria("programacion").habilidades("java").etiquetas("backend").cupo(2));
         PublicacionDto sql = e.publicada(bruno, e.oferta().titulo("SQL").categoria("datos").habilidades("sql").etiquetas("bases").cupo(3).franjasEn(100L, 130L));
-        e.publicada(bruno, e.oferta().titulo("Kotlin").categoria("movil").habilidades("kotlin").etiquetas("android"));
+        kotlin = e.publicada(bruno, e.oferta().titulo("Kotlin").categoria("movil").habilidades("kotlin").etiquetas("android"));
         e.publicada(cecilia, e.oferta().titulo("Mi propia mentoria").habilidades("java"));
-        e.aceptada(dario, bruno, sql, 0);
-        e.aceptada(elena, bruno, sql, 1);
+        e.pagada(dario, bruno, sql, 0);
+        e.pagada(elena, bruno, sql, 1);
     }
 
     private List<String> titulos(PerfilDto actor, TipoEstrategiaRecomendacion estrategia) {
@@ -86,6 +87,49 @@ class RecomendacionServiceTest {
     @DisplayName("POPULARIDAD recomienda primero lo mas contratado, aunque no coincida con los intereses")
     void porPopularidad() {
         assertEquals(List.of("SQL", "Java", "Kotlin"), titulos(cecilia, TipoEstrategiaRecomendacion.POPULARIDAD));
+    }
+
+    @Test
+    @DisplayName("POPULARIDAD cuenta los pagos de los ultimos 30 dias, con el dia 30 incluido; despues dejan de contar")
+    void popularidadConVentanaReciente() {
+        e.avanzarHoras(30 * 24);
+        assertEquals(List.of("SQL", "Java", "Kotlin"), titulos(cecilia, TipoEstrategiaRecomendacion.POPULARIDAD));
+
+        e.avanzarHoras(1);
+        assertEquals(List.of("Java", "SQL", "Kotlin"), titulos(cecilia, TipoEstrategiaRecomendacion.POPULARIDAD),
+                "sin pagos recientes y a igual reputacion, por id");
+    }
+
+    @Test
+    @DisplayName("POPULARIDAD no cuenta las contrataciones aceptadas que todavia no se pagaron")
+    void popularidadSoloCuentaPagadas() {
+        e.aceptada(dario, bruno, kotlin, 0); // si contara, Kotlin quedaria antes que Java
+
+        assertEquals(List.of("SQL", "Java", "Kotlin"), titulos(cecilia, TipoEstrategiaRecomendacion.POPULARIDAD));
+    }
+
+    @Test
+    @DisplayName("la ventana de popularidad sale de la configuracion")
+    void ventanaConfigurable() {
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 10, 2, 5, 5,
+                PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
+        Escenario chico = new Escenario(AplicacionEnMemoria.crear(config));
+        PerfilDto cliente = chico.profesional("u-cliente", "Cliente");
+        PerfilDto comprador = chico.profesional("u-comprador", "Comprador");
+        PerfilDto autora = chico.profesional("u-autora", "Autora");
+        chico.publicada(autora, chico.oferta().titulo("Uno"));
+        PublicacionDto dos = chico.publicada(autora, chico.oferta().titulo("Dos"));
+        chico.pagada(comprador, autora, dos, 0);
+
+        chico.avanzarHoras(2 * 24);
+        assertEquals("Dos", primeraPorPopularidad(chico, cliente), "a los 2 dias el pago todavia cuenta");
+        chico.avanzarHoras(1);
+        assertEquals("Uno", primeraPorPopularidad(chico, cliente), "pasada la ventana de 2 dias ya no cuenta");
+    }
+
+    private static String primeraPorPopularidad(Escenario escenario, PerfilDto actor) {
+        return escenario.app.recomendacionUseCase.recomendar(actor.id(), TipoEstrategiaRecomendacion.POPULARIDAD, TODAS)
+                .contenido().get(0).titulo();
     }
 
     @Test
@@ -125,7 +169,7 @@ class RecomendacionServiceTest {
         e.publicada(ana, e.oferta().titulo("Java de Ana").habilidades("java").etiquetas("backend"));
         e.publicada(bruno, e.oferta().titulo("Java de Bruno").habilidades("java").etiquetas("backend"));
         darReputacion(ana, dario, 2);
-        darReputacion(bruno, dario, 5);
+        darReputacion(bruno, elena, 5); // otro cliente: a Dario ya no le alcanza el saldo para dos sesiones mas
 
         List<String> afinidad = titulos(cecilia, TipoEstrategiaRecomendacion.AFINIDAD);
 
@@ -135,7 +179,7 @@ class RecomendacionServiceTest {
     @Test
     @DisplayName("el limite de recomendaciones sale de la configuracion")
     void limiteConfigurable() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 1, 5, 5,
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 1, 30, 5, 5,
                 PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario chico = new Escenario(AplicacionEnMemoria.crear(config));
         PerfilDto cliente = chico.registrar("u-cliente", "Cliente", TipoPerfil.PROFESIONAL, CanalNotificacion.INTERNA, Set.of(), Set.of("java"));

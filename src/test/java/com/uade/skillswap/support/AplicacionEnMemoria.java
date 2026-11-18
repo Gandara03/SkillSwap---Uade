@@ -76,7 +76,8 @@ public final class AplicacionEnMemoria {
         this.contratacionUseCase = new ContratacionService(contrataciones, publicaciones, perfiles, wallets,
                 promociones, calificaciones, List.of(notificador), transaccion, reloj, politicas);
         this.busquedaUseCase = new BusquedaService(publicaciones, perfiles, promociones, reloj);
-        this.recomendacionUseCase = new RecomendacionService(publicaciones, perfiles, reloj, promociones, config);
+        this.recomendacionUseCase = new RecomendacionService(publicaciones, perfiles, contrataciones, reloj, promociones,
+                config);
         this.calificacionUseCase = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);
         this.notificacionUseCase = new NotificacionService(notificaciones);
         this.walletUseCase = new WalletService(wallets);

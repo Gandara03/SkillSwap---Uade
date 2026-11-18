@@ -5,6 +5,8 @@ import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.application.port.out.ContratacionRepository;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,5 +46,17 @@ public class InMemoryContratacionRepository implements ContratacionRepository {
                         .thenComparing(Contratacion::getId, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
         return Paginador.paginar(propias, pagina);
+    }
+
+    /** Mismo criterio que la consulta agrupada de JPA: pagadaEn desde esa fecha, inclusive. */
+    @Override
+    public Map<Long, Long> contarPagadasDesde(Collection<Long> publicacionIds, LocalDateTime desde) {
+        if (publicacionIds == null || publicacionIds.isEmpty()) {
+            return Map.of();
+        }
+        return contrataciones.values().stream()
+                .filter(c -> publicacionIds.contains(c.getPublicacionId()))
+                .filter(c -> c.getPagadaEn() != null && !c.getPagadaEn().isBefore(desde))
+                .collect(Collectors.groupingBy(Contratacion::getPublicacionId, Collectors.counting()));
     }
 }

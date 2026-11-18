@@ -110,7 +110,8 @@ public final class Composicion {
                 promociones, calificaciones, observadores, transaccion, reloj,
                 new PoliticaCancelacionFactory(config.cancelacionFlexible(), config.cancelacionEstricta()));
         var busquedaService = new BusquedaService(publicaciones, perfiles, promociones, reloj);
-        var recomendacionService = new RecomendacionService(publicaciones, perfiles, reloj, promociones, config);
+        var recomendacionService = new RecomendacionService(publicaciones, perfiles, contrataciones, reloj, promociones,
+                config);
         var calificacionService = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);
         var notificacionService = new NotificacionService(notificaciones);
         var walletService = new WalletService(wallets);
