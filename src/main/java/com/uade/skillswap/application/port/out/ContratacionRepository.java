@@ -14,6 +14,8 @@ public interface ContratacionRepository {
     Contratacion guardar(Contratacion contratacion);
     Optional<Contratacion> buscarPorId(Long id);
     Pagina<Contratacion> buscarPorParticipante(Long perfilId, PaginaRequest pagina);
+    /** Contrataciones COMPLETADAS donde el perfil fue el proveedor, las completadas mas recientemente primero. */
+    Pagina<Contratacion> buscarCompletadasPorProveedor(Long proveedorId, PaginaRequest pagina);
     /**
      * Cuantas contrataciones de cada publicacion se pagaron desde esa fecha (inclusive), con una sola consulta.
      * Las publicaciones sin pagos en ese lapso no aparecen en el mapa.

@@ -111,7 +111,7 @@ class RecomendacionServiceTest {
     @Test
     @DisplayName("la ventana de popularidad sale de la configuracion")
     void ventanaConfigurable() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 10, 2, 5, 5,
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 10, 2, 5, 5, 5,
                 PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario chico = new Escenario(AplicacionEnMemoria.crear(config));
         PerfilDto cliente = chico.profesional("u-cliente", "Cliente");
@@ -179,7 +179,7 @@ class RecomendacionServiceTest {
     @Test
     @DisplayName("el limite de recomendaciones sale de la configuracion")
     void limiteConfigurable() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 1, 30, 5, 5,
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(100), 200, 1, 30, 5, 5, 5,
                 PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario chico = new Escenario(AplicacionEnMemoria.crear(config));
         PerfilDto cliente = chico.registrar("u-cliente", "Cliente", TipoPerfil.PROFESIONAL, CanalNotificacion.INTERNA, Set.of(), Set.of("java"));

@@ -4,6 +4,7 @@ import com.uade.skillswap.application.Escenario;
 import com.uade.skillswap.application.command.CrearPromocionCommand;
 import com.uade.skillswap.application.command.SolicitarContratacionCommand;
 import com.uade.skillswap.application.dto.ComprobanteDto;
+import com.uade.skillswap.application.dto.ContratacionCompletadaDto;
 import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.HistorialDto;
 import com.uade.skillswap.application.dto.MovimientoDto;
@@ -648,6 +649,27 @@ class ContratacionServiceTest {
         assertEquals(0L, app.contratacionUseCase.listarMias(dario.id(), PaginaRequest.de(0, 10)).totalElementos());
         assertThrows(ValidacionException.class, () -> app.contratacionUseCase.listarMias(bruno.id(), null));
         assertThrows(ValidacionException.class, () -> app.contratacionUseCase.listarMias(null, PaginaRequest.de(0, 10)));
+    }
+
+    @Test
+    @DisplayName("listarCompletadasComoProveedor: solo las completadas del proveedor, con titulo y fecha, paginadas")
+    void listarCompletadasComoProveedor() {
+        PublicacionDto publicada = e.publicada(ana, e.oferta().cupo(2));
+        PublicacionDto otra = e.publicada(cecilia, e.oferta().titulo("Taller de SQL"));
+        ContratacionDto vieja = e.completada(bruno, ana, publicada, 0);
+        e.avanzarHoras(1);
+        ContratacionDto nueva = e.completada(cecilia, ana, publicada, 1);
+        e.completada(ana, cecilia, otra, 0); // Ana como clienta: no es parte de su historial
+
+        Pagina<ContratacionCompletadaDto> pagina1 = app.contratacionUseCase.listarCompletadasComoProveedor(ana.id(), PaginaRequest.de(0, 1));
+        Pagina<ContratacionCompletadaDto> pagina2 = app.contratacionUseCase.listarCompletadasComoProveedor(ana.id(), PaginaRequest.de(1, 1));
+
+        assertEquals(2L, pagina1.totalElementos());
+        assertEquals(List.of(new ContratacionCompletadaDto("Mentoria de Java", nueva.completadaEn())), pagina1.contenido());
+        assertEquals(List.of(new ContratacionCompletadaDto("Mentoria de Java", vieja.completadaEn())), pagina2.contenido());
+        assertEquals(0L, app.contratacionUseCase.listarCompletadasComoProveedor(bruno.id(), PaginaRequest.de(0, 5)).totalElementos());
+        assertThrows(ValidacionException.class, () -> app.contratacionUseCase.listarCompletadasComoProveedor(ana.id(), null));
+        assertThrows(ValidacionException.class, () -> app.contratacionUseCase.listarCompletadasComoProveedor(null, PaginaRequest.de(0, 5)));
     }
 
     // ---------- transacciones y observer ----------

@@ -13,7 +13,6 @@ import com.uade.skillswap.application.exception.ErrorCode;
 import com.uade.skillswap.domain.model.publicacion.AccionPublicacion;
 import com.uade.skillswap.domain.model.publicacion.Modalidad;
 import com.uade.skillswap.domain.query.FiltroBusqueda;
-import com.uade.skillswap.domain.query.Pagina;
 import com.uade.skillswap.domain.query.PaginaRequest;
 import com.uade.skillswap.presentation.Resultado;
 import com.uade.skillswap.presentation.controller.RecomendacionController;
@@ -312,23 +311,7 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
         iniciarSesion(userId);
         PerfilDto yo = valor(perfiles.miPerfil());
         PerfilPublicoDto publico = valor(perfiles.verPerfilPublico(yo.id()));
-        return MapeadorUi.perfil(yo, publico, completadasComoProveedor(yo.id()));
-    }
-
-    private int completadasComoProveedor(Long perfilId) {
-        int completadas = 0;
-        int numero = 0;
-        Pagina<ContratacionDto> pagina;
-        do {
-            pagina = valor(contrataciones.misContrataciones(PaginaRequest.de(numero, PaginaRequest.TAMANO_MAXIMO)));
-            for (ContratacionDto c : pagina.contenido()) {
-                if ("COMPLETADA".equals(c.estado()) && perfilId.equals(c.proveedorId())) {
-                    completadas++;
-                }
-            }
-            numero++;
-        } while (pagina.tieneSiguiente());
-        return completadas;
+        return MapeadorUi.perfil(yo, publico);
     }
 
     // ---------- soporte ----------

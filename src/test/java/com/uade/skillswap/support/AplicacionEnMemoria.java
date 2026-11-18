@@ -82,7 +82,7 @@ public final class AplicacionEnMemoria {
         this.notificacionUseCase = new NotificacionService(notificaciones);
         this.walletUseCase = new WalletService(wallets);
         this.perfilPublicoUseCase = new PerfilPublicoFacade(perfilUseCase, calificacionUseCase, publicacionUseCase,
-                config);
+                contratacionUseCase, config);
     }
 
     /** Aplicacion con la configuracion por defecto (bono inicial de 100 SC, etc.). */

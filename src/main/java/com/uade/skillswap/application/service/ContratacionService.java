@@ -2,6 +2,7 @@ package com.uade.skillswap.application.service;
 
 import com.uade.skillswap.application.command.SolicitarContratacionCommand;
 import com.uade.skillswap.application.dto.ComprobanteDto;
+import com.uade.skillswap.application.dto.ContratacionCompletadaDto;
 import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.HistorialDto;
 import com.uade.skillswap.application.dto.ResultadoCancelacionDto;
@@ -281,6 +282,20 @@ public class ContratacionService implements ContratacionUseCase {
         }
         return contrataciones.mapear(c -> Mapeador.contratacion(c, publicaciones.get(c.getPublicacionId()), actorId,
                 calificadas.contains(c.getId())));
+    }
+
+    @Override
+    public Pagina<ContratacionCompletadaDto> listarCompletadasComoProveedor(Long proveedorId, PaginaRequest pagina) {
+        Entradas.exigir(proveedorId, "El proveedor");
+        Entradas.exigirPagina(pagina);
+        Pagina<Contratacion> completadas = contratacionRepository.buscarCompletadasPorProveedor(proveedorId, pagina);
+        // Los titulos de toda la pagina con una sola carga (sin N+1).
+        Map<Long, Publicacion> publicaciones = new HashMap<>();
+        for (Publicacion p : publicacionRepository.buscarPorIds(completadas.contenido().stream()
+                .map(Contratacion::getPublicacionId).distinct().toList())) {
+            publicaciones.put(p.getId(), p);
+        }
+        return completadas.mapear(c -> Mapeador.completada(c, publicaciones.get(c.getPublicacionId())));
     }
 
     // ---------- soporte ----------

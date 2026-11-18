@@ -16,11 +16,12 @@ public record SkillSwapConfig(
         int diasPopularidadReciente,
         int ultimasCalificacionesPerfilPublico,
         int ultimasPublicacionesPerfilPublico,
+        int ultimasCompletadasPerfilPublico,
         UmbralesCancelacion cancelacionFlexible,
         UmbralesCancelacion cancelacionEstricta) {
 
     public static SkillSwapConfig porDefecto() {
-        return new SkillSwapConfig(SkillCoins.de(100), 200, 10, 30, 5, 5,
+        return new SkillSwapConfig(SkillCoins.de(100), 200, 10, 30, 5, 5, 5,
                 PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
     }
 }

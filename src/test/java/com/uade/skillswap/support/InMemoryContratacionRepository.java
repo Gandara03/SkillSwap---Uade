@@ -48,6 +48,16 @@ public class InMemoryContratacionRepository implements ContratacionRepository {
         return Paginador.paginar(propias, pagina);
     }
 
+    @Override
+    public Pagina<Contratacion> buscarCompletadasPorProveedor(Long proveedorId, PaginaRequest pagina) {
+        List<Contratacion> completadas = contrataciones.values().stream()
+                .filter(c -> proveedorId.equals(c.getProveedorId()) && c.estaCompletada())
+                .sorted(Comparator.comparing(Contratacion::getCompletadaEn).reversed()
+                        .thenComparing(Contratacion::getId, Comparator.reverseOrder()))
+                .collect(Collectors.toList());
+        return Paginador.paginar(completadas, pagina);
+    }
+
     /** Mismo criterio que la consulta agrupada de JPA: pagadaEn desde esa fecha, inclusive. */
     @Override
     public Map<Long, Long> contarPagadasDesde(Collection<Long> publicacionIds, LocalDateTime desde) {

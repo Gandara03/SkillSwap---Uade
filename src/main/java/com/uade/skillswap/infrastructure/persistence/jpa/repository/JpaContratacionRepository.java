@@ -24,6 +24,8 @@ import java.util.Optional;
 public class JpaContratacionRepository extends SimpleJpaRepository
         implements ContratacionRepository {
 
+    private static final String COMPLETADA = "COMPLETADA";
+
     public JpaContratacionRepository(JpaContexto contexto) {
         super(contexto);
     }
@@ -58,19 +60,33 @@ public class JpaContratacionRepository extends SimpleJpaRepository
         return leer(em -> Optional.ofNullable(em.find(ContratacionJpaEntity.class, id)).map(ContratacionMapper::aDominio));
     }
 
-    /** Contrataciones donde el perfil es cliente o proveedor, las mas recientes primero. Paginado en SQL + 1 fetch del historial. */
+    /** Contrataciones donde el perfil es cliente o proveedor, las mas recientes primero. */
     @Override
     public Pagina<Contratacion> buscarPorParticipante(Long perfilId, PaginaRequest pagina) {
+        Map<String, Object> parametros = new HashMap<>();
+        parametros.put("perfilId", perfilId);
+        return paginar("from ContratacionJpaEntity c where c.clienteId = :perfilId or c.proveedorId = :perfilId",
+                "c.creadaEn desc, c.id desc", parametros, pagina);
+    }
+
+    @Override
+    public Pagina<Contratacion> buscarCompletadasPorProveedor(Long proveedorId, PaginaRequest pagina) {
+        Map<String, Object> parametros = new HashMap<>();
+        parametros.put("proveedorId", proveedorId);
+        parametros.put("estado", COMPLETADA);
+        return paginar("from ContratacionJpaEntity c where c.proveedorId = :proveedorId and c.estado = :estado",
+                "c.completadaEn desc, c.id desc", parametros, pagina);
+    }
+
+    /** Paginado en SQL (count + ids de la pagina) y despues las entidades con 1 fetch del historial. */
+    private Pagina<Contratacion> paginar(String desde, String orden, Map<String, Object> parametros,
+                                         PaginaRequest pagina) {
         return leer(em -> {
-            Map<String, Object> parametros = new HashMap<>();
-            parametros.put("perfilId", perfilId);
-            String desde = "from ContratacionJpaEntity c where c.clienteId = :perfilId or c.proveedorId = :perfilId";
             long total = contar(em, "select count(c) " + desde, parametros);
             if (total == 0 || pagina.offset() >= total) {
                 return new Pagina<Contratacion>(List.of(), pagina.pagina(), pagina.tamano(), total);
             }
-            List<Long> ids = idsPaginados(em, "select c.id " + desde + " order by c.creadaEn desc, c.id desc",
-                    parametros, pagina);
+            List<Long> ids = idsPaginados(em, "select c.id " + desde + " order by " + orden, parametros, pagina);
             List<ContratacionJpaEntity> entidades = cargarEnOrden(em, ContratacionJpaEntity.class, ids,
                     ContratacionJpaEntity::getId);
             precargar(em, ContratacionJpaEntity.class, ids, "historial");

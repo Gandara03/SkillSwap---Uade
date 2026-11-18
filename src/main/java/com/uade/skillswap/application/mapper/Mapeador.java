@@ -3,6 +3,7 @@ package com.uade.skillswap.application.mapper;
 import com.uade.skillswap.application.command.BloqueDisponibilidadDto;
 import com.uade.skillswap.application.dto.CalificacionDto;
 import com.uade.skillswap.application.dto.ComprobanteDto;
+import com.uade.skillswap.application.dto.ContratacionCompletadaDto;
 import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.FranjaDto;
 import com.uade.skillswap.application.dto.HistorialDto;
@@ -118,6 +119,11 @@ public final class Mapeador {
                 .map(h -> new HistorialDto(h.getEstadoAnterior(), h.getEstadoNuevo(), h.getActorId(), h.getMotivo(),
                         h.getFecha()))
                 .toList();
+    }
+
+    /** Para el perfil publico del proveedor: no expone nada del cliente. */
+    public static ContratacionCompletadaDto completada(Contratacion c, Publicacion publicacion) {
+        return new ContratacionCompletadaDto(publicacion.getTitulo(), c.getCompletadaEn());
     }
 
     public static ComprobanteDto comprobante(Comprobante c) {

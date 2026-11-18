@@ -2,6 +2,7 @@ package com.uade.skillswap.application.port.in;
 
 import com.uade.skillswap.application.command.SolicitarContratacionCommand;
 import com.uade.skillswap.application.dto.ComprobanteDto;
+import com.uade.skillswap.application.dto.ContratacionCompletadaDto;
 import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.HistorialDto;
 import com.uade.skillswap.application.dto.ResultadoCancelacionDto;
@@ -45,4 +46,7 @@ public interface ContratacionUseCase {
     Pagina<HistorialDto> historial(Long actorId, Long contratacionId, PaginaRequest pagina);
 
     Pagina<ContratacionDto> listarMias(Long actorId, PaginaRequest pagina);
+
+    /** Historial publico del proveedor: sus contrataciones completadas, sin datos del cliente. */
+    Pagina<ContratacionCompletadaDto> listarCompletadasComoProveedor(Long proveedorId, PaginaRequest pagina);
 }

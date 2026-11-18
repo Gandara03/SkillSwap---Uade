@@ -88,7 +88,7 @@ class PerfilServiceTest {
     @Test
     @DisplayName("el bono inicial sale de la configuracion y no esta hardcodeado")
     void bonoInicialConfigurable() {
-        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(250), 200, 10, 30, 5, 5,
+        SkillSwapConfig config = new SkillSwapConfig(SkillCoins.de(250), 200, 10, 30, 5, 5, 5,
                 PoliticaFlexible.UMBRALES_POR_DEFECTO, PoliticaEstricta.UMBRALES_POR_DEFECTO);
         Escenario otro = new Escenario(AplicacionEnMemoria.crear(config));
 

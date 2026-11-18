@@ -115,8 +115,9 @@ public final class Composicion {
         var calificacionService = new CalificacionService(calificaciones, contrataciones, perfiles, transaccion, reloj);
         var notificacionService = new NotificacionService(notificaciones);
         var walletService = new WalletService(wallets);
-        // Facade: la vista publica del perfil coordina tres casos de uso
-        var perfilPublico = new PerfilPublicoFacade(perfilService, calificacionService, publicacionService, config);
+        // Facade: la vista publica del perfil coordina cuatro casos de uso
+        var perfilPublico = new PerfilPublicoFacade(perfilService, calificacionService, publicacionService,
+                contratacionService, config);
 
         // Controllers (presentacion): dependen solo de los puertos de entrada
         return new Composicion(ctx, emailSdk, pushSdk,

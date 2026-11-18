@@ -24,6 +24,7 @@ import static com.uade.skillswap.application.exception.ErrorCode.NO_AUTORIZADO;
 import static com.uade.skillswap.application.exception.ErrorCode.NO_ENCONTRADO;
 import static com.uade.skillswap.application.exception.ErrorCode.VALIDACION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Integracion PerfilController -> PerfilUseCase / PerfilPublicoUseCase -> JPA/H2. */
@@ -87,7 +88,7 @@ class PerfilControllerTest extends ControllerJpaTestBase {
     }
 
     @Test
-    @DisplayName("verPerfilPublico anda sin sesion: reputacion, ultimas calificaciones y publicaciones activas")
+    @DisplayName("verPerfilPublico anda sin sesion: reputacion, ultimas calificaciones, publicaciones activas e historial")
     void verPerfilPublico() {
         PerfilDto ana = profesional("u-ana", "Ana");
         profesional("u-bruno", "Bruno");
@@ -105,6 +106,29 @@ class PerfilControllerTest extends ControllerJpaTestBase {
         assertEquals(List.of(4), publico.ultimasCalificaciones().stream().map(c -> c.puntaje()).toList());
         assertEquals(List.of(mentoria.id()),
                 publico.publicacionesActivas().stream().map(PublicacionResumenDto::id).toList());
+        assertEquals(1, publico.contratacionesCompletadas());
+        assertEquals(1, publico.ultimasCompletadas().size());
+        assertEquals(mentoria.titulo(), publico.ultimasCompletadas().get(0).tituloPublicacion());
+        assertNotNull(publico.ultimasCompletadas().get(0).completadaEn());
+    }
+
+    @Test
+    @DisplayName("verPerfilPublico sin N+1: las sentencias SQL no crecen con las contrataciones completadas")
+    void verPerfilPublicoSinNMasUno() {
+        PerfilDto ana = profesional("u-ana", "Ana");
+        profesional("u-bruno", "Bruno");
+        contratarYCompletar("u-ana", "u-bruno", publicarMentoria("u-ana", 10, 1, 1), 0);
+        sinSesion();
+        long conUna = sentenciasSql(() -> ok(perfiles().verPerfilPublico(ana.id())));
+
+        for (int i = 0; i < 3; i++) {
+            contratarYCompletar("u-ana", "u-bruno", publicarMentoria("u-ana", 10, 1, 1), 0);
+        }
+        sinSesion();
+        long conCuatro = sentenciasSql(() -> ok(perfiles().verPerfilPublico(ana.id())));
+
+        assertEquals(4, ok(perfiles().verPerfilPublico(ana.id())).contratacionesCompletadas());
+        assertEquals(conUna, conCuatro, "con 1 completada: " + conUna + " sentencias; con 4: " + conCuatro);
     }
 
     @Test

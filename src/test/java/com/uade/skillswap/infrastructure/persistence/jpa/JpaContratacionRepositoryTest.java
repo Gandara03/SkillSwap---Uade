@@ -267,6 +267,31 @@ class JpaContratacionRepositoryTest extends JpaTestBase {
         assertTrue(contrataciones.contarPagadasDesde(List.of(), AHORA).isEmpty());
     }
 
+    @Test
+    @DisplayName("buscarCompletadasPorProveedor: solo COMPLETADAS del proveedor, la completada mas recientemente primero y paginado")
+    void buscarCompletadasPorProveedor() {
+        Contratacion tarde = contrataciones.guardar(completadaEn(AHORA.plusDays(2)));
+        Contratacion temprano = contrataciones.guardar(completadaEn(AHORA.plusDays(1)));
+        contrataciones.guardar(pagadaEn(publicacion, AHORA)); // pagada, no completada: no cuenta
+
+        Pagina<Contratacion> primera = contrataciones.buscarCompletadasPorProveedor(proveedor.getId(), PaginaRequest.de(0, 1));
+        Pagina<Contratacion> segunda = contrataciones.buscarCompletadasPorProveedor(proveedor.getId(), PaginaRequest.de(1, 1));
+
+        assertEquals(2, primera.totalElementos());
+        assertIterableEquals(List.of(tarde.getId()), primera.contenido().stream().map(Contratacion::getId).toList());
+        assertIterableEquals(List.of(temprano.getId()), segunda.contenido().stream().map(Contratacion::getId).toList());
+        assertEquals(AHORA.plusDays(2), primera.contenido().get(0).getCompletadaEn());
+        assertEquals(0, contrataciones.buscarCompletadasPorProveedor(cliente.getId(), PaginaRequest.de(0, 5)).totalElementos());
+    }
+
+    /** Contratacion del escenario pagada una hora antes de {@code completadaEn} y completada en ese momento. */
+    private Contratacion completadaEn(LocalDateTime completadaEn) {
+        Contratacion c = pagadaEn(publicacion, completadaEn.minusHours(1));
+        c.iniciar(proveedor.getId(), completadaEn.minusMinutes(30));
+        c.completar(proveedor.getId(), completadaEn);
+        return c;
+    }
+
     /** Contratacion del cliente del escenario sobre {@code p}, aceptada y pagada en {@code pagadaEn}. */
     private Contratacion pagadaEn(Publicacion p, LocalDateTime pagadaEn) {
         Contratacion c = Contratacion.solicitar(p.getId(), cliente.getId(), p.getAutorId(),

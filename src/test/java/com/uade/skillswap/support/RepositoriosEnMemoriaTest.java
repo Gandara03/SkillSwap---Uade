@@ -80,6 +80,28 @@ class RepositoriosEnMemoriaTest {
         assertTrue(repo.contarPagadasDesde(List.of(), AHORA).isEmpty());
     }
 
+    @Test
+    @DisplayName("contrataciones: lista las completadas de un proveedor, la completada mas recientemente primero")
+    void contrataciones_completadasPorProveedor() {
+        InMemoryContratacionRepository repo = new InMemoryContratacionRepository();
+        Contratacion tarde = repo.guardar(completada(10L, AHORA.plusDays(2)));
+        Contratacion temprano = repo.guardar(completada(11L, AHORA.plusDays(1)));
+        repo.guardar(pagada(10L, AHORA));                     // pagada, no completada: no cuenta
+
+        Pagina<Contratacion> p = repo.buscarCompletadasPorProveedor(Datos.PROVEEDOR, PaginaRequest.de(0, 10));
+        assertEquals(2L, p.totalElementos());
+        assertEquals(List.of(tarde, temprano), p.contenido(), "por fecha de completada, no por id");
+        assertEquals(0L, repo.buscarCompletadasPorProveedor(Datos.CLIENTE, PaginaRequest.de(0, 10)).totalElementos());
+    }
+
+    /** Contratacion pagada una hora antes de {@code completadaEn} y completada en ese momento. */
+    private static Contratacion completada(Long publicacionId, LocalDateTime completadaEn) {
+        Contratacion c = pagada(publicacionId, completadaEn.minusHours(1));
+        c.iniciar(Datos.PROVEEDOR, completadaEn.minusMinutes(30));
+        c.completar(Datos.PROVEEDOR, completadaEn);
+        return c;
+    }
+
     /** Contratacion aceptada y pagada en {@code pagadaEn}. */
     private static Contratacion pagada(Long publicacionId, LocalDateTime pagadaEn) {
         Contratacion c = Contratacion.solicitar(publicacionId, Datos.CLIENTE, Datos.PROVEEDOR, 1L, "m", "o",

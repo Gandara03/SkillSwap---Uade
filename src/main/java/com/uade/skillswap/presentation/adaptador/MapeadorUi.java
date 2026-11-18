@@ -155,13 +155,13 @@ final class MapeadorUi {
     }
 
     /** Datos propios del perfil y lo que arma la vista publica (reputacion y ultimas calificaciones). */
-    static Models.Perfil perfil(PerfilDto yo, PerfilPublicoDto publico, int proyectosCompletados) {
+    static Models.Perfil perfil(PerfilDto yo, PerfilPublicoDto publico) {
         List<Models.Resena> resenas = publico.ultimasCalificaciones().stream()
                 .map(c -> new Models.Resena(c.puntaje(), c.comentario(), c.fecha()))
                 .toList();
         return new Models.Perfil(yo.userId(), yo.nombreVisible(), rol(yo.tipo()), yo.biografia(),
                 List.copyOf(yo.habilidades()), publico.reputacion(), publico.cantidadCalificaciones(),
-                proyectosCompletados, resenas);
+                publico.contratacionesCompletadas(), resenas);
     }
 
     private static String rol(TipoPerfil tipo) {
