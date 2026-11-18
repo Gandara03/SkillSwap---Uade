@@ -259,7 +259,7 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
         boolean soyCliente = yo.equals(c.clienteId());
         Long otro = soyCliente ? c.proveedorId() : c.clienteId();
         String contraparte = (soyCliente ? "Proveedor: " : "Cliente: ") + nombres.computeIfAbsent(otro, this::nombreDe);
-        return MapeadorUi.contratacion(c, contraparte);
+        return MapeadorUi.contratacion(c, contraparte, otro);
     }
 
     private String nombreDe(Long perfilId) {
@@ -274,6 +274,13 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
         iniciarSesion(userId);
         valor(calificaciones.calificar(new CalificarCommand(id(contratacionId, "la contratacion"), puntaje,
                 comentario)));
+    }
+
+    @Override
+    public Models.Pagina<Models.Resena> listarRecibidas(String userId, String perfilId, int pagina) {
+        iniciarSesion(userId);
+        return MapeadorUi.pagina(valor(calificaciones.recibidasDe(id(perfilId, "el perfil"), pedido(pagina))),
+                MapeadorUi::resena);
     }
 
     // ---------- wallet ----------
@@ -333,6 +340,12 @@ public class UiControllersAdapter implements UiControllers, UiControllers.Busque
         PerfilDto yo = valor(perfiles.miPerfil());
         PerfilPublicoDto publico = valor(perfiles.verPerfilPublico(yo.id()));
         return MapeadorUi.perfil(yo, publico);
+    }
+
+    @Override
+    public Models.PerfilPublico verPerfilPublico(String userId, String perfilId) {
+        iniciarSesion(userId);
+        return MapeadorUi.perfilPublico(valor(perfiles.verPerfilPublico(id(perfilId, "el perfil"))));
     }
 
     // ---------- soporte ----------

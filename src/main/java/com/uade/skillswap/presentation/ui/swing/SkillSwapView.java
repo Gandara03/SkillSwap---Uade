@@ -14,7 +14,9 @@ import com.uade.skillswap.presentation.ui.swing.contrato.Models.NuevaPublicacion
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.OrdenBusqueda;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Pagina;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Perfil;
+import com.uade.skillswap.presentation.ui.swing.contrato.Models.PerfilPublico;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.PoliticaCancelacion;
+import com.uade.skillswap.presentation.ui.swing.contrato.Models.ProyectoCompletado;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Publicacion;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.Resena;
 import com.uade.skillswap.presentation.ui.swing.contrato.Models.ResultadoCancelacion;
@@ -478,6 +480,10 @@ public final class SkillSwapView extends JPanel {
         info.add(label("<html><div style='width:550px'>" + x.descripcion() + "</div></html>", BODY, MUTED));
         info.add(Box.createVerticalStrut(16));
         info.add(label("Duración: " + x.duracionMinutos() + " minutos", BODY, TEXT));
+        info.add(Box.createVerticalStrut(16));
+        JButton proveedor = button("Ver perfil de " + x.proveedor(), false);
+        proveedor.addActionListener(e -> intentar(() -> showPublicProfile(x.proveedorId(), 0, () -> showDetail(x))));
+        info.add(proveedor);
         c.add(info);
         JPanel buy = new Theme.RoundedPanel(16, new Color(239, 247, 246));
         buy.setLayout(new BoxLayout(buy, BoxLayout.Y_AXIS));
@@ -703,6 +709,10 @@ public final class SkillSwapView extends JPanel {
                     BorderLayout.CENTER);
             JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
             actions.setOpaque(false);
+            JButton perfil = button("Ver perfil", false);
+            perfil.addActionListener(e -> intentar(() ->
+                    showPublicProfile(x.contraparteId(), 0, () -> showContracts(numero))));
+            actions.add(perfil);
             for (AccionContratacion a : x.acciones()) {
                 JButton b = button(a.etiqueta(), a != AccionContratacion.CANCELAR && a != AccionContratacion.RECHAZAR);
                 b.addActionListener(e -> intentar(() -> ejecutar(x, a, numero)));
@@ -910,22 +920,106 @@ public final class SkillSwapView extends JPanel {
             p.add(vacio);
         }
         for (Resena r : x.ultimasResenas()) {
-            JPanel row = card(new BorderLayout(14, 0));
-            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
-            row.setAlignmentX(LEFT_ALIGNMENT);
-            row.add(label("★ " + r.puntaje(), H3, GOLD), BorderLayout.WEST);
-            JPanel t = new JPanel();
-            t.setOpaque(false);
-            t.setLayout(new BoxLayout(t, BoxLayout.Y_AXIS));
-            t.add(label(r.comentario() == null || r.comentario().isBlank() ? "Sin comentario" : r.comentario(),
-                    BODY, TEXT));
-            t.add(label(r.fecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), SMALL, MUTED));
-            row.add(t);
-            p.add(row);
-            p.add(Box.createVerticalStrut(8));
+            agregarFila(p, textoResena(r), "★ " + r.puntaje(), r.fecha());
         }
         p.add(Box.createVerticalGlue());
         page("Mi perfil", p);
+    }
+
+    /**
+     * Perfil publico de otro usuario: reputacion, publicaciones activas, ultimos proyectos completados y las
+     * calificaciones que recibio, de a una pagina. {@code volver} rearma la pantalla desde la que se llego.
+     */
+    private void showPublicProfile(String perfilId, int numeroResenas, Runnable volver) {
+        PerfilPublico x = controllers.perfiles().verPerfilPublico(usuarioActivo, perfilId);
+        Pagina<Resena> resenas = controllers.calificaciones().listarRecibidas(usuarioActivo, perfilId, numeroResenas);
+        JPanel p = base();
+        JButton back = button("← Volver", false);
+        back.setAlignmentX(LEFT_ALIGNMENT);
+        back.addActionListener(e -> intentar(volver));
+        p.add(back);
+        p.add(Box.createVerticalStrut(18));
+        JPanel hero = card(new BorderLayout(20, 0));
+        hero.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
+        hero.add(avatar(iniciales(x.nombre()), 86), BorderLayout.WEST);
+        JPanel data = new JPanel();
+        data.setOpaque(false);
+        data.setLayout(new BoxLayout(data, BoxLayout.Y_AXIS));
+        data.add(label(x.nombre(), H1, TEXT));
+        data.add(Box.createVerticalStrut(10));
+        data.add(label("<html><div style='width:570px'>" + (x.bio() == null ? "" : x.bio()) + "</div></html>",
+                BODY, MUTED));
+        hero.add(data);
+        JPanel stats = new JPanel(new GridLayout(3, 1, 0, 4));
+        stats.setOpaque(false);
+        stats.add(label("★ " + x.reputacion() + " reputación", H3, GOLD));
+        stats.add(label(x.resenas() + " reseñas", BODY, MUTED));
+        stats.add(label(x.proyectosCompletados() + " proyectos completados", BODY, MUTED));
+        hero.add(stats, BorderLayout.EAST);
+        hero.setAlignmentX(LEFT_ALIGNMENT);
+        p.add(hero);
+        p.add(Box.createVerticalStrut(24));
+        addSection(p, "Habilidades", null);
+        JPanel tags = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        tags.setOpaque(false);
+        for (String s : x.habilidades()) {
+            tags.add(pill(s, NAVY_2));
+        }
+        tags.setAlignmentX(LEFT_ALIGNMENT);
+        tags.setMaximumSize(new Dimension(Integer.MAX_VALUE, tags.getPreferredSize().height));
+        p.add(tags);
+        p.add(Box.createVerticalStrut(24));
+        addSection(p, "Publicaciones activas", null);
+        if (x.publicacionesActivas().isEmpty()) {
+            agregarVacio(p, "No tiene publicaciones activas.");
+        } else {
+            p.add(cardGrid(x.publicacionesActivas()));
+        }
+        p.add(Box.createVerticalStrut(24));
+        addSection(p, "Últimos proyectos completados", "Como proveedor; no se muestra quién fue el cliente");
+        if (x.ultimosProyectos().isEmpty()) {
+            agregarVacio(p, "Todavía no completó proyectos.");
+        }
+        for (ProyectoCompletado proyecto : x.ultimosProyectos()) {
+            agregarFila(p, proyecto.titulo(), "✓", proyecto.fecha());
+        }
+        p.add(Box.createVerticalStrut(24));
+        addSection(p, "Calificaciones recibidas", resenas.totalElementos() + " en total");
+        if (resenas.totalElementos() == 0) {
+            agregarVacio(p, "Todavía no recibió calificaciones.");
+        }
+        for (Resena r : resenas.elementos()) {
+            agregarFila(p, textoResena(r), "★ " + r.puntaje(), r.fecha());
+        }
+        agregarPaginador(p, resenas, n -> showPublicProfile(perfilId, n, volver));
+        p.add(Box.createVerticalGlue());
+        page("Perfil de " + x.nombre(), p);
+    }
+
+    /** Fila de una lista con un marcador a la izquierda (puntaje o tilde), un texto y su fecha. */
+    private void agregarFila(JPanel p, String texto, String marcador, LocalDateTime fecha) {
+        JPanel row = card(new BorderLayout(14, 0));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 72));
+        row.setAlignmentX(LEFT_ALIGNMENT);
+        row.add(label(marcador, H3, GOLD), BorderLayout.WEST);
+        JPanel t = new JPanel();
+        t.setOpaque(false);
+        t.setLayout(new BoxLayout(t, BoxLayout.Y_AXIS));
+        t.add(label(texto, BODY, TEXT));
+        t.add(label(fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), SMALL, MUTED));
+        row.add(t);
+        p.add(row);
+        p.add(Box.createVerticalStrut(8));
+    }
+
+    private static String textoResena(Resena r) {
+        return r.comentario() == null || r.comentario().isBlank() ? "Sin comentario" : r.comentario();
+    }
+
+    private void agregarVacio(JPanel p, String texto) {
+        JLabel vacio = label(texto, BODY, MUTED);
+        vacio.setAlignmentX(LEFT_ALIGNMENT);
+        p.add(vacio);
     }
 
     private JLabel pill(String text, Color color) {

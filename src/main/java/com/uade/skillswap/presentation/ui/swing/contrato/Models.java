@@ -58,10 +58,21 @@ public final class Models {
                          List<String> habilidades, double reputacion,
                          int resenas, int proyectosCompletados, List<Resena> ultimasResenas) {}
 
+    /** Una contratacion completada del historial publico: que publicacion y cuando, sin datos del cliente. */
+    public record ProyectoCompletado(String titulo, LocalDateTime fecha) {}
+
+    /**
+     * Lo que cualquier usuario ve de otro perfil. {@code id} es el id del perfil (el que traen
+     * {@link Publicacion#proveedorId()} y {@link Contratacion#contraparteId()}), no su userId.
+     */
+    public record PerfilPublico(String id, String nombre, String bio, List<String> habilidades, double reputacion,
+                                int resenas, int proyectosCompletados, List<ProyectoCompletado> ultimosProyectos,
+                                List<Publicacion> publicacionesActivas) {}
+
     /** {@code accionesDelAutor} solo tiene sentido en "Mis publicaciones", donde quien mira es el autor. */
     public record Publicacion(String id, String titulo, String descripcion,
                               String categoria, Modalidad modalidad, int duracionMinutos,
-                              BigDecimal precio, double reputacion, String proveedor,
+                              BigDecimal precio, double reputacion, String proveedor, String proveedorId,
                               List<String> etiquetas, EstadoPublicacion estado,
                               boolean destacada, int cupoDisponible, List<AccionPublicacion> accionesDelAutor) {}
 
@@ -74,7 +85,7 @@ public final class Models {
     public record Franja(String id, LocalDateTime inicio, LocalDateTime fin) {}
 
     /** {@code acciones}: las que puede pedir el usuario activo, segun el estado y su parte en la contratacion. */
-    public record Contratacion(String id, String titulo, String contraparte,
+    public record Contratacion(String id, String titulo, String contraparte, String contraparteId,
                                LocalDateTime fecha, BigDecimal precio, EstadoContratacion estado,
                                List<AccionContratacion> acciones) {}
 

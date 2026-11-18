@@ -28,6 +28,7 @@ import static com.uade.skillswap.presentation.ui.swing.contrato.Models.AccionPub
 import static com.uade.skillswap.presentation.ui.swing.contrato.Models.AccionPublicacion.PUBLICAR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -107,6 +108,67 @@ class UiControllersAdapterTest extends AceptacionJpaBase {
         assertEquals(5, perfilDeAna.ultimasResenas().get(0).puntaje());
         assertEquals("Muy clara", perfilDeAna.ultimasResenas().get(0).comentario());
         assertEquals(0, ui.perfiles().verPerfil(BRUNO).proyectosCompletados(), "Bruno fue el cliente");
+    }
+
+    // ---------- perfil publico de otro usuario ----------
+
+    @Test
+    @DisplayName("el perfil publico del proveedor se abre con el id que traen la publicacion y la contratacion")
+    void perfilPublicoDelProveedor() {
+        Models.Contratacion pagada = contratadaYPagada(); // "Mentoria de Java" de Ana, contratada por Bruno
+        ui.contrataciones().iniciar(ANA, pagada.id());
+        ui.contrataciones().completar(ANA, pagada.id());
+        ui.calificaciones().calificar(BRUNO, pagada.id(), 4, "Muy util");
+
+        Models.Publicacion publicacion = buscar(null).get(0);
+        Models.Contratacion vistaDeBruno = contratacionDe(BRUNO, pagada.id());
+        assertEquals(publicacion.proveedorId(), vistaDeBruno.contraparteId(), "los dos apuntan al perfil de Ana");
+
+        Models.PerfilPublico ana = ui.perfiles().verPerfilPublico(BRUNO, publicacion.proveedorId());
+        assertEquals(publicacion.proveedorId(), ana.id());
+        assertEquals("Ana Gomez", ana.nombre());
+        assertEquals(4.0, ana.reputacion());
+        assertEquals(1, ana.resenas());
+        assertEquals(1, ana.proyectosCompletados());
+        assertEquals(List.of("Mentoria de Java"), ana.ultimosProyectos().stream()
+                .map(Models.ProyectoCompletado::titulo).toList());
+        assertNotNull(ana.ultimosProyectos().get(0).fecha());
+        assertEquals(List.of(publicacion.id()), ana.publicacionesActivas().stream().map(Models.Publicacion::id).toList());
+
+        Models.PerfilPublico bruno = ui.perfiles().verPerfilPublico(ANA, contratacionDe(ANA, pagada.id()).contraparteId());
+        assertEquals("Bruno Diaz", bruno.nombre());
+        assertEquals(0, bruno.proyectosCompletados(), "Bruno fue el cliente");
+    }
+
+    @Test
+    @DisplayName("las calificaciones recibidas de otro perfil vienen paginadas, de la mas reciente a la mas vieja")
+    void calificacionesRecibidas() {
+        String perfilDeAna = null;
+        for (int i = 1; i <= 10; i++) {
+            Models.Contratacion pagada = contratadaYPagada(10); // 10 SC cada una: a Bruno le alcanza para las 10
+            ui.contrataciones().iniciar(ANA, pagada.id());
+            ui.contrataciones().completar(ANA, pagada.id());
+            ui.calificaciones().calificar(BRUNO, pagada.id(), 1 + i % 5, "Sesion " + i);
+            perfilDeAna = contratacionDe(BRUNO, pagada.id()).contraparteId();
+        }
+
+        Models.Pagina<Models.Resena> primera = ui.calificaciones().listarRecibidas(BRUNO, perfilDeAna, 0);
+        Models.Pagina<Models.Resena> segunda = ui.calificaciones().listarRecibidas(BRUNO, perfilDeAna, 1);
+
+        assertEquals(10, primera.totalElementos());
+        assertEquals(9, primera.elementos().size());
+        assertEquals("Sesion 10", primera.elementos().get(0).comentario());
+        assertEquals(List.of("Sesion 1"), segunda.elementos().stream().map(Models.Resena::comentario).toList());
+        assertEquals(10, ui.perfiles().verPerfilPublico(BRUNO, perfilDeAna).proyectosCompletados());
+    }
+
+    @Test
+    @DisplayName("perfil publico o calificaciones con un id que no es numero es VALIDACION; con uno inexistente, NO_ENCONTRADO")
+    void perfilPublicoConIdInvalido() {
+        falla("VALIDACION", () -> ui.perfiles().verPerfilPublico(BRUNO, "abc"));
+        falla("VALIDACION", () -> ui.calificaciones().listarRecibidas(BRUNO, null, 0));
+        falla("NO_ENCONTRADO", () -> ui.perfiles().verPerfilPublico(BRUNO, "999"));
+        falla("NO_AUTORIZADO", () -> ui.perfiles().verPerfilPublico("u-nadie", "1"));
     }
 
     @Test
@@ -396,7 +458,11 @@ class UiControllersAdapterTest extends AceptacionJpaBase {
 
     /** Mentoria de 40 SC de Ana, solicitada por Bruno, aceptada y pagada. */
     private Models.Contratacion contratadaYPagada() {
-        Models.Contratacion solicitud = solicitar(BRUNO, publicar("Mentoria de Java", 40));
+        return contratadaYPagada(40);
+    }
+
+    private Models.Contratacion contratadaYPagada(long precio) {
+        Models.Contratacion solicitud = solicitar(BRUNO, publicar("Mentoria de Java", precio));
         ui.contrataciones().aceptar(ANA, solicitud.id());
         return ui.contrataciones().pagar(BRUNO, solicitud.id());
     }

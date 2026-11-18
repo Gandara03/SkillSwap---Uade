@@ -41,6 +41,8 @@ public interface UiControllers {
 
     interface CalificacionController {
         void calificar(String userId, String contratacionId, int puntaje, String comentario);
+        /** Las calificaciones que recibio ese perfil, de la mas reciente a la mas vieja. */
+        Pagina<Resena> listarRecibidas(String userId, String perfilId, int pagina);
     }
 
     interface WalletController {
@@ -57,6 +59,8 @@ public interface UiControllers {
 
     interface PerfilController {
         Perfil verPerfil(String userId);
+        /** El perfil publico de otro usuario (o del propio), por su id de perfil. */
+        PerfilPublico verPerfilPublico(String userId, String perfilId);
     }
 
     BusquedaController busqueda();

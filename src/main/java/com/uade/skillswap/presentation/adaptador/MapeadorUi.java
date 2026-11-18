@@ -2,6 +2,8 @@ package com.uade.skillswap.presentation.adaptador;
 
 import com.uade.skillswap.application.command.CrearPublicacionCommand;
 import com.uade.skillswap.application.command.FranjaCommand;
+import com.uade.skillswap.application.dto.CalificacionDto;
+import com.uade.skillswap.application.dto.ContratacionCompletadaDto;
 import com.uade.skillswap.application.dto.ContratacionDto;
 import com.uade.skillswap.application.dto.FranjaDto;
 import com.uade.skillswap.application.dto.MovimientoDto;
@@ -83,7 +85,7 @@ final class MapeadorUi {
     static Models.Publicacion publicacion(PublicacionResumenDto p) {
         return new Models.Publicacion(String.valueOf(p.id()), p.titulo(), p.descripcion(), p.categoria(),
                 convertir(p.modalidad(), Models.Modalidad.class), p.duracionMinutos(), p.precioFinal(),
-                p.autorReputacion(), p.autorNombre(), List.copyOf(p.etiquetas()),
+                p.autorReputacion(), p.autorNombre(), String.valueOf(p.autorId()), List.copyOf(p.etiquetas()),
                 Models.EstadoPublicacion.valueOf(p.estado()), conPromocion(p.precioBase(), p.precioFinal()),
                 p.cupoDisponible(), convertir(p.accionesDelAutor(), Models.AccionPublicacion.class));
     }
@@ -92,7 +94,7 @@ final class MapeadorUi {
     static Models.Publicacion publicacion(PublicacionDto p, PerfilDto autor) {
         return new Models.Publicacion(String.valueOf(p.id()), p.titulo(), p.descripcion(), p.categoria(),
                 convertir(p.modalidad(), Models.Modalidad.class), p.duracionMinutos(), p.precioFinal(),
-                autor.reputacion(), autor.nombreVisible(), List.copyOf(p.etiquetas()),
+                autor.reputacion(), autor.nombreVisible(), String.valueOf(autor.id()), List.copyOf(p.etiquetas()),
                 Models.EstadoPublicacion.valueOf(p.estado()), conPromocion(p.precioBase(), p.precioFinal()),
                 p.cupoDisponible(), convertir(p.accionesDelAutor(), Models.AccionPublicacion.class));
     }
@@ -126,12 +128,13 @@ final class MapeadorUi {
     // ---------- contrataciones ----------
 
     /**
-     * @param contraparte la otra parte, vista desde el usuario activo. La fecha es el inicio de la franja reservada
-     *                    (o la de la solicitud, si la publicacion ya no esta disponible).
+     * @param contraparte la otra parte, vista desde el usuario activo, y su id de perfil. La fecha es el inicio de la
+     *                    franja reservada (o la de la solicitud, si la publicacion ya no esta disponible).
      */
-    static Models.Contratacion contratacion(ContratacionDto c, String contraparte) {
+    static Models.Contratacion contratacion(ContratacionDto c, String contraparte, Long contraparteId) {
         LocalDateTime fecha = c.franjaInicio() != null ? c.franjaInicio() : c.creadaEn();
-        return new Models.Contratacion(String.valueOf(c.id()), c.publicacionTitulo(), contraparte, fecha,
+        return new Models.Contratacion(String.valueOf(c.id()), c.publicacionTitulo(), contraparte,
+                String.valueOf(contraparteId), fecha,
                 c.precioFinal(), Models.EstadoContratacion.valueOf(c.estado()),
                 convertir(c.acciones(), Models.AccionContratacion.class));
     }
@@ -176,12 +179,27 @@ final class MapeadorUi {
 
     /** Datos propios del perfil y lo que arma la vista publica (reputacion y ultimas calificaciones). */
     static Models.Perfil perfil(PerfilDto yo, PerfilPublicoDto publico) {
-        List<Models.Resena> resenas = publico.ultimasCalificaciones().stream()
-                .map(c -> new Models.Resena(c.puntaje(), c.comentario(), c.fecha()))
-                .toList();
+        List<Models.Resena> resenas = publico.ultimasCalificaciones().stream().map(MapeadorUi::resena).toList();
         return new Models.Perfil(yo.userId(), yo.nombreVisible(), rol(yo.tipo()), yo.biografia(),
                 List.copyOf(yo.habilidades()), publico.reputacion(), publico.cantidadCalificaciones(),
                 publico.contratacionesCompletadas(), resenas);
+    }
+
+    /** El perfil de otro usuario tal como lo arma la vista publica: reputacion, historial y publicaciones activas. */
+    static Models.PerfilPublico perfilPublico(PerfilPublicoDto p) {
+        return new Models.PerfilPublico(String.valueOf(p.id()), p.nombreVisible(), p.biografia(),
+                List.copyOf(p.habilidades()), p.reputacion(), p.cantidadCalificaciones(),
+                p.contratacionesCompletadas(),
+                p.ultimasCompletadas().stream().map(MapeadorUi::proyecto).toList(),
+                p.publicacionesActivas().stream().map(MapeadorUi::publicacion).toList());
+    }
+
+    static Models.ProyectoCompletado proyecto(ContratacionCompletadaDto c) {
+        return new Models.ProyectoCompletado(c.tituloPublicacion(), c.completadaEn());
+    }
+
+    static Models.Resena resena(CalificacionDto c) {
+        return new Models.Resena(c.puntaje(), c.comentario(), c.fecha());
     }
 
     private static String rol(TipoPerfil tipo) {
