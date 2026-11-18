@@ -5,16 +5,16 @@ Los profesionales publican mentorías o servicios, las organizaciones publican d
 
 ## Estado
 
-`mvnw verify` pasa completo: **740 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
+`mvnw verify` pasa completo: **757 tests, 0 fallos** (JDK 17+, base H2 en memoria en modo MySQL). Incluye el arranque de Flyway (`V1__esquema.sql`), el `hbm2ddl=validate` de Hibernate y todas las consultas JPQL.
 
 | Grupo de tests | Carpeta | Tests |
 |---|---|---|
-| Dominio | `domain/**` | 225 |
-| Aplicación | `application/**` | 223 |
-| Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 48 |
-| Persistencia JPA | `infrastructure/persistence/jpa/**` | 88 |
-| Controllers: integración sobre JPA/H2 y `ValidadorEntrada` | `presentation/controller/**` | 79 |
-| Pantalla: adaptador sobre JPA/H2 y dependencias de la vista | `presentation/{adaptador,ui}/**` | 18 |
+| Dominio | `domain/**` | 226 |
+| Aplicación | `application/**` | 229 |
+| Adapters, reloj y fakes | `infrastructure/{identidad,notificacion,time}/**`, `support/**` | 50 |
+| Persistencia JPA | `infrastructure/persistence/jpa/**` | 90 |
+| Controllers: integración sobre JPA/H2 y `ValidadorEntrada` | `presentation/controller/**` | 80 |
+| Pantalla: adaptador sobre JPA/H2 y dependencias de la vista | `presentation/{adaptador,ui}/**` | 23 |
 | Aceptación en memoria | `acceptance/memoria/**` | 35 |
 | Aceptación sobre JPA/H2 | `acceptance/jpa/**` | 23 |
 | Demo de consola completa sobre H2 | `bootstrap/**` | 1 |
@@ -23,15 +23,15 @@ Cobertura de JaCoCo por capa (meta de la consigna: 80 % en dominio y aplicación
 
 | Capa | Líneas | Ramas |
 |---|---|---|
-| `domain` | 99,5 % | 96,4 % |
-| `application` | 99,4 % | 91,9 % |
-| `infrastructure` | 93,3 % | 87,7 % |
-| `presentation` | 42,1 % | 54,1 % |
+| `domain` | 99,5 % | 96,5 % |
+| `application` | 99,5 % | 92,1 % |
+| `infrastructure` | 93,4 % | 87,7 % |
+| `presentation` | 39,1 % | 52,2 % |
 | ↳ `presentation.controller` | 100,0 % | 97,6 % |
-| ↳ `presentation.adaptador` | 91,8 % | 70,1 % |
-| ↳ `presentation.ui.swing` | 3,9 % | 0,0 % |
+| ↳ `presentation.adaptador` | 94,1 % | 74,0 % |
+| ↳ `presentation.ui.swing` | 3,9 % | 3,2 % |
 | `bootstrap` y `Main` | 83,8 % | 44,9 % |
-| **Total** | **80,4 %** | **80,4 %** |
+| **Total** | **78,5 %** | **79,6 %** |
 
 Sin `clean`, JaCoCo suma los datos de corridas anteriores que siguen en `target\jacoco.exec` (por ejemplo, las del perfil `mysql`) y los porcentajes pueden salir más altos.
 
@@ -65,7 +65,7 @@ skillswap/
                                  · acceptance (memoria y jpa) · support (fakes)
 ```
 
-Números: 218 clases de producción, 103 clases de test (740 tests), ~12.9 mil líneas de código y ~15.6 mil de tests.
+Números: 219 clases de producción, 103 clases de test (757 tests), ~13.3 mil líneas de código y ~16.1 mil de tests.
 
 ---
 
@@ -136,7 +136,7 @@ La demo no es repetible sobre la misma base MySQL (los saldos y cupos ya fueron 
 .\mvnw.cmd test -Pmysql
 ```
 
-Corre los tests JPA, de aceptación JPA, de controllers y del adaptador de la pantalla contra MySQL. Cada test crea y borra su propia base `skillswap_test_<uuid>` (`support/BasesDePrueba`). Usa `SKILLSWAP_TEST_DB_URL` (servidor sin base, por defecto `jdbc:mysql://localhost:3306/`) y `SKILLSWAP_TEST_DB_USER`/`SKILLSWAP_TEST_DB_PASSWORD`, o las `SKILLSWAP_DB_*` si no están. El usuario necesita `CREATE` y `DROP` sobre `skillswap%` (el de los pasos de arriba los tiene). Tarda unos minutos porque Flyway migra en cada test.
+Corre los tests JPA, de aceptación JPA, de controllers y del adaptador de la pantalla contra MySQL (214 tests). Cada test crea y borra su propia base `skillswap_test_<uuid>` (`support/BasesDePrueba`). Usa `SKILLSWAP_TEST_DB_URL` (servidor sin base, por defecto `jdbc:mysql://localhost:3306/`) y `SKILLSWAP_TEST_DB_USER`/`SKILLSWAP_TEST_DB_PASSWORD`, o las `SKILLSWAP_DB_*` si no están. El usuario necesita `CREATE` y `DROP` sobre `skillswap%` (el de los pasos de arriba los tiene). Tarda unos minutos porque Flyway migra en cada test.
 
 **Qué imprime la demo** (`DemoFlujoPrincipal`): publicar → solicitar → aceptar → pagar → iniciar → completar → calificar, mostrando actor, estado y saldos de cada paso; una cancelación con reintegro parcial (reintegro + compensación al proveedor); un pago con saldo insuficiente como error controlado; y reputación final.
 
@@ -258,7 +258,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 9 | Controllers delgados que validan la entrada, errores uniformes, sin SQL ni reglas | ✅ | `presentation/controller/*`, `ValidadorEntrada`, `Resultado`; tests en `presentation/controller/**` (ver nota de nombres abajo) |
 | 10 | Mock UI Kit conectado por interfaces | ✅ | `SkillSwapView` → `UiControllers` (contrato del kit) ← `UiControllersAdapter` → los 8 controllers; `Main --ui`; `UiControllersAdapterTest`, `DependenciasUiTest` (sección 8, punto 11) |
 | 11 | Entregas incrementales | ⬜ | — |
-| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 740 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
+| 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 757 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (todas las capas) y `uml/01-patrones-aplicados.puml` (los 7 patrones con sus roles); PlantUML, sección 3 |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
@@ -272,7 +272,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 - **4.3 Popularidad reciente:** hoy usa cupo ocupado + reputación; evaluar agregar una ventana temporal.
 - **6 y 7 (informe):** dibujar el diagrama de capas y justificar cada patrón (problema, alternativa, consecuencias, evidencia).
 - **8 (informe):** justificar los fetch plans. Los tests que cuentan sentencias SQL ya están (sección 5).
-- **10 Mock UI Kit:** consultar con la cátedra los cambios hechos al contrato del kit (sección 8, punto 11), en especial que la pantalla ya no ofrezca el filtro por precio máximo.
+- **10 Mock UI Kit:** consultar con la cátedra los cambios hechos al contrato del kit (sección 8, punto 11). La pantalla todavía no ofrece reprogramar una contratación, ver el comprobante ni editar un borrador: eso queda solo en el backend.
 - **11 Entregas incrementales:** planificarlas con el equipo.
 - **13:** revisar el informe y ensayar la demo.
 
@@ -326,7 +326,7 @@ Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos cono
 8. **Solicitar la propia publicación** lanza `ReglaDeNegocioException` (regla del dominio), no `NoAutorizadoException`.
 9. **Fakes sin rollback.** `TransaccionSimulada` no revierte: en los tests en memoria, un fallo a mitad de `aceptar`/`reprogramar` puede dejar mutado el objeto en memoria. Con JPA la transacción hace rollback y se recarga el agregado, así que no pasa. Los tests en memoria no dependen de eso.
 10. **Disponibilidad en la búsqueda:** el fake y el JPA definen "franja libre con inicio ≥ desde y fin ≤ hasta"; la consigna no lo precisa.
-11. **Mock UI Kit conectado con un Adapter.** El kit trae su propio contrato (`UiControllers` y `Models`), distinto de nuestros 8 controllers. En lugar de cambiar los controllers, `UiControllersAdapter` implementa ese contrato y les delega. La pantalla (`SkillSwapView`) solo conoce el contrato, y `DependenciasUiTest` lo controla. El contrato se ajustó al sistema: montos en `BigDecimal`, un método por acción (los botones salen de las acciones que permite cada estado, según el State), el formulario completo de publicación (`NuevaPublicacion`), y `cancelar` devuelve el reparto (`ResultadoCancelacion`). Además se quitaron `acreditarDemo`, `Modalidad.HIBRIDA` y el precio máximo de `FiltrosBusqueda`, porque la pantalla siempre mandaba 0. El filtro por rango de precio sigue en `BusquedaController`, pero la pantalla no lo ofrece: queda para consultar con la cátedra. La vista no tiene tests automáticos: se prueba a mano con `--ui`.
+11. **Mock UI Kit conectado con un Adapter.** El kit trae su propio contrato (`UiControllers` y `Models`), distinto de nuestros 8 controllers. En lugar de cambiar los controllers, `UiControllersAdapter` implementa ese contrato y les delega. La pantalla (`SkillSwapView`) solo conoce el contrato, y `DependenciasUiTest` lo controla. El contrato se ajustó al sistema: montos en `BigDecimal`, un método por acción (los botones salen de las acciones que permite cada estado, según el State), el formulario completo de publicación (`NuevaPublicacion`), y `cancelar` devuelve el reparto (`ResultadoCancelacion`). Además se quitaron `acreditarDemo` y `Modalidad.HIBRIDA`, y `FiltrosBusqueda` se completó con precio mínimo y máximo, habilidad y reputación mínima, que la pantalla ofrece en la búsqueda. Los listados llegan de a una página (`Models.Pagina`) y la pantalla navega entre páginas; también muestra el perfil público de otro usuario (`verPerfilPublico`: reputación, reseñas, contrataciones completadas y publicaciones activas). Reprogramar una contratación, ver su comprobante y editar un borrador siguen solo en el backend: la pantalla no los ofrece. Los cambios al contrato quedan para consultar con la cátedra. La vista no tiene tests automáticos: se prueba a mano con `--ui`.
 12. **Comisiones** (Decorator de comisión de plataforma) y **Composite de categorías** quedaron fuera a propósito.
 13. **La entrada se valida dos veces.** Primero el controller (`ValidadorEntrada`) y después el caso de uso (`Entradas`) y el dominio. Por eso, a través del controller, faltar el mensaje o el objetivo de una solicitud, el motivo de un rechazo o una cancelación, un puntaje fuera de 1 a 5 o un porcentaje mayor a 100 da `VALIDACION`; llamando directo al caso de uso da `REGLA_DE_NEGOCIO`, como antes. Los largos máximos copian los `VARCHAR` de `V1__esquema.sql`: si cambia la migración, hay que cambiarlos también en `ValidadorEntrada`.
 14. **Recomendaciones e historial paginados en memoria.** El puntaje de recomendación se calcula en Java sobre todas las candidatas (`candidatasRecomendacion`), así que no se puede paginar en la consulta: se arma el top `limiteRecomendaciones` y se recorta la página con `Pagina.recortar`. El historial de una contratación ya viene completo con el agregado (que igual se carga para validar al participante) y se recorta igual. `ContratacionDto.historial`, el detalle completo, no cambió.
