@@ -233,7 +233,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 |---|---|---|---|
 | 4.1 | Registrar perfil con `userId` de identidad externa | ✅ | `PerfilService.registrar`, `IdentidadPort` |
 | 4.1 | Nombre, bio, zona horaria, habilidades, intereses, disponibilidad | ✅ | `Perfil.actualizarDatos`, `ActualizarPerfilCommand` |
-| 4.1 | Perfil público con reputación, publicaciones activas e **historial resumido** | ✅ (interpretación, ver pendientes) | `PerfilPublicoFacade` → `PerfilPublicoDto`: reputación + últimas calificaciones + publicaciones activas |
+| 4.1 | Perfil público con reputación, publicaciones activas e **historial resumido** | ✅ | `PerfilPublicoFacade` → `PerfilPublicoDto`: reputación + últimas calificaciones + publicaciones activas + contrataciones completadas (total y últimas) |
 | 4.1 | Reputación recalculada desde calificaciones verificadas, no editable | ✅ | `Perfil.recalcularReputacion` (sin setter), `CalificacionService` |
 | 4.2 | Mentoría/servicio (profesional) y desafío (organización) con todos los campos | ✅ | `Publicacion.crearBorrador`, `TipoPerfil` |
 | 4.2 | 5 estados + transiciones inválidas rechazadas + publicar exige título, categoría, precio ≥ 0 y franja | ✅ | `publicacion/estado/*`, `validarCompletaParaPublicar` |
@@ -267,9 +267,9 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 
 **Pendientes y puntos abiertos de la matriz:**
 
-- **4.1 Historial resumido:** falta decidir si exige también las contrataciones completadas. En ese caso, sumar un contador en `PerfilPublicoFacade` (a través de `ContratacionUseCase` o de un método nuevo en su repositorio).
+- ~~**4.1 Historial resumido**~~ **Resuelto:** `PerfilPublicoDto` trae el total de contrataciones completadas como proveedor y las últimas (título y fecha, sin datos del cliente); `PerfilPublicoFacade` las pide a `ContratacionUseCase.listarCompletadasComoProveedor`.
 - **4.3 Relevancia:** hoy ordena por título > reputación > fecha; se puede enriquecer.
-- **4.3 Popularidad reciente:** hoy usa cupo ocupado + reputación; evaluar agregar una ventana temporal.
+- ~~**4.3 Popularidad reciente**~~ **Resuelto:** `RecomendacionPorPopularidad` ordena por contrataciones pagadas en los últimos `diasPopularidadReciente` días (30 por defecto, en `SkillSwapConfig`) y desempata por reputación; se cuentan con una sola consulta agrupada (`ContratacionRepository.contarPagadasDesde`).
 - **6 y 7 (informe):** dibujar el diagrama de capas y justificar cada patrón (problema, alternativa, consecuencias, evidencia).
 - **8 (informe):** justificar los fetch plans. Los tests que cuentan sentencias SQL ya están (sección 5).
 - **10 Mock UI Kit:** consultar con la cátedra los cambios hechos al contrato del kit (sección 8, punto 11). La pantalla todavía no ofrece reprogramar una contratación, ver el comprobante ni editar un borrador: eso queda solo en el backend.
