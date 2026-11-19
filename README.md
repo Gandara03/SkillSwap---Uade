@@ -171,7 +171,7 @@ Reglas que se respetan (verificables con un `grep` de imports): `domain` no impo
 
 ### Diagramas de clases (`uml/`)
 
-`uml/` tiene dos diagramas, cada uno en tres archivos: el fuente PlantUML (`.puml`) y sus exportaciones `.svg` y `.png`.
+`uml/` tiene un diagrama de clases en tres archivos: el fuente PlantUML (`.puml`) y sus exportaciones `.svg` y `.png`.
 
 **`00-aplicacion-completa`** muestra 75 elementos de la aplicación (46 clases y 29 interfaces) en las 4 capas, cada uno en su paquete:
 
@@ -182,19 +182,19 @@ Reglas que se respetan (verificables con un `grep` de imports): `domain` no impo
 
 Cada elemento lleva sus campos y métodos con visibilidad y tipos.
 
-**`01-patrones-aplicados`** muestra en 63 elementos (46 clases y 17 interfaces) los 7 patrones con todos sus roles, agrupados por capa y por patrón: las interfaces y clases base de State con los 12 estados concretos; las políticas de cancelación y las estrategias de recomendación con los datos que reciben, `DatosRecomendacion` (Strategy); `PrecioBase` y los decoradores de promoción (Decorator); `Contratacion` como Subject, `ContratacionEvent` y `NotificadorObserver` (Observer); los 5 Adapters, incluido `UiControllersAdapter` entre `SkillSwapView` y los controllers; las fábricas (Simple Factory) y `PerfilPublicoFacade` con su cliente `PerfilController`, los cuatro casos de uso que coordina y el `PerfilPublicoDto` que arma (Facade). De cada elemento muestra los miembros que hacen al patrón.
+**Patrones identificados.** Las clases e interfaces que cumplen un rol en uno de los 7 patrones llevan el estereotipo del patrón, y una leyenda arriba a la derecha los lista: `<<State>>` en `EstadoContratacion` y `EstadoPublicacion`; `<<Strategy>>` en `PoliticaCancelacion` y `EstrategiaRecomendacion`; `<<Decorator>>` en `PrecioPublicacion`; `<<Observer>>` en `ContratacionSubject`, `ContratacionObserver` y `NotificadorObserver`; `<<Adapter>>` en `IdentidadMockAdapter`, `EmailCanalAdapter`, `PushCanalAdapter` y `JpaTransaccionAdapter`; `<<Simple Factory>>` en `CanalNotificacionFactory` y `CanalNotificacionFactoryImpl`, y `<<Facade>>` en `PerfilPublicoFacade`. Los estados, estrategias y decoradores concretos, las demás fábricas y las clases adaptadas no están dibujados; la sección 4 lista todas las clases de cada patrón.
 
-En los dos, las relaciones (98 en el `00` y 66 en el `01`) distinguen herencia, realización, composición, agregación, asociación y dependencia. Las composiciones, agregaciones y asociaciones llevan multiplicidades y una etiqueta que nombra la relación (`+precio final`, `+accede a`); las dependencias llevan solo la etiqueta (`+persiste`, `+crea`). La herencia y la realización van sin etiqueta.
+Las 98 relaciones distinguen herencia, realización, composición, agregación, asociación y dependencia. Las composiciones, agregaciones y asociaciones llevan multiplicidades y una etiqueta que nombra la relación (`+precio final`, `+accede a`); las dependencias llevan solo la etiqueta (`+persiste`, `+crea`). La herencia y la realización van sin etiqueta.
 
-Cómo abrirlos:
+Cómo abrirlo:
 
-- **`.puml`**: con PlantUML, por ejemplo con la extensión PlantUML de VS Code (necesita Graphviz). Los dos diagramas pasan de 4096 px, el tamaño máximo que PlantUML dibuja por defecto, y sin subir ese límite recorta la imagen sin avisar. En VS Code se configura en `settings.json` con `"plantuml.commandArgs": ["-DPLANTUML_LIMIT_SIZE=16384"]`; desde la consola:
+- **`.puml`**: con PlantUML, por ejemplo con la extensión PlantUML de VS Code (necesita Graphviz). El diagrama pasa de 4096 px, el tamaño máximo que PlantUML dibuja por defecto, y sin subir ese límite recorta la imagen sin avisar. En VS Code se configura en `settings.json` con `"plantuml.commandArgs": ["-DPLANTUML_LIMIT_SIZE=16384"]`; desde la consola:
 
   ```
-  java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg uml/00-aplicacion-completa.puml uml/01-patrones-aplicados.puml
+  java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg uml/00-aplicacion-completa.puml
   ```
 
-- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. Los `.png` (6503 × 5159 px el 00 y 7916 × 5357 px el 01) sirven para insertarlos en un documento.
+- **`.svg`**: abrirlo en el navegador y hacer zoom; al ser vectorial, el texto se lee bien a cualquier escala. El `.png` (6503 × 5403 px) sirve para insertarlos en un documento.
 
 ---
 
@@ -260,7 +260,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 11 | Entregas incrementales | ⬜ | — |
 | 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 757 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
 | 12 | README reproducible | ✅ | este archivo |
-| 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (todas las capas) y `uml/01-patrones-aplicados.puml` (los 7 patrones con sus roles); PlantUML, sección 3 |
+| 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (todas las capas, con los 7 patrones identificados por estereotipos); PlantUML, sección 3 |
 | 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
 | 13 | Demo en vivo del recorrido principal | ✅ | `mvnw compile exec:java` con `--h2` (consola) o `--h2 --ui` (pantalla) (sección 2) |
 | 15 | **10 casos de aceptación** | ✅ | `acceptance/memoria/Caso01…Caso10`, `acceptance/jpa/Caso01…Caso10…JpaTest` |
@@ -307,7 +307,7 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 | **D — Adapters y soporte de tests** | `infrastructure/{identidad,notificacion,time}`, `src/test/.../support` | ✅ | Opcional: rollback simulado en `TransaccionSimulada` para que los fakes reflejen JPA |
 | **E — Tests de aplicación** | `src/test/.../application` | ✅ | Mantener la cobertura al agregar casos (hoy 99,4 % de líneas en `application`) |
 | **F — Aceptación** | `src/test/.../acceptance` | ✅ | Mantener alineados los juegos en memoria y sobre JPA |
-| **G — UML** | `uml/` | ✅ | Mantener los dos diagramas (`00-aplicacion-completa` y `01-patrones-aplicados`) al día con el código y volver a exportarlos |
+| **G — UML** | `uml/` | ✅ | Mantener el diagrama `00-aplicacion-completa` (y sus estereotipos de patrones) al día con el código y volver a exportarlo |
 | **H — Informe PDF** | `Informe_SkillSwap.pdf` | 🟡 | Revisar que cada decisión tenga problema, alternativa, consecuencias y evidencia (código/tests) |
 
 ---

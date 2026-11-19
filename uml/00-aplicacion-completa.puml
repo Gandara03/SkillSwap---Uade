@@ -8,6 +8,20 @@ hide empty members
 skinparam linetype polyline
 title SkillSwap: diagrama de clases de la aplicacion
 
+legend top right
+  <b>Patrones identificados</b> (estereotipo sobre la clase o interfaz)
+  |= Patron |= Clases e interfaces del diagrama |
+  | <<State>> | EstadoContratacion, EstadoPublicacion |
+  | <<Strategy>> | PoliticaCancelacion, EstrategiaRecomendacion |
+  | <<Decorator>> | PrecioPublicacion |
+  | <<Observer>> | ContratacionSubject, ContratacionObserver, NotificadorObserver |
+  | <<Adapter>> | IdentidadMockAdapter, EmailCanalAdapter, PushCanalAdapter, JpaTransaccionAdapter |
+  | <<Simple Factory>> | CanalNotificacionFactory, CanalNotificacionFactoryImpl |
+  | <<Facade>> | PerfilPublicoFacade |
+  Los estados, estrategias y decoradores concretos, las demas fabricas y las clases adaptadas
+  no estan dibujados. CanalInterno implementa CanalNotificacionPort sin clase adaptada: no es un Adapter.
+endlegend
+
 package "Presentation" #FADBD8 {
   class NotificacionController {
     -notificaciones: NotificacionUseCase
@@ -172,7 +186,7 @@ package "Application" #D6E4F7 {
     +darDeBaja(actorId: Long): void
     -pausarPublicacionesActivas(autorId: Long, ahora: LocalDateTime): void
   }
-  class PerfilPublicoFacade {
+  class PerfilPublicoFacade <<Facade>> {
     -perfiles: PerfilUseCase
     -calificaciones: CalificacionUseCase
     -publicaciones: PublicacionUseCase
@@ -265,7 +279,7 @@ package "Application" #D6E4F7 {
     -armador: ArmadorResumenes
     +recomendar(actorId: Long, tipoEstrategia: TipoEstrategiaRecomendacion, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
   }
-  class NotificadorObserver {
+  class NotificadorObserver <<Observer>> {
     -notificacionRepository: NotificacionRepository
     -perfilRepository: PerfilRepository
     -canales: CanalNotificacionFactory
@@ -283,14 +297,14 @@ package "Application" #D6E4F7 {
     +usuarioActual(): Optional<UsuarioIdentidad>
     +buscarPorUserId(userId: String): Optional<UsuarioIdentidad>
   }
-  interface CanalNotificacionFactory {
+  interface CanalNotificacionFactory <<Simple Factory>> {
     +crear(canal: CanalNotificacion): CanalNotificacionPort
   }
   interface CanalNotificacionPort {
     +getCanal(): CanalNotificacion
     +enviar(notificacion: Notificacion, destinatario: Perfil): void
   }
-  interface EstrategiaRecomendacion {
+  interface EstrategiaRecomendacion <<Strategy>> {
     +getTipo(): TipoEstrategiaRecomendacion
     +recomendar(datos: DatosRecomendacion, candidatas: List<Publicacion>, limite: int): List<Publicacion>
   }
@@ -359,15 +373,15 @@ package "Application" #D6E4F7 {
 }
 
 package "Domain" #D5F0D5 {
-  interface ContratacionSubject {
+  interface ContratacionSubject <<Observer>> {
     +agregarObserver(observer: ContratacionObserver): void
     +quitarObserver(observer: ContratacionObserver): void
     +notificarObservers(evento: ContratacionEvent): void
   }
-  interface ContratacionObserver {
+  interface ContratacionObserver <<Observer>> {
     +actualizar(evento: ContratacionEvent): void
   }
-  interface PoliticaCancelacion {
+  interface PoliticaCancelacion <<Strategy>> {
     +getTipo(): TipoPoliticaCancelacion
     +calcularReintegro(montoPagado: SkillCoins, anticipacion: Duration): SkillCoins
   }
@@ -465,7 +479,7 @@ package "Domain" #D5F0D5 {
     -{static} exigirMontoPositivo(monto: SkillCoins): void
     +limpiarMovimientosNuevos(): void
   }
-  interface EstadoContratacion {
+  interface EstadoContratacion <<State>> {
     +getNombre(): String
     +aceptar(c: Contratacion, t: ContextoTransicion): void
     +rechazar(c: Contratacion, t: ContextoTransicion): void
@@ -577,7 +591,7 @@ package "Domain" #D5F0D5 {
     ~liberar(): void
     +yaComenzo(ahora: LocalDateTime): boolean
   }
-  interface EstadoPublicacion {
+  interface EstadoPublicacion <<State>> {
     +getNombre(): String
     +publicar(publicacion: Publicacion, t: ContextoTransicion): void
     +pausar(publicacion: Publicacion, t: ContextoTransicion): void
@@ -590,7 +604,7 @@ package "Domain" #D5F0D5 {
     +esVisiblePublicamente(): boolean
     +esTerminal(): boolean
   }
-  interface PrecioPublicacion {
+  interface PrecioPublicacion <<Decorator>> {
     +calcular(): SkillCoins
     +detalle(): List<String>
   }
@@ -610,7 +624,7 @@ package "Domain" #D5F0D5 {
 }
 
 package "Infrastructure" #FAE0D0 {
-  class IdentidadMockAdapter {
+  class IdentidadMockAdapter <<Adapter>> {
     -servicio: ServicioIdentidadExterno
     -tokenActual: String
     +{static} conUsuariosDemo(): IdentidadMockAdapter
@@ -622,7 +636,7 @@ package "Infrastructure" #FAE0D0 {
     +buscarPorUserId(userId: String): Optional<UsuarioIdentidad>
     -{static} traducir(u: UsuarioExterno): UsuarioIdentidad
   }
-  class EmailCanalAdapter {
+  class EmailCanalAdapter <<Adapter>> {
     -sdk: EmailSdkMock
     -identidad: IdentidadPort
     +getCanal(): CanalNotificacion
@@ -630,7 +644,7 @@ package "Infrastructure" #FAE0D0 {
     -direccionDe(destinatario: Perfil): String
     -{static} porDefecto(destinatario: Perfil): String
   }
-  class PushCanalAdapter {
+  class PushCanalAdapter <<Adapter>> {
     -sdk: PushSdkMock
     +getCanal(): CanalNotificacion
     +enviar(notificacion: Notificacion, destinatario: Perfil): void
@@ -639,7 +653,7 @@ package "Infrastructure" #FAE0D0 {
     +getCanal(): CanalNotificacion
     +enviar(notificacion: Notificacion, destinatario: Perfil): void
   }
-  class CanalNotificacionFactoryImpl {
+  class CanalNotificacionFactoryImpl <<Simple Factory>> {
     -emailSdk: EmailSdkMock
     -pushSdk: PushSdkMock
     -identidad: IdentidadPort
@@ -649,7 +663,7 @@ package "Infrastructure" #FAE0D0 {
     -clock: Clock
     +ahora(): LocalDateTime
   }
-  class JpaTransaccionAdapter {
+  class JpaTransaccionAdapter <<Adapter>> {
     -contexto: JpaContexto
     +ejecutar(trabajo: Supplier<T>): T
   }
