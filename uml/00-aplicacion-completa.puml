@@ -34,17 +34,19 @@ skinparam class {
 title SkillSwap: diagrama de clases de la aplicacion
 
 legend top right
-  <b>Patrones identificados</b> (color y estereotipo sobre la clase o interfaz)
-  |= Patron |= Clases e interfaces del diagrama |
-  |<#FFC107> <<State>> | EstadoContratacion, EstadoPublicacion |
-  |<#42A5F5> <<Strategy>> | PoliticaCancelacion, EstrategiaRecomendacion |
-  |<#BA68C8> <<Decorator>> | PrecioPublicacion |
-  |<#66BB6A> <<Observer>> | ContratacionSubject, ContratacionObserver, NotificadorObserver |
-  |<#FF8A50> <<Adapter>> | IdentidadMockAdapter, EmailCanalAdapter, PushCanalAdapter, JpaTransaccionAdapter |
-  |<#EF5350> <<Simple Factory>> | CanalNotificacionFactory, CanalNotificacionFactoryImpl |
-  |<#A1887F> <<Facade>> | PerfilPublicoFacade |
-  Los estados, estrategias y decoradores concretos, las demas fabricas y las clases adaptadas
-  no estan dibujados. CanalInterno implementa CanalNotificacionPort sin clase adaptada: no es un Adapter.
+  <b>Patrones identificados</b>: relleno de color y estereotipo en el rol principal de cada patron
+  |= Patron |= Participantes y roles (en negrita, los dibujados en este diagrama) |
+  |<#FFC107> <<State>> | Contexto: **Publicacion**, **Contratacion**  -  Estado: **EstadoPublicacion**, **EstadoContratacion**\nEstado base: EstadoPublicacionBase, EstadoContratacionBase\nEstados concretos de la publicacion: EstadoBorrador, EstadoPublicada, EstadoPausada, EstadoCerrada, EstadoCancelada\nEstados concretos de la contratacion: EstadoPendiente, EstadoAceptada, EstadoRechazada, EstadoConfirmada, EstadoEnCurso, EstadoCompletada, EstadoCancelada |
+  |<#42A5F5> <<Strategy>> | Contexto: **Contratacion** (repartirRetenido), **RecomendacionService**  -  Estrategia: **PoliticaCancelacion**, **EstrategiaRecomendacion**\nEstrategias concretas: PoliticaFlexible, PoliticaEstricta (base PoliticaPorUmbrales); RecomendacionPorAfinidad, RecomendacionPorPopularidad\nDatos que reciben las estrategias de recomendacion: DatosRecomendacion |
+  |<#BA68C8> <<Decorator>> | Componente: **PrecioPublicacion**  -  Componente concreto: PrecioBase  -  Decorador: PromocionDecorator\nDecoradores concretos: PromocionPorcentaje, PromocionMontoFijo  -  Arma la cadena: PrecioPublicacionFactory\nClientes: **ContratacionService**, **PublicacionService** (por medio de CalculadorPrecios) |
+  |<#66BB6A> <<Observer>> | Sujeto: **ContratacionSubject**  -  Sujeto concreto: **Contratacion**  -  Evento: ContratacionEvent\nObservador: **ContratacionObserver**  -  Observador concreto: **NotificadorObserver**\nSuscribe los observadores y los notifica despues de guardar: **ContratacionService** |
+  |<#FF8A50> <<Adapter>> | Target: **IdentidadPort**  -  Adaptador: **IdentidadMockAdapter**  -  Adaptado: ServicioIdentidadExterno\nTarget: **CanalNotificacionPort**  -  Adaptadores: **EmailCanalAdapter**, **PushCanalAdapter**  -  Adaptados: EmailSdkMock, PushSdkMock\nTarget: **TransaccionPort**  -  Adaptador: **JpaTransaccionAdapter**  -  Adaptado: EntityManager (JPA)\nTarget: UiControllers  -  Adaptador: UiControllersAdapter  -  Adaptados: los 8 controllers  -  Cliente: SkillSwapView |
+  |<#EF5350> <<Simple Factory>> | Fabrica: **CanalNotificacionFactory** (puerto), **CanalNotificacionFactoryImpl**  -  Producto: **CanalNotificacionPort**\nProductos concretos: **EmailCanalAdapter**, **PushCanalAdapter**, **CanalInterno**  -  Cliente: **NotificadorObserver**\nOtras fabricas: EstadoPublicacionFactory, EstadoContratacionFactory, PoliticaCancelacionFactory, EstrategiaRecomendacionFactory, PrecioPublicacionFactory |
+  |<#A1887F> <<Facade>> | Fachada: **PerfilPublicoFacade** (implementa **PerfilPublicoUseCase**)  -  Cliente: **PerfilController**\nSubsistema: **PerfilUseCase**, **CalificacionUseCase**, **PublicacionUseCase**, **ContratacionUseCase**\nLo que arma: PerfilPublicoDto, ContratacionCompletadaDto |
+  Borde grueso del color del patron, sin relleno: contexto o cliente (Publicacion, RecomendacionService, PerfilController).
+  Contratacion lleva borde negro: es contexto de State y de Strategy y sujeto concreto de Observer.
+  NotificadorObserver: relleno de Observer y borde rojo, por ser el cliente de la fabrica de canales.
+  CanalInterno implementa CanalNotificacionPort sin clase adaptada: no es un Adapter.
 endlegend
 
 package "Presentation" #FADBD8 {
@@ -60,7 +62,7 @@ package "Presentation" #FADBD8 {
     +consultar(): Resultado<WalletDto>
     +movimientos(pagina: PaginaRequest): Resultado<Pagina<MovimientoDto>>
   }
-  class PerfilController {
+  class PerfilController #line:A1887F;line.bold {
     -perfiles: PerfilUseCase
     -perfilPublico: PerfilPublicoUseCase
     -sesion: SesionUseCase
@@ -295,7 +297,7 @@ package "Application" #D6E4F7 {
     -armador: ArmadorResumenes
     +buscar(filtro: FiltroBusqueda, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
   }
-  class RecomendacionService {
+  class RecomendacionService #line:42A5F5;line.bold {
     -publicacionRepository: PublicacionRepository
     -perfilRepository: PerfilRepository
     -contratacionRepository: ContratacionRepository
@@ -304,7 +306,7 @@ package "Application" #D6E4F7 {
     -armador: ArmadorResumenes
     +recomendar(actorId: Long, tipoEstrategia: TipoEstrategiaRecomendacion, pagina: PaginaRequest): Pagina<PublicacionResumenDto>
   }
-  class NotificadorObserver <<Observer>> {
+  class NotificadorObserver <<Observer>> #line:EF5350;line.bold {
     -notificacionRepository: NotificacionRepository
     -perfilRepository: PerfilRepository
     -canales: CanalNotificacionFactory
@@ -420,7 +422,7 @@ package "Domain" #D5F0D5 {
     -fecha: LocalDateTime
     +{static} registrar(contratacion: Contratacion, autorId: Long, puntaje: Puntaje, comentario: String, ahora: LocalDateTime): Calificacion
   }
-  class Contratacion {
+  class Contratacion #line:000000;line.bold {
     -id: Long
     -publicacionId: Long
     -clienteId: Long
@@ -516,7 +518,7 @@ package "Domain" #D5F0D5 {
     +permiteReprogramacion(): boolean
     +esTerminal(): boolean
   }
-  class Publicacion {
+  class Publicacion #line:FFC107;line.bold {
     -id: Long
     -tipo: TipoPublicacion
     -autorId: Long
