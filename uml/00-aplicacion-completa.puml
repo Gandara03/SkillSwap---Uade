@@ -6,18 +6,43 @@ skinparam nodesep 24
 skinparam ranksep 55
 hide empty members
 skinparam linetype polyline
+skinparam class {
+  StereotypeFontSize 18
+  StereotypeFontStyle bold
+  BackgroundColor<<State>> #FFC107
+  BorderColor<<State>> #B28704
+  BorderThickness<<State>> 3
+  BackgroundColor<<Strategy>> #42A5F5
+  BorderColor<<Strategy>> #1565C0
+  BorderThickness<<Strategy>> 3
+  BackgroundColor<<Decorator>> #BA68C8
+  BorderColor<<Decorator>> #6A1B9A
+  BorderThickness<<Decorator>> 3
+  BackgroundColor<<Observer>> #66BB6A
+  BorderColor<<Observer>> #2E7D32
+  BorderThickness<<Observer>> 3
+  BackgroundColor<<Adapter>> #FF8A50
+  BorderColor<<Adapter>> #C43E00
+  BorderThickness<<Adapter>> 3
+  BackgroundColor<<Simple Factory>> #EF5350
+  BorderColor<<Simple Factory>> #B71C1C
+  BorderThickness<<Simple Factory>> 3
+  BackgroundColor<<Facade>> #A1887F
+  BorderColor<<Facade>> #5D4037
+  BorderThickness<<Facade>> 3
+}
 title SkillSwap: diagrama de clases de la aplicacion
 
 legend top right
-  <b>Patrones identificados</b> (estereotipo sobre la clase o interfaz)
+  <b>Patrones identificados</b> (color y estereotipo sobre la clase o interfaz)
   |= Patron |= Clases e interfaces del diagrama |
-  | <<State>> | EstadoContratacion, EstadoPublicacion |
-  | <<Strategy>> | PoliticaCancelacion, EstrategiaRecomendacion |
-  | <<Decorator>> | PrecioPublicacion |
-  | <<Observer>> | ContratacionSubject, ContratacionObserver, NotificadorObserver |
-  | <<Adapter>> | IdentidadMockAdapter, EmailCanalAdapter, PushCanalAdapter, JpaTransaccionAdapter |
-  | <<Simple Factory>> | CanalNotificacionFactory, CanalNotificacionFactoryImpl |
-  | <<Facade>> | PerfilPublicoFacade |
+  |<#FFC107> <<State>> | EstadoContratacion, EstadoPublicacion |
+  |<#42A5F5> <<Strategy>> | PoliticaCancelacion, EstrategiaRecomendacion |
+  |<#BA68C8> <<Decorator>> | PrecioPublicacion |
+  |<#66BB6A> <<Observer>> | ContratacionSubject, ContratacionObserver, NotificadorObserver |
+  |<#FF8A50> <<Adapter>> | IdentidadMockAdapter, EmailCanalAdapter, PushCanalAdapter, JpaTransaccionAdapter |
+  |<#EF5350> <<Simple Factory>> | CanalNotificacionFactory, CanalNotificacionFactoryImpl |
+  |<#A1887F> <<Facade>> | PerfilPublicoFacade |
   Los estados, estrategias y decoradores concretos, las demas fabricas y las clases adaptadas
   no estan dibujados. CanalInterno implementa CanalNotificacionPort sin clase adaptada: no es un Adapter.
 endlegend
