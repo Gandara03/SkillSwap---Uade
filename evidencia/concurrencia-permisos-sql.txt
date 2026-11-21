@@ -1,0 +1,96 @@
+[AREA3] OK    C1 misma franja, dos clientes, dos aceptaciones: 25 rondas -> {CONFLICTO_CONCURRENCIA=25, OK=25}
+[AREA3] OK    C2 doble pago de la misma contratacion: 25 rondas -> {CONFLICTO_CONCURRENCIA=25, OK=25}
+[AREA3] OK    C3 doble cancelacion de una CONFIRMADA: 25 rondas -> {CONFLICTO_CONCURRENCIA=25, OK=25}
+[AREA3] OK    C4 doble completar: 25 rondas -> {CONFLICTO_CONCURRENCIA=25, OK=25}
+[AREA3] OK    C5 doble calificacion del mismo autor: 25 rondas -> {CONFLICTO_CONCURRENCIA=25, OK=25}
+[AREA3] OK    C6 dos pagos del mismo cliente con saldo para uno solo: 25 rondas -> {CONFLICTO_CONCURRENCIA=25, OK=25}
+[AREA3] OK    C7 pagar contra cancelar la misma ACEPTADA: 25 rondas -> {CONFLICTO_CONCURRENCIA=25, OK=25}
+[AREA3] OK    C8 dos cobros del mismo proveedor (contrataciones distintas): 25 rondas -> {CONFLICTO_CONCURRENCIA=25, OK=25}
+[AREA3] OK    C10 aceptar una reprogramacion contra aceptar otra solicitud, misma franja destino: 25 rondas -> {CONFLICTO_CONCURRENCIA=24, FRANJA_NO_DISPONIBLE=1, OK=25}
+[AREA3] OK    C11 dos reprogramaciones aceptadas a la vez hacia la misma franja: 25 rondas -> {CONFLICTO_CONCURRENCIA=25, OK=25}
+[AREA3] C9 doble registro del mismo usuario: 8 rondas -> {CONFLICTO_CONCURRENCIA=8, OK=8}
+[AREA3] observacion: sin sesion: buscar -> PERMITIDO
+[AREA3] observacion: sin sesion: ver perfil publico -> PERMITIDO
+[AREA3] observacion: sin sesion: calificaciones recibidas de otro -> PERMITIDO
+[AREA3] observacion: sin sesion: ver publicacion publicada -> NO_AUTORIZADO (No hay una sesion iniciada)
+[AREA3] observacion: perfil dado de baja: solicitar -> NO_AUTORIZADO (El perfil esta dado de baja)
+[AREA3] observacion: perfil dado de baja: crear borrador -> NO_AUTORIZADO (El perfil esta dado de baja)
+[AREA3] observacion: perfil dado de baja: actualizar perfil -> NO_AUTORIZADO (El perfil esta dado de baja)
+[AREA3] observacion: perfil dado de baja: consultar saldo -> NO_AUTORIZADO (El perfil esta dado de baja)
+[AREA3] observacion: perfil dado de baja: dar de baja otra vez -> NO_AUTORIZADO (El perfil esta dado de baja)
+[AREA3] observacion: solicitarle a un perfil dado de baja (publicacion de Ana, Ana activa) -> PERMITIDO
+[AREA3] aceptada: buscar texto=null
+[AREA3] aceptada: actualizar perfil zona=null
+[AREA3] aceptada: crear borrador titulo/categoria=null
+[AREA3] aceptada: buscar texto=""
+[AREA3] aceptada: actualizar perfil zona=""
+[AREA3] aceptada: crear borrador titulo/categoria=""
+[AREA3] aceptada: buscar texto="   "
+[AREA3] aceptada: actualizar perfil zona="   "
+[AREA3] aceptada: crear borrador titulo/categoria="   "
+[AREA3] aceptada: buscar texto=10000 caracteres
+[AREA3] aceptada: solicitar mensaje="'; DROP TABLE perfil; --"
+[AREA3] aceptada: solicitar objetivo="'; DROP TABLE perfil; --"
+[AREA3] aceptada: buscar texto="'; DROP TABLE perfil; --"
+[AREA3] aceptada: actualizar perfil nombre="'; DROP TABLE perfil; --"
+[AREA3] aceptada: rechazar motivo="'; DROP TABLE perfil; --"
+[AREA3] aceptada: crear borrador titulo/categoria="'; DROP TABLE perfil; --"
+[AREA3] aceptada: cancelar publicacion motivo="'; DROP TABLE perfil; --"
+[AREA3] aceptada: promocion descripcion="'; DROP TABLE perfil; --"
+[AREA3] aceptada: crear borrador etiqueta/habilidad="'; DROP TABLE perfil; --"
+[AREA3] aceptada: solicitar mensaje="?%_\"
+[AREA3] aceptada: solicitar objetivo="?%_\"
+[AREA3] aceptada: buscar texto="?%_\"
+[AREA3] aceptada: actualizar perfil nombre="?%_\"
+[AREA3] aceptada: crear borrador titulo/categoria="?%_\"
+[AREA3] aceptada: promocion descripcion="?%_\"
+[AREA3] aceptada: crear borrador etiqueta/habilidad="?%_\"
+[AREA3] aceptada: crear borrador precio=0.001
+[AREA3] aceptada: promocion monto fijo=0.001
+[AREA3] aceptada: promocion porcentaje=0.001
+[AREA3] aceptada: crear borrador cupo=0
+[AREA3] aceptada: crear borrador duracion=0
+[AREA3] aceptada: crear borrador cupo=2147483647
+[AREA3] aceptada: crear borrador duracion=2147483647
+[AREA3] aceptada: crear borrador con 2000 etiquetas
+[AREA3] aceptada: franja de duracion cero
+[AREA3] aceptada: franja de 50 anios
+[AREA3] aceptada: buscar filtro=null
+[AREA3] aceptada: calificaciones pagina 2147483647
+[AREA3] aceptada: recomendar estrategia=null
+[AREA3] aceptada: actualizar perfil colecciones null y canal null
+[AREA3] nota: el estado cambio durante las entradas hostiles (alguna fue aceptada)
+[AREA3] cancelar con motivo de 100 caracteres -> OK; notificaciones nuevas del proveedor: 1
+[AREA3] cancelar con motivo de 960 caracteres -> OK; notificaciones nuevas del proveedor: 1
+[AREA3] cancelar con motivo de 1000 caracteres -> OK; notificaciones nuevas del proveedor: 1
+[AREA3] etiquetas {Java, java} en H2 -> aceptadas; intereses {Java, java} en H2 -> aceptados
+[AREA3] sentencias SQL con n=10: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=13; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=22; pantalla: listarContrataciones=65; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=30; pantalla: verPerfilPublico (Ana, visto por Bruno)=22; pantalla: listarNotificaciones (Ana)=6; 
+[AREA3] sentencias SQL con n=40: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=13; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=22; pantalla: listarContrataciones=65; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=30; pantalla: verPerfilPublico (Ana, visto por Bruno)=22; pantalla: listarNotificaciones (Ana)=6; 
+[AREA3] sentencias SQL con n=10 y n/2 completadas: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=14; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=30; pantalla: listarContrataciones=74; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=38; pantalla: verPerfilPublico (Ana, visto por Bruno)=30; pantalla: listarNotificaciones (Ana)=6; 
+[AREA3] sentencias SQL con n=40 y n/2 completadas: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=14; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=30; pantalla: listarContrataciones=74; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=38; pantalla: verPerfilPublico (Ana, visto por Bruno)=30; pantalla: listarNotificaciones (Ana)=6; 
+[AREA3]   entrada hostil ACEPTADA = 40
+[AREA3]   entrada hostil rechazada con FRANJA_NO_DISPONIBLE = 3
+[AREA3]   entrada hostil rechazada con NO_AUTORIZADO = 2
+[AREA3]   entrada hostil rechazada con NO_ENCONTRADO = 28
+[AREA3]   entrada hostil rechazada con REGLA_DE_NEGOCIO = 9
+[AREA3]   entrada hostil rechazada con TRANSICION_INVALIDA = 7
+[AREA3]   entrada hostil rechazada con VALIDACION = 157
+[AREA3]   permiso denegado con NO_AUTORIZADO = 45
+[AREA3] RESULTADO: 7 PROBLEMAS
+[AREA3]   - HOSTIL buscar pagina 2147483647: ERROR_INTERNO
+[AREA3]   - HOSTIL mis publicaciones pagina 2147483647: ERROR_INTERNO
+[AREA3]   - HOSTIL mis contrataciones pagina 2147483647: ERROR_INTERNO
+[AREA3]   - HOSTIL movimientos pagina 2147483647: ERROR_INTERNO
+[AREA3]   - HOSTIL notificaciones pagina 2147483647: ERROR_INTERNO
+[AREA3]   - HOSTIL historial pagina 2147483647: ERROR_INTERNO
+[AREA3]   - HOSTIL recomendar pagina 2147483647: ERROR_INTERNO
+codigo de salida: 0
+
+Segunda ejecucion, argumento escala (de 1 a 6 contrataciones completadas, por debajo de los topes de pagina):
+[AREA3] sentencias SQL con n=2 y n/2 completadas: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=14; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=30; pantalla: listarContrataciones=74; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=38; pantalla: verPerfilPublico (Ana, visto por Bruno)=30; pantalla: listarNotificaciones (Ana)=6; 
+[AREA3] sentencias SQL con n=4 y n/2 completadas: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=14; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=30; pantalla: listarContrataciones=74; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=38; pantalla: verPerfilPublico (Ana, visto por Bruno)=30; pantalla: listarNotificaciones (Ana)=6; 
+[AREA3] sentencias SQL con n=6 y n/2 completadas: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=14; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=30; pantalla: listarContrataciones=74; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=38; pantalla: verPerfilPublico (Ana, visto por Bruno)=30; pantalla: listarNotificaciones (Ana)=6; 
+[AREA3] sentencias SQL con n=8 y n/2 completadas: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=14; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=30; pantalla: listarContrataciones=74; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=38; pantalla: verPerfilPublico (Ana, visto por Bruno)=30; pantalla: listarNotificaciones (Ana)=6; 
+[AREA3] sentencias SQL con n=10 y n/2 completadas: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=14; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=30; pantalla: listarContrataciones=74; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=38; pantalla: verPerfilPublico (Ana, visto por Bruno)=30; pantalla: listarNotificaciones (Ana)=6; 
+[AREA3] sentencias SQL con n=12 y n/2 completadas: buscar=12; recomendar=19; recomendar (popularidad)=20; mis contrataciones=14; mis publicaciones (Ana)=16; notificaciones (Ana)=6; movimientos=7; perfil publico de Ana=30; pantalla: listarContrataciones=74; pantalla: listarPropias (Ana)=16; pantalla: verPerfil (Ana)=38; pantalla: verPerfilPublico (Ana, visto por Bruno)=30; pantalla: listarNotificaciones (Ana)=6; 
+codigo de salida: 0

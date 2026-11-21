@@ -1,0 +1,3 @@
+[H1] excepcion que sale de actualizar(): ninguna
+[H1] notificaciones de la proveedora (2do destinatario): 2; correos enviados: 1
+codigo de salida: 0

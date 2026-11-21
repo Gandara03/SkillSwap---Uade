@@ -47,6 +47,7 @@ skillswap/
 ├── README.md                    este archivo
 ├── mvnw, mvnw.cmd, .mvn/        Maven Wrapper (descarga Maven 3.9.16; no hace falta tener Maven instalado)
 ├── uml/                         diagramas de clases (PlantUML: .puml, .svg y .png)
+├── evidencia/                   salidas de verify, tests MySQL, demo, mutaciones y concurrencia, y la verificación de capas (programas/)
 ├── Informe_SkillSwap.pdf        informe de decisiones de diseño
 └── src/
     ├── main/java/com/uade/skillswap/
@@ -261,7 +262,7 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 | 12 | Pruebas: dominio, estrategias, casos de uso con fakes, persistencia, integración, negativos | ✅ | 757 tests (ver Estado al principio); integración controller → caso de uso → H2 en `presentation/controller/**` y `presentation/adaptador/**` |
 | 12 | README reproducible | ✅ | este archivo |
 | 13 | Diagrama de clases | ✅ | `uml/00-aplicacion-completa.puml` (todas las capas, con los 7 patrones identificados por estereotipos); PlantUML, sección 3 |
-| 13 | Informe PDF de decisiones | 🟡 | `Informe_SkillSwap.pdf` (insumo: secciones 3-5 y 8 de este README) |
+| 13 | Informe PDF de decisiones | ✅ | `Informe_SkillSwap.pdf` en la raíz del repositorio |
 | 13 | Demo en vivo del recorrido principal | ✅ | `mvnw compile exec:java` con `--h2` (consola) o `--h2 --ui` (pantalla) (sección 2) |
 | 15 | **10 casos de aceptación** | ✅ | `acceptance/memoria/Caso01…Caso10`, `acceptance/jpa/Caso01…Caso10…JpaTest` |
 
@@ -270,11 +271,9 @@ Estado: ✅ implementado y verificado con `mvnw verify` · 🟡 hay una versión
 - ~~**4.1 Historial resumido**~~ **Resuelto:** `PerfilPublicoDto` trae el total de contrataciones completadas como proveedor y las últimas (título y fecha, sin datos del cliente); `PerfilPublicoFacade` las pide a `ContratacionUseCase.listarCompletadasComoProveedor`.
 - **4.3 Relevancia:** hoy ordena por título > reputación > fecha; se puede enriquecer.
 - ~~**4.3 Popularidad reciente**~~ **Resuelto:** `RecomendacionPorPopularidad` ordena por contrataciones pagadas en los últimos `diasPopularidadReciente` días (30 por defecto, en `SkillSwapConfig`) y desempata por reputación; se cuentan con una sola consulta agrupada (`ContratacionRepository.contarPagadasDesde`).
-- **6 y 7 (informe):** dibujar el diagrama de capas y justificar cada patrón (problema, alternativa, consecuencias, evidencia).
-- **8 (informe):** justificar los fetch plans. Los tests que cuentan sentencias SQL ya están (sección 5).
-- **10 Mock UI Kit:** consultar con la cátedra los cambios hechos al contrato del kit (sección 8, punto 11). La pantalla todavía no ofrece reprogramar una contratación, ver el comprobante ni editar un borrador: eso queda solo en el backend.
+- **10 Mock UI Kit:** el contrato del kit se ajustó al sistema (sección 8, punto 11). La pantalla todavía no ofrece reprogramar una contratación, ver el comprobante ni editar un borrador: eso queda solo en el backend.
 - **11 Entregas incrementales:** planificarlas con el equipo.
-- **13:** revisar el informe y ensayar la demo.
+- **13:** ensayar la demo.
 
 Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (≈ `crearPerfil`), `miPerfil`/`verPerfilPublico(id)` (≈ `verPerfil`) y `cambiarEstado(id, AccionPublicacion, motivo)` además de `publicar/pausar/...`. Son orientativos: la pantalla del Mock UI Kit usa sus propios nombres y `UiControllersAdapter` los traduce (sección 8, punto 11).
 
@@ -308,7 +307,7 @@ Nota de nombres (sección 9 de la consigna): los controllers usan `registrar` (�
 | **E — Tests de aplicación** | `src/test/.../application` | ✅ | Mantener la cobertura al agregar casos (hoy 99,4 % de líneas en `application`) |
 | **F — Aceptación** | `src/test/.../acceptance` | ✅ | Mantener alineados los juegos en memoria y sobre JPA |
 | **G — UML** | `uml/` | ✅ | Mantener el diagrama `00-aplicacion-completa` (y sus estereotipos de patrones) al día con el código y volver a exportarlo |
-| **H — Informe PDF** | `Informe_SkillSwap.pdf` | 🟡 | Revisar que cada decisión tenga problema, alternativa, consecuencias y evidencia (código/tests) |
+| **H — Informe PDF** | `Informe_SkillSwap.pdf` | ✅ | Mantenerlo alineado con el código y el diagrama |
 
 ---
 
@@ -326,7 +325,7 @@ Decisiones tomadas con un criterio razonable que pueden revisarse, y huecos cono
 8. **Solicitar la propia publicación** lanza `ReglaDeNegocioException` (regla del dominio), no `NoAutorizadoException`.
 9. **Fakes sin rollback.** `TransaccionSimulada` no revierte: en los tests en memoria, un fallo a mitad de `aceptar`/`reprogramar` puede dejar mutado el objeto en memoria. Con JPA la transacción hace rollback y se recarga el agregado, así que no pasa. Los tests en memoria no dependen de eso.
 10. **Disponibilidad en la búsqueda:** el fake y el JPA definen "franja libre con inicio ≥ desde y fin ≤ hasta"; la consigna no lo precisa.
-11. **Mock UI Kit conectado con un Adapter.** El kit trae su propio contrato (`UiControllers` y `Models`), distinto de nuestros 8 controllers. En lugar de cambiar los controllers, `UiControllersAdapter` implementa ese contrato y les delega. La pantalla (`SkillSwapView`) solo conoce el contrato, y `DependenciasUiTest` lo controla. El contrato se ajustó al sistema: montos en `BigDecimal`, un método por acción (los botones salen de las acciones que permite cada estado, según el State), el formulario completo de publicación (`NuevaPublicacion`), y `cancelar` devuelve el reparto (`ResultadoCancelacion`). Además se quitaron `acreditarDemo` y `Modalidad.HIBRIDA`, y `FiltrosBusqueda` se completó con precio mínimo y máximo, habilidad y reputación mínima, que la pantalla ofrece en la búsqueda. Los listados llegan de a una página (`Models.Pagina`) y la pantalla navega entre páginas; también muestra el perfil público de otro usuario (`verPerfilPublico`: reputación, reseñas, contrataciones completadas y publicaciones activas). Reprogramar una contratación, ver su comprobante y editar un borrador siguen solo en el backend: la pantalla no los ofrece. Los cambios al contrato quedan para consultar con la cátedra. La vista no tiene tests automáticos: se prueba a mano con `--ui`.
+11. **Mock UI Kit conectado con un Adapter.** El kit trae su propio contrato (`UiControllers` y `Models`), distinto de nuestros 8 controllers. En lugar de cambiar los controllers, `UiControllersAdapter` implementa ese contrato y les delega. La pantalla (`SkillSwapView`) solo conoce el contrato, y `DependenciasUiTest` lo controla. El contrato se ajustó al sistema: montos en `BigDecimal`, un método por acción (los botones salen de las acciones que permite cada estado, según el State), el formulario completo de publicación (`NuevaPublicacion`), y `cancelar` devuelve el reparto (`ResultadoCancelacion`). Además se quitaron `acreditarDemo` y `Modalidad.HIBRIDA`, y `FiltrosBusqueda` se completó con precio mínimo y máximo, habilidad y reputación mínima, que la pantalla ofrece en la búsqueda. Los listados llegan de a una página (`Models.Pagina`) y la pantalla navega entre páginas; también muestra el perfil público de otro usuario (`verPerfilPublico`: reputación, reseñas, contrataciones completadas y publicaciones activas). Reprogramar una contratación, ver su comprobante y editar un borrador siguen solo en el backend: la pantalla no los ofrece. Estos ajustes son una decisión de diseño del equipo: el contrato refleja lo que el backend ya ofrece (créditos decimales, acciones según el estado, datos completos de publicación y búsqueda). La vista no tiene tests automáticos: se prueba a mano con `--ui`.
 12. **Comisiones** (Decorator de comisión de plataforma) y **Composite de categorías** quedaron fuera a propósito.
 13. **La entrada se valida dos veces.** Primero el controller (`ValidadorEntrada`) y después el caso de uso (`Entradas`) y el dominio. Por eso, a través del controller, faltar el mensaje o el objetivo de una solicitud, el motivo de un rechazo o una cancelación, un puntaje fuera de 1 a 5 o un porcentaje mayor a 100 da `VALIDACION`; llamando directo al caso de uso da `REGLA_DE_NEGOCIO`, como antes. Los largos máximos copian los `VARCHAR` de `V1__esquema.sql`: si cambia la migración, hay que cambiarlos también en `ValidadorEntrada`.
 14. **Recomendaciones e historial paginados en memoria.** El puntaje de recomendación se calcula en Java sobre todas las candidatas (`candidatasRecomendacion`), así que no se puede paginar en la consulta: se arma el top `limiteRecomendaciones` y se recorta la página con `Pagina.recortar`. El historial de una contratación ya viene completo con el agregado (que igual se carga para validar al participante) y se recorta igual. `ContratacionDto.historial`, el detalle completo, no cambió.

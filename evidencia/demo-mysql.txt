@@ -1,0 +1,164 @@
+base: skillswap_informe_20261116_1524
+SkillSwap - base de datos: MySQL
+Cargando datos de demostración (idempotente)...
+Listo: perfiles u-ana, u-bruno, u-cecilia y u-techcorp con sus publicaciones.
+
+==== Descubrimiento: búsqueda y recomendaciones de Bruno ====
+
+[01] Bruno busca publicaciones con el texto 'java', ordenadas por reputación
+    -> OK    1 resultado(s)
+         - #1 [MENTORIA] Mentoría de Java y Clean Architecture | 40.00 SC -> 32.00 SC | Ana Gomez (rep. 0,0) | cupo 10
+
+[02] Bruno pide recomendaciones por AFINIDAD
+    -> OK    2 recomendación(es), se muestran hasta 3
+         - #1 [MENTORIA] Mentoría de Java y Clean Architecture | 40.00 SC -> 32.00 SC | Ana Gomez (rep. 0,0) | cupo 10
+         - #4 [DESAFIO] Desafío: dashboard de métricas para e-commerce | 25.00 SC | TechCorp S.A. (rep. 0,0) | cupo 20
+
+[03] Bruno pide recomendaciones por POPULARIDAD
+    -> OK    4 recomendación(es), se muestran hasta 3
+         - #1 [MENTORIA] Mentoría de Java y Clean Architecture | 40.00 SC -> 32.00 SC | Ana Gomez (rep. 0,0) | cupo 10
+         - #2 [SERVICIO] Auditoría de UX completa | 120.00 SC | Cecilia Paz (rep. 0,0) | cupo 5
+         - #3 [SERVICIO] Prototipado en Figma | 35.00 SC | Cecilia Paz (rep. 0,0) | cupo 5
+
+==== Flujo principal: publicar -> solicitar -> aceptar -> pagar -> iniciar -> completar -> calificar ====
+
+[04] Ana crea el borrador de su mentoría con 3 franjas
+    -> OK    Publicación #5 'Mentoría exprés de patrones de diseño' | BORRADOR | 3 franjas
+    saldos: Ana 100.00 SC | Bruno 100.00 SC | Cecilia 100.00 SC
+
+[05] Ana publica la mentoría
+    -> OK    Publicación #5 | PUBLICADA
+    saldos: Ana 100.00 SC | Bruno 100.00 SC | Cecilia 100.00 SC
+
+[06] Ana agrega una promoción del 25 % por tiempo limitado
+    -> OK    Precio base 40.00 SC -> precio final 30.00 SC | [Precio base: 40.00 SC, Promocion Promo 25 %: -25%]
+    saldos: Ana 100.00 SC | Bruno 100.00 SC | Cecilia 100.00 SC
+
+[07] Bruno busca 'patrones' y encuentra la mentoría nueva
+    -> OK    1 resultado(s)
+         - #5 [MENTORIA] Mentoría exprés de patrones de diseño | 40.00 SC -> 30.00 SC | Ana Gomez (rep. 0,0) | cupo 10
+
+[08] Bruno solicita la mentoría en la franja de dentro de 3 días
+    -> OK    Contratación #1 'Mentoría exprés de patrones de diseño' | PENDIENTE | 30.00 SC
+    saldos: Ana 100.00 SC | Bruno 100.00 SC | Cecilia 100.00 SC
+
+[09] Ana (proveedora) acepta la solicitud
+    -> OK    Contratación #1 'Mentoría exprés de patrones de diseño' | ACEPTADA | 30.00 SC
+    saldos: Ana 100.00 SC | Bruno 100.00 SC | Cecilia 100.00 SC
+
+[10] Bruno (cliente) paga: el monto queda retenido en la contratación
+    -> OK    Contratación #1 'Mentoría exprés de patrones de diseño' | CONFIRMADA | 30.00 SC
+    saldos: Ana 100.00 SC | Bruno 70.00 SC | Cecilia 100.00 SC
+
+[11] Ana inicia la sesión
+    -> OK    Contratación #1 'Mentoría exprés de patrones de diseño' | EN_CURSO | 30.00 SC
+    saldos: Ana 100.00 SC | Bruno 70.00 SC | Cecilia 100.00 SC
+
+[12] Ana completa la sesión: se acredita lo retenido a Ana
+    -> OK    Contratación #1 'Mentoría exprés de patrones de diseño' | COMPLETADA | 30.00 SC
+    saldos: Ana 130.00 SC | Bruno 70.00 SC | Cecilia 100.00 SC
+
+[13] Bruno consulta el comprobante
+    -> OK    SS-00000001 | monto 30.00 SC | pagado 16/11 15:24 | completado 16/11 15:24
+
+[14] Bruno califica a Ana con 5 estrellas
+    -> OK    Puntaje 5: 'Excelente mentoría, muy clara.'
+
+[15] Ana califica a Bruno con 4 estrellas
+    -> OK    Puntaje 4: 'Llegó con las dudas bien preparadas.'
+
+[16] Bruno mira el perfil público de Ana (reputación recalculada)
+    -> OK    Ana Gomez | reputación 5,0 sobre 1 calificación(es)
+
+==== Cancelación con reintegro parcial (política FLEXIBLE: menos de 24 h y más de 2 h -> 50 %) ====
+
+[17] Bruno solicita otra sesión, en la franja de dentro de ~11 horas
+    -> OK    Contratación #2 'Mentoría exprés de patrones de diseño' | PENDIENTE | 30.00 SC
+    saldos: Ana 130.00 SC | Bruno 70.00 SC | Cecilia 100.00 SC
+
+[18] Ana (proveedora) acepta
+    -> OK    Contratación #2 'Mentoría exprés de patrones de diseño' | ACEPTADA | 30.00 SC
+    saldos: Ana 130.00 SC | Bruno 70.00 SC | Cecilia 100.00 SC
+
+[19] Bruno (cliente) paga
+    -> OK    Contratación #2 'Mentoría exprés de patrones de diseño' | CONFIRMADA | 30.00 SC
+    saldos: Ana 130.00 SC | Bruno 40.00 SC | Cecilia 100.00 SC
+
+[20] Bruno cancela: surgió un imprevisto
+    -> OK    #2 'Mentoría exprés de patrones de diseño' | CANCELADA | 30.00 SC | política FLEXIBLE | reintegro al cliente 15.00 SC | compensación a la proveedora 15.00 SC
+    saldos: Ana 145.00 SC | Bruno 55.00 SC | Cecilia 100.00 SC
+    la cancelación se avisa a las dos partes, cada una por su canal:
+       email (EmailCanalAdapter) -> ana@skillswap.test | Se cancelo la contratacion #2 (Surgió un imprevisto laboral)
+       push  (PushCanalAdapter)  -> dispositivo-u-bruno | Se cancelo la contratacion #2 (Surgió un imprevisto laboral)
+
+==== Pago con saldo insuficiente (error controlado, sin excepciones hacia la UI) ====
+
+[21] Bruno mira la 'Auditoría de UX completa' de Cecilia
+    -> OK    #2 'Auditoría de UX completa' | precio 120.00 SC | política ESTRICTA
+
+[22] Bruno solicita la auditoría
+    -> OK    Contratación #3 'Auditoría de UX completa' | PENDIENTE | 120.00 SC
+    saldos: Ana 145.00 SC | Bruno 55.00 SC | Cecilia 100.00 SC
+
+[23] Cecilia (proveedora) acepta
+    -> OK    Contratación #3 'Auditoría de UX completa' | ACEPTADA | 120.00 SC
+    saldos: Ana 145.00 SC | Bruno 55.00 SC | Cecilia 100.00 SC
+
+[24] Bruno intenta pagar la auditoría sin saldo suficiente
+    -> ERROR CONTROLADO [SALDO_INSUFICIENTE] Saldo insuficiente: disponible 55.00 SC, requerido 120.00 SC
+       (la operación no se aplicó: no cambió el estado ni se movió ningún saldo)
+    saldos: Ana 145.00 SC | Bruno 55.00 SC | Cecilia 100.00 SC
+
+[25] Bruno consulta la contratación: sigue ACEPTADA y sin cobrar nada
+    -> OK    Contratación #3 'Auditoría de UX completa' | ACEPTADA | 120.00 SC
+
+[26] Bruno la cancela (no había pago: no hay reintegro)
+    -> OK    #3 'Auditoría de UX completa' | CANCELADA | 120.00 SC | reintegro 0.00 SC | compensación 0.00 SC
+    saldos: Ana 145.00 SC | Bruno 55.00 SC | Cecilia 100.00 SC
+
+==== Estado final ====
+    saldos: Ana 145.00 SC | Bruno 55.00 SC | Cecilia 100.00 SC
+
+[27] Bruno revisa los movimientos de su wallet
+    -> OK    4 movimiento(s)
+         - 16/11 15:24 REINTEGRO    15.00 SC | saldo 55.00 SC
+         - 16/11 15:24 PAGO         30.00 SC | saldo 40.00 SC
+         - 16/11 15:24 PAGO         30.00 SC | saldo 70.00 SC
+         - 16/11 15:24 BONO_INICIAL 100.00 SC | saldo 100.00 SC
+
+[28] Ana revisa los movimientos de su wallet
+    -> OK    3 movimiento(s)
+         - 16/11 15:24 COBRO        15.00 SC | saldo 145.00 SC
+         - 16/11 15:24 COBRO        30.00 SC | saldo 130.00 SC
+         - 16/11 15:24 BONO_INICIAL 100.00 SC | saldo 100.00 SC
+
+[29] Ana consulta su reputación
+    -> OK    reputación 5,0 (1 calificación(es))
+
+[30] Bruno consulta su reputación
+    -> OK    reputación 4,0 (1 calificación(es))
+
+[31] Bruno revisa el historial de estados de la contratación #1
+    -> OK    5 transición(es)
+         - 16/11 15:24 (inicio) -> PENDIENTE | Solicitud creada
+         - 16/11 15:24 PENDIENTE -> ACEPTADA | Solicitud aceptada por el proveedor
+         - 16/11 15:24 ACEPTADA -> CONFIRMADA | Pago confirmado con SkillCoins
+         - 16/11 15:24 CONFIRMADA -> EN_CURSO | Sesion iniciada
+         - 16/11 15:24 EN_CURSO -> COMPLETADA | Sesion completada
+
+[32] Ana revisa su bandeja de notificaciones
+    -> OK    10 notificación(es) por canal {EMAIL=5, INTERNA=5} | últimas 3
+         - 16/11 15:24 [EMAIL] (nueva) CANCELACION: Se cancelo la contratacion #2 (Surgió un imprevisto laboral)
+         - 16/11 15:24 [INTERNA] (nueva) CANCELACION: Se cancelo la contratacion #2 (Surgió un imprevisto laboral)
+         - 16/11 15:24 [EMAIL] (nueva) PAGO_CONFIRMADO: Se confirmo el pago de la contratacion #2 (Pago de 30.00 SC)
+
+[33] Bruno revisa su bandeja de notificaciones
+    -> OK    12 notificación(es) por canal {INTERNA=6, PUSH=6} | últimas 3
+         - 16/11 15:24 [PUSH] (nueva) CANCELACION: Se cancelo la contratacion #3 (Sin saldo suficiente)
+         - 16/11 15:24 [INTERNA] (nueva) CANCELACION: Se cancelo la contratacion #3 (Sin saldo suficiente)
+         - 16/11 15:24 [PUSH] (nueva) SOLICITUD_ACEPTADA: Tu solicitud fue aceptada, contratacion #3
+
+  Canales externos simulados: 5 correo(s) enviados por Email, 6 push enviados.
+
+Demo finalizada correctamente.
+codigo de salida: 0

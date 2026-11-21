@@ -1,0 +1,4 @@
+[INFO] Tests run: 214, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time:  04:01 min
+codigo de salida: 0

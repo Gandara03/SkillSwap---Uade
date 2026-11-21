@@ -1,0 +1,54 @@
+[SECUENCIAS] OK    semilla 20261111: 500 acciones, 34 contrataciones, 10 publicaciones
+[SECUENCIAS] OK    semilla 7: 500 acciones, 74 contrataciones, 9 publicaciones
+[SECUENCIAS] OK    semilla 424242: 500 acciones, 58 contrataciones, 11 publicaciones
+[SECUENCIAS] OK    semilla 31337: 500 acciones, 58 contrataciones, 11 publicaciones
+[SECUENCIAS] observacion O1: tras INICIAR con propuesta pendiente: estado EN_CURSO, propuesta limpia
+[SECUENCIAS] observacion O1: responderla en EN_CURSO -> REGLA_DE_NEGOCIO
+[SECUENCIAS] observacion O2: segunda solicitud identica del mismo cliente: ACEPTADA como otra PENDIENTE
+[SECUENCIAS] observacion O2: aceptar la segunda -> FRANJA_NO_DISPONIBLE; queda PENDIENTE
+[SECUENCIAS] observacion O3: agregar una franja con el mismo horario que otra: ACEPTADA
+[SECUENCIAS] observacion O4: aceptar con la publicacion PAUSADA -> OK (ACEPTADA)
+[SECUENCIAS] observacion O4: aceptar con la publicacion CANCELADA -> REGLA_DE_NEGOCIO
+[SECUENCIAS] observacion O4: pagar la ACEPTADA de una publicacion CANCELADA -> OK (CONFIRMADA)
+[SECUENCIAS] observacion O5: acciones del cliente despues de calificar: []; calificar de nuevo -> REGLA_DE_NEGOCIO
+[SECUENCIAS] acciones ejecutadas: 2000 (cada una con todos los invariantes)
+[SECUENCIAS]   declarada pero fallo por otra regla: ACEPTAR (CUPO_AGOTADO) = 1
+[SECUENCIAS]   declarada pero fallo por otra regla: ACEPTAR (REGLA_DE_NEGOCIO) = 16
+[SECUENCIAS]   declarada pero fallo por otra regla: PUBLICAR publicacion (REGLA_DE_NEGOCIO) = 1
+[SECUENCIAS]   estado final de contratacion ACEPTADA = 2
+[SECUENCIAS]   estado final de contratacion CANCELADA = 33
+[SECUENCIAS]   estado final de contratacion COMPLETADA = 8
+[SECUENCIAS]   estado final de contratacion PENDIENTE = 169
+[SECUENCIAS]   estado final de contratacion RECHAZADA = 12
+[SECUENCIAS]   estado final de publicacion BORRADOR = 12
+[SECUENCIAS]   estado final de publicacion CANCELADA = 4
+[SECUENCIAS]   estado final de publicacion CERRADA = 4
+[SECUENCIAS]   estado final de publicacion PAUSADA = 8
+[SECUENCIAS]   estado final de publicacion PUBLICADA = 13
+[SECUENCIAS]   no autor sobre publicacion (NO_AUTORIZADO) = 38
+[SECUENCIAS]   ok ACEPTAR desde PENDIENTE = 43
+[SECUENCIAS]   ok CALIFICAR = 16
+[SECUENCIAS]   ok CANCELAR desde ACEPTADA = 24
+[SECUENCIAS]   ok CANCELAR desde CONFIRMADA = 9
+[SECUENCIAS]   ok COMPLETAR desde EN_CURSO = 8
+[SECUENCIAS]   ok INICIAR desde CONFIRMADA = 8
+[SECUENCIAS]   ok PAGAR desde ACEPTADA = 17
+[SECUENCIAS]   ok PROPONER REPROGRAMACION desde ACEPTADA = 17
+[SECUENCIAS]   ok PROPONER REPROGRAMACION desde CONFIRMADA = 4
+[SECUENCIAS]   ok RECHAZAR desde PENDIENTE = 12
+[SECUENCIAS]   ok RESPONDER REPROGRAMACION (acepta) = 4
+[SECUENCIAS]   ok RESPONDER REPROGRAMACION (rechaza) = 4
+[SECUENCIAS]   ok publicacion CANCELAR desde BORRADOR = 1
+[SECUENCIAS]   ok publicacion CANCELAR desde PAUSADA = 2
+[SECUENCIAS]   ok publicacion CANCELAR desde PUBLICADA = 1
+[SECUENCIAS]   ok publicacion CERRAR desde PAUSADA = 1
+[SECUENCIAS]   ok publicacion CERRAR desde PUBLICADA = 3
+[SECUENCIAS]   ok publicacion PAUSAR desde PUBLICADA = 25
+[SECUENCIAS]   ok publicacion PUBLICAR desde BORRADOR = 10
+[SECUENCIAS]   ok publicacion REANUDAR desde PAUSADA = 14
+[SECUENCIAS]   ok solicitar = 224
+[SECUENCIAS]   rechazado solicitar (CUPO_AGOTADO) = 6
+[SECUENCIAS]   rechazado solicitar (FRANJA_NO_DISPONIBLE) = 24
+[SECUENCIAS]   rechazado solicitar (REGLA_DE_NEGOCIO) = 142
+[SECUENCIAS] RESULTADO: OK, ningun invariante se rompio
+codigo de salida: 0

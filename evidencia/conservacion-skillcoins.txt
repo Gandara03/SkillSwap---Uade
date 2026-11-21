@@ -1,0 +1,27 @@
+[CONSERVACION] OK    A. Flujo feliz: pagar, iniciar, completar
+[CONSERVACION] OK    B. Cancelar ACEPTADA sin pagar: no se mueve nada
+[CONSERVACION] OK    C. Rechazar una solicitud: no se mueve nada
+[CONSERVACION] OK    D. Flexible, cliente cancela con 30 h (>= 24): reintegro 100 %
+[CONSERVACION] OK    E. Flexible, cliente cancela con 10 h (2 a 24): 50 % con redondeo
+[CONSERVACION] OK    F. Flexible, cliente cancela con 1 h (< 2): reintegro 0 %
+[CONSERVACION] OK    G. Estricta, cliente cancela con 80 h (>= 72): 100 %
+[CONSERVACION] OK    H. Estricta, cliente cancela con 60 h (48 a 72): 50 %
+[CONSERVACION] OK    I. Estricta, cliente cancela con 30 h (< 48): 0 %
+[CONSERVACION] OK    J. Cancela el PROVEEDOR con 1 h, politica estricta: cliente recupera 100 %
+[CONSERVACION] OK    K. Un centavo al 50 %: 0.01 al cliente y 0.00 al proveedor
+[CONSERVACION] OK    L. Saldo insuficiente: el pago falla y no cambia nada
+[CONSERVACION] OK    M. Doble pago: el segundo se rechaza y no cobra de nuevo
+[CONSERVACION] OK    N. Doble completar y cancelar una COMPLETADA: no acredita de nuevo
+[CONSERVACION] OK    O. Doble cancelacion: la segunda no reintegra de nuevo
+[CONSERVACION] OK    P. Promociones acumuladas 99.99 -10 % -5: precio 84.99
+[CONSERVACION] OK    Q. Promociones que superan el precio: total 0, se paga y completa sin movimientos
+[CONSERVACION] OK    R. Precio 0 pagado y cancelado: reparto 0 / 0
+[CONSERVACION] OK    S. La promocion agregada despues de solicitar no cambia el precio congelado
+[CONSERVACION] OK    T. Reprogramar una CONFIRMADA y cancelar: la anticipacion usa la franja nueva
+[CONSERVACION]   observacion V: el segundo pago devuelve TRANSICION_INVALIDA
+[CONSERVACION] OK    V. (observacion) Segundo pago de una CONFIRMADA cuando el saldo ya no alcanza
+[CONSERVACION]   aleatorio: pagadas=45, sin saldo=15, canceladas=19, completadas=9
+[CONSERVACION] OK    U. 60 contrataciones aleatorias (semilla 20261111) entre 4 perfiles
+[CONSERVACION] verificaciones del invariante: 351
+[CONSERVACION] RESULTADO: OK, el total de SkillCoins se conserva en todos los pasos
+codigo de salida: 0
